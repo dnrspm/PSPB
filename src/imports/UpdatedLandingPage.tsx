@@ -3546,8 +3546,8 @@ function Content() {
       <AboutPlatformSection />
       <Block3 />
       <Block1 />
-      <Frame21 />
       <ProgramReachSection />
+      <Frame21 />
       <Frame24 />
       <Frame25 />
       <Block2 />
