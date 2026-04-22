@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown, MoreVertical, Trash2, ArrowLeft, GraduationCap, School, ClipboardCheck, ArrowRight, Plus } from "lucide-react";
+import { ChevronDown, MoreVertical, Trash2, ArrowLeft, GraduationCap, School, ClipboardCheck, ArrowRight, Plus, File } from "lucide-react";
 import { FormInput } from "./FormInput";
 import { FileUpload } from "./FileUpload";
 import { PackageCheckbox } from "./PackageCheckbox";
@@ -1537,68 +1537,43 @@ export function ContributionFormWizard({
               </div>
 
               <div className="flex flex-col gap-spacing-6 p-spacing-6 bg-surface-default">
-                {/* Contributor Info Section */}
+                {/* Contributor Info Section - Simplified */}
                 <div className="border border-border-light rounded-lg overflow-hidden">
-                  <div className="bg-surface-subdued px-5 py-4 border-b border-border-light">
+                  <div className="bg-surface-subdued px-5 py-3 border-b border-border-light">
                     <h4 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-base)' }}>Informasi Kontributor</h4>
                   </div>
-                  <div className="p-5 flex flex-col gap-4">
+<div className="p-5 flex flex-col gap-4">
+                      {/* Informasi Perusahaan */}
+                      <div className="flex flex-col gap-0">
+                        <p className="text-subdued font-medium" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', fontFamily: 'Inter' }}>Informasi Perusahaan</p>
+                        <p className="text-foreground" style={{ fontSize: '16px', fontWeight: 600, fontFamily: 'Inter' }}>{formData.organization || '-'}</p>
+                        <p className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontFamily: 'Inter' }}>
+                          {formData.badanHukum === 'pt' ? 'PT' :
+                           formData.badanHukum === 'pt-perorangan' ? 'PT Perorangan' :
+                           formData.badanHukum === 'yayasan' ? 'Yayasan' :
+                           formData.badanHukum === 'koperasi' ? 'Koperasi' :
+                           formData.badanHukum === 'perkumpulan' ? 'Perkumpulan' :
+                           formData.badanHukum === 'bumn-bumd' ? 'BUMN/BUMD' : ''}
+                          {formData.statusMitra && ` • ${formData.statusMitra === 'baru' ? 'Baru' : formData.statusMitra === 'lama' ? 'Lama' : ''}`}
+                        </p>
+                        {formData.companyProfile && (
+                          <div className="inline-flex items-center gap-2 px-3 py-2 border border-border-light rounded bg-white w-fit mt-1">
+                            <File className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontFamily: 'Inter' }}>{formData.companyProfile.name}</span>
+                          </div>
+                        )}
+                      </div>
 
-                  {/* Perusahaan */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Nama Perusahaan</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.organization || '-'}</p>
+                      {/* Narahubung */}
+                      <div className="flex flex-col gap-0">
+                        <p className="text-subdued font-medium" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', fontFamily: 'Inter' }}>Narahubung</p>
+                        <p className="text-foreground" style={{ fontSize: '16px', fontWeight: 600, fontFamily: 'Inter' }}>{formData.fullName || '-'}</p>
+                        <p className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontFamily: 'Inter' }}>{formData.position || '-'}</p>
+                        <p className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontFamily: 'Inter' }}>
+                          {formData.email || '-'}{formData.phone ? ` • ${formData.phone}` : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Bentuk Badan Hukum</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>
-                        {formData.badanHukum === 'pt' ? 'PT' :
-                         formData.badanHukum === 'pt-perorangan' ? 'PT Perorangan' :
-                         formData.badanHukum === 'yayasan' ? 'Yayasan' :
-                         formData.badanHukum === 'koperasi' ? 'Koperasi' :
-                         formData.badanHukum === 'perkumpulan' ? 'Perkumpulan' :
-                         formData.badanHukum === 'bumn-bumd' ? 'BUMN/BUMD' : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Status Mitra</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>
-                        {formData.statusMitra === 'baru' ? 'Baru' :
-                         formData.statusMitra === 'lama' ? 'Lama' : '-'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Narahubung */}
-                  <div className="border-t border-border-light pt-4 grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Nama</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.fullName || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Jabatan dan Posisi</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.position || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Email Kantor</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.email || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Nomor Telepon</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.phone || '-'}</p>
-                    </div>
-                  </div>
-
-                  {/* Dokumen */}
-                  {formData.companyProfile && (
-                    <div className="border-t border-border-light pt-4">
-                      <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Company Profile</p>
-                      <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{formData.companyProfile.name}</p>
-                    </div>
-                  )}
-
-                  </div>
                 </div>
 
                 {/* Contributions List */}
@@ -1624,65 +1599,44 @@ export function ContributionFormWizard({
                             {/* Multi-school display for Revitalisasi & Infrastruktur Digital */}
                             {isMultiSchoolProgram && formData.contributions[idx]?.schools && formData.contributions[idx].schools.length > 0 ? (
                               <div className="col-span-2">
-                                <div className="flex flex-col gap-3">
-                                  {formData.contributions[idx].schools.map((schoolItem: any, schoolIdx: number) => (
-                                    <div key={`${idx}-${schoolItem.school.npsn}-${schoolIdx}`} className="p-3 border border-border-light rounded-lg">
-                                      <p className="text-foreground font-semibold mb-0.5" style={{ fontSize: 'var(--text-sm)' }}>{schoolIdx + 1}. {schoolItem.school.name}</p>
-                                      <p className="text-subdued mb-2" style={{ fontSize: 'var(--text-xs)' }}>NPSN: {schoolItem.school.npsn}</p>
+                                <div className="flex flex-col gap-2">
+                                  {formData.contributions[idx].schools.map((schoolItem: any, schoolIdx: number) => {
+                                    const isSingleSchool = formData.contributions[idx].schools.length === 1;
+                                    return (
+                                      <div key={`${idx}-${schoolItem.school.npsn}-${schoolIdx}`} className={isSingleSchool ? 'py-1' : 'p-2 border border-border-light rounded-lg'}>
+                                        {/* Always show school name */}
+                                        <p className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{schoolItem.school.name}</p>
 
-                                      {/* Buildings for Revitalisasi Sekolah */}
-                                      {isRevitalisasiSekolah && schoolItem.selectedBuildings && schoolItem.selectedBuildings.length > 0 && (
-                                        <div className="mt-2 pl-3 border-l border-border-light">
-                                          <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Bangunan yang Direvitalisasi:</p>
-                                          <div className="flex flex-col gap-1">
+                                        {/* Buildings for Revitalisasi Sekolah - Simplified */}
+                                        {isRevitalisasiSekolah && schoolItem.selectedBuildings && schoolItem.selectedBuildings.length > 0 && (
+                                          <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>
                                             {revitalizationBuildings
                                               .filter((building) => schoolItem.selectedBuildings.includes(building.id))
-                                              .map((building) => (
-                                                <div key={building.id} style={{ fontSize: 'var(--text-xs)' }} className="text-foreground">
-                                                  <span className="font-medium">{building.buildingName}</span>
-                                                  <span className="text-subdued"> • {building.revitalizationType === 'rehabilitasi' ? 'Rehabilitasi' : 'Pembangunan Gedung Baru'}</span>
-                                                  {building.classification && (
-                                                    <span className="text-subdued">
-                                                      {' • '}
-                                                      {building.classification === 'ringan' && 'Rusak Ringan'}
-                                                      {building.classification === 'sedang' && 'Rusak Sedang'}
-                                                      {building.classification === 'berat' && 'Rusak Berat'}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              ))}
-                                          </div>
-                                        </div>
-                                      )}
+                                              .map((building) => building.buildingName)
+                                              .join(', ')}
+                                          </p>
+                                        )}
 
-                                      {/* Packages for Infrastruktur Digital */}
+                                      {/* Packages for Infrastruktur Digital - Simplified */}
                                       {isInfrastrukturDigital && schoolItem.packages && schoolItem.packages.length > 0 && (
-                                        <div className="mt-2 pl-3 border-l border-border-light">
-                                          <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Paket yang Dipilih:</p>
-                                          <div className="flex flex-wrap gap-2">
-                                            {schoolItem.packages.map((pkg: string, pkgIdx: number) => (
-                                              <span
-                                                key={pkgIdx}
-                                                className="px-3 py-1 bg-primary/10 text-primary font-medium rounded-full"
-                                                style={{ fontSize: 'var(--text-xs)' }}
-                                              >
-                                                {pkg === 'internet' && 'Jaringan Internet'}
-                                                {pkg === 'electricity' && 'Instalasi Listrik'}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        </div>
+                                        <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>
+                                          {schoolItem.packages.map((pkg: string) => 
+                                            pkg === 'internet' ? 'Jaringan Internet' : 
+                                            pkg === 'electricity' ? 'Instalasi Listrik' : pkg
+                                          ).join(', ')}
+                                        </p>
                                       )}
 
                                       {/* Notes for this school */}
                                       {schoolItem.notes && (
-                                        <div className="mt-2 pl-3 border-l border-border-light">
-                                          <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Catatan:</p>
-                                          <p className="text-foreground" style={{ fontSize: 'var(--text-xs)' }}>{schoolItem.notes}</p>
+                                        <div className="mt-3">
+                                          <p className="text-subdued mb-0" style={{ fontSize: 'var(--text-xs)' }}>Catatan:</p>
+                                          <p className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>{schoolItem.notes}</p>
                                         </div>
                                       )}
-                                    </div>
-                                  ))}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             ) : null}
@@ -1711,7 +1665,6 @@ export function ContributionFormWizard({
                               
                               return allItems.length > 0 ? (
                                 <div className="col-span-2">
-                                  <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>{programContent?.fieldLabel}</p>
                                   <div className="flex flex-col gap-1">
                                     {allItems.map((item: {label: string; isLainnya: boolean}, idx: number) => (
                                       <p key={idx} className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>
@@ -1735,34 +1688,31 @@ export function ContributionFormWizard({
                               const muridLabels = (contribution.jenjangMurid || []).map((v: string) => jenjangMap[v] || v);
                               
                               return (
-                                <div className="col-span-2">
-                                  <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>{programContent?.targetAudienceLabel}</p>
-                                  <div className="flex flex-col gap-1">
-                                    {(contribution.targetAudience || []).includes('guru') && (
-                                      <>
-                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-sm)' }}>• Guru</p>
-                                        {guruLabels.length > 0 && (
-                                          <div className="ml-4 flex flex-col gap-1">
-                                            {guruLabels.map((label: string, idx: number) => (
-                                              <p key={`guru-${idx}`} className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>- {label}</p>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
-                                    {(contribution.targetAudience || []).includes('murid') && (
-                                      <>
-                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-sm)' }}>• Murid</p>
-                                        {muridLabels.length > 0 && (
-                                          <div className="ml-4 flex flex-col gap-1">
-                                            {muridLabels.map((label: string, idx: number) => (
-                                              <p key={`murid-${idx}`} className="text-foreground" style={{ fontSize: 'var(--text-sm)' }}>- {label}</p>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
+                                <div className="col-span-2 flex flex-col gap-2">
+                                  {(contribution.targetAudience || []).includes('guru') && guruLabels.length > 0 && (
+                                    <div>
+                                      <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Guru</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {guruLabels.map((label: string, idx: number) => (
+                                          <span key={`guru-${idx}`} className="px-2 py-1 bg-white border border-border-light rounded-full" style={{ fontSize: 'var(--text-xs)' }}>
+                                            {label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {(contribution.targetAudience || []).includes('murid') && muridLabels.length > 0 && (
+                                    <div>
+                                      <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Murid</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {muridLabels.map((label: string, idx: number) => (
+                                          <span key={`murid-${idx}`} className="px-2 py-1 bg-white border border-border-light rounded-full" style={{ fontSize: 'var(--text-xs)' }}>
+                                            {label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })()}
@@ -1783,8 +1733,8 @@ export function ContributionFormWizard({
 
                             {/* Informasi Tambahan - hide for multi-school programs */}
                             {contribution.notes && !isMultiSchoolProgram && (
-                              <div className="col-span-2">
-                                <p className="text-subdued mb-1" style={{ fontSize: 'var(--text-xs)' }}>Informasi Tambahan</p>
+                              <div className="col-span-2 mt-1">
+                                <p className="text-subdued mb-0" style={{ fontSize: 'var(--text-xs)' }}>Informasi Tambahan</p>
                                 <p className="text-foreground whitespace-pre-wrap" style={{ fontSize: 'var(--text-sm)' }}>{contribution.notes}</p>
                               </div>
                             )}
