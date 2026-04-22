@@ -76,7 +76,7 @@ export function ContributionFormWizard({
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
   const [showThankYou, setShowThankYou] = useState(false);
-  const [expandedPrasyarat, setExpandedPrasyarat] = useState<Record<string, boolean>>({guru: true, murid: true, 'sso-belajar-id': true, 'integrasi-rumah-pendidikan': true});
+  const [expandedPrasyarat, setExpandedPrasyarat] = useState<Record<string, boolean>>({guru: true, murid: true, 'sso-belajar-id': true, 'integrasi-rumah-pendidikan': true, 'default': true});
 
   // Debug: Log formData changes
   useEffect(() => {
@@ -1265,16 +1265,29 @@ export function ContributionFormWizard({
                                             <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-sm)' }}>{option.label}</span>
                                           </label>
 
-                                          {/* Show prasyarat when checked */}
+                                          {/* Show prasyarat when checked - collapsible */}
                                           {isChecked && (option.prasyaratSubstansi || option.prasyaratTeknis) && (
                                             <div className="px-4 pb-4 pt-3 border-t border-border-light-light">
-                                              <p className="font-medium text-foreground mb-2" style={{ fontSize: 'var(--text-base)' }}>
-                                                Prasyarat
-                                              </p>
-                                              <ContributionPrerequisites
-                                                prasyaratSubstansi={option.prasyaratSubstansi}
-                                                prasyaratTeknis={option.prasyaratTeknis}
-                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => setExpandedPrasyarat(prev => ({...prev, [option.value]: !prev[option.value]}))}
+                                                className="flex items-center justify-between w-full"
+                                              >
+                                                <p className="font-medium text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  Prasyarat
+                                                </p>
+                                                <ChevronDown 
+                                                  className={`w-4 h-4 text-foreground transition-transform ${expandedPrasyarat[option.value] ? 'rotate-180' : ''}`}
+                                                />
+                                              </button>
+                                              {expandedPrasyarat[option.value] && (
+                                                <div className="border-t border-border-light mt-2 pt-2">
+                                                  <ContributionPrerequisites
+                                                    prasyaratSubstansi={option.prasyaratSubstansi}
+                                                    prasyaratTeknis={option.prasyaratTeknis}
+                                                  />
+                                                </div>
+                                              )}
                                             </div>
                                           )}
                                         </div>
@@ -1284,76 +1297,101 @@ export function ContributionFormWizard({
                                 );
                               }
 
-                              return (
-                                <div className="flex flex-col gap-4">
-                                  {/* Checkbox Group Selection */}
-                                  <div className="flex flex-col gap-3">
-                                    <label 
-                                      className="text-foreground"
-                                      style={{
-                                        fontSize: 'var(--input-label-size)',
-                                        fontWeight: 'var(--input-label-weight)',
-                                        color: 'var(--input-label-color)',
-                                        lineHeight: '22px',
-                                        display: 'block'
-                                      }}
-                                    >
-                                      {programContent.fieldLabel}
-                                    </label>
-                                    
+return (
+                                 <div className="flex flex-col gap-4">
+                                   {/* Checkbox Group Selection */}
+                                   <div className="flex flex-col gap-3">
+                                     <label 
+                                       className="text-foreground"
+                                       style={{
+                                         fontSize: 'var(--input-label-size)',
+                                         fontWeight: 'var(--input-label-weight)',
+                                         color: 'var(--input-label-color)',
+                                         lineHeight: '22px',
+                                         display: 'block'
+                                       }}
+                                     >
+                                       {programContent.fieldLabel}
+                                     </label>
+                                     
 {/* Program Options as Checkboxes - skip "lainnya" as it's handled separately */}
-                                    {programContent.options.filter((opt: any) => opt.value !== 'lainnya').map((option: any) => {
-                                      const isChecked = (contribution.selectedTopics || []).includes(option.value);
-                                      return (
-                                        <div key={option.value} className={`rounded-lg overflow-hidden border transition-colors ${isChecked ? 'border-primary' : 'border-border-light'}`}>
-                                          <label
-                                            className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
-                                              isChecked ? 'bg-[var(--primary-50)]' : 'bg-background hover:bg-surface-subdued'
-                                            }`}
-                                          >
-                                            <div className="relative shrink-0">
-                                              <input
-                                                type="checkbox"
-                                                className="sr-only peer"
-                                                checked={isChecked}
-                                                onChange={(e) => {
-                                                  const currentTopics = contribution.selectedTopics || [];
-                                                  const newTopics = e.target.checked
-                                                    ? [...currentTopics, option.value]
-                                                    : currentTopics.filter((t: string) => t !== option.value);
-                                                  setFormData({
-                                                    ...formData,
-                                                    contributions: {
-                                                      ...formData.contributions,
-                                                      [idx]: { ...contribution, selectedTopics: newTopics }
-                                                    }
-                                                  });
-                                                }}
-                                              />
-                                              <div
-                                                className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
-                                                  isChecked
-                                                    ? 'bg-primary border-primary'
-                                                    : 'bg-input-background border-border peer-hover:border-primary'
-                                                }`}
+                                     {programContent.options.filter((opt: any) => opt.value !== 'lainnya').map((option: any) => {
+                                       const isChecked = (contribution.selectedTopics || []).includes(option.value);
+                                       return (
+                                         <div key={option.value} className={`rounded-lg overflow-hidden border transition-colors ${isChecked ? 'border-primary' : 'border-border-light'}`}>
+                                           <label
+                                             className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                                               isChecked ? 'bg-[var(--primary-50)]' : 'bg-background hover:bg-surface-subdued'
+                                             }`}
+                                           >
+                                             <div className="relative shrink-0">
+                                               <input
+                                                 type="checkbox"
+                                                 className="sr-only peer"
+                                                 checked={isChecked}
+                                                 onChange={(e) => {
+                                                   const currentTopics = contribution.selectedTopics || [];
+                                                   const newTopics = e.target.checked
+                                                     ? [...currentTopics, option.value]
+                                                     : currentTopics.filter((t: string) => t !== option.value);
+                                                   setFormData({
+                                                     ...formData,
+                                                     contributions: {
+                                                       ...formData.contributions,
+                                                       [idx]: { ...contribution, selectedTopics: newTopics }
+                                                     }
+                                                   });
+                                                 }}
+                                               />
+                                               <div
+                                                 className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
+                                                   isChecked
+                                                     ? 'bg-primary border-primary'
+                                                     : 'bg-input-background border-border peer-hover:border-primary'
+                                                 }`}
+                                               >
+                                                 {isChecked && (
+                                                   <svg className="w-3 h-3 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                   </svg>
+                                                 )}
+                                               </div>
+                                             </div>
+                                             <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-sm)' }}>{option.label}</span>
+                                           </label>
+                                           {isChecked && option.deskripsi && (
+                                             <div className="px-3 pb-3 bg-background border-t border-border-light">
+                                               <p className="text-muted-foreground mt-2" style={{ fontSize: 'var(--text-sm)' }}>{option.deskripsi}</p>
+                                             </div>
+                                           )}
+{/* Show prasyarat only for Pengembangan Platform Digital (per-option) */}
+                                          {isChecked && (program.title === "Pengembangan Platform Digital") && (option.prasyaratSubstansi || option.prasyaratTeknis) && (
+                                            <div className="px-4 pb-4 pt-3 border-t border-border-light-light">
+                                              <button
+                                                type="button"
+                                                onClick={() => setExpandedPrasyarat(prev => ({...prev, [option.value]: !prev[option.value]}))}
+                                                className="flex items-center justify-between w-full"
                                               >
-                                                {isChecked && (
-                                                  <svg className="w-3 h-3 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                  </svg>
-                                                )}
-                                              </div>
-                                            </div>
-                                            <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-sm)' }}>{option.label}</span>
-                                          </label>
-                                          {isChecked && option.deskripsi && (
-                                            <div className="px-3 pb-3 bg-background border-t border-border-light">
-                                              <p className="text-muted-foreground mt-2" style={{ fontSize: 'var(--text-sm)' }}>{option.deskripsi}</p>
+                                                <p className="font-medium text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  Prasyarat
+                                                </p>
+                                                <ChevronDown 
+                                                  className={`w-4 h-4 text-foreground transition-transform ${expandedPrasyarat[option.value] ? 'rotate-180' : ''}`}
+                                                />
+                                              </button>
+                                              {expandedPrasyarat[option.value] && (
+                                                <div className="border-t border-border-light mt-2 pt-2">
+                                                  <ContributionPrerequisites
+                                                    prasyaratSubstansi={option.prasyaratSubstansi}
+                                                    prasyaratTeknis={option.prasyaratTeknis}
+                                                  />
+                                                </div>
+                                              )}
                                             </div>
                                           )}
-                                        </div>
-                                      );
-                                    })}
+                                         </div>
+                                       );
+                                     })}
                                     
                                     {/* Lainnya Option - with free text input */}
                                     {(() => {
@@ -1440,12 +1478,32 @@ export function ContributionFormWizard({
                                     })()}
                                   </div>
 
-                                  {/* Prerequisites - Show when at least one topic is selected (excluding Lainnya) */}
-                                  {(contribution.selectedTopics && contribution.selectedTopics.length > 0) && (
-                                    <ContributionPrerequisites
-                                      prasyaratSubstansi={programContent.options[0]?.prasyaratSubstansi}
-                                      prasyaratTeknis={programContent.options[0]?.prasyaratTeknis}
-                                    />
+                                  {/* Prerequisites - Show when at least one topic is selected (excluding Lainnya) - collapsible */}
+                                  {contribution.selectedTopics && contribution.selectedTopics.length > 0 && (
+                                    <div className="pt-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedPrasyarat(prev => ({...prev, ['default']: !prev['default']}))}
+                                        className="flex items-center justify-between w-full mb-2"
+                                      >
+                                        <p className="font-medium text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                          Prasyarat
+                                        </p>
+                                        <ChevronDown 
+                                          className={`w-4 h-4 text-foreground transition-transform ${expandedPrasyarat['default'] ? 'rotate-180' : ''}`}
+                                        />
+                                      </button>
+                                      <div className="border-t border-border-light pt-2">
+                                        {expandedPrasyarat['default'] && (
+                                          <div className="mt-2">
+                                            <ContributionPrerequisites
+                                              prasyaratSubstansi={programContent.options[0]?.prasyaratSubstansi}
+                                              prasyaratTeknis={programContent.options[0]?.prasyaratTeknis}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
                               );
