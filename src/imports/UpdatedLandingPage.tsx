@@ -16,7 +16,7 @@ import loopSvgPaths from "./svg-qgcasdpjdv";
 import highlightSvgPaths from "./svg-pfbodqyl9b";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowRight, Wifi, Zap, Monitor, GraduationCap, BookOpen, Building2, ChevronDown, MoreVertical, Trash2, X, Download, Info, School, ArrowDown, Clock, MapPin, Handshake, Lightbulb, Users, Boxes } from "lucide-react";
+import { ArrowRight, Wifi, Zap, Monitor, GraduationCap, BookOpen, Building2, ChevronDown, MoreVertical, Trash2, X, Download, Info, School, ArrowDown, Clock, MapPin, Handshake, Lightbulb, Users, Boxes, CheckCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../app/components/ui/dropdown-menu";
 import ExplorePageFilterOnRenovasiSekolah from "./ExplorePageFilterOnRenovasiSekolah";
 import { Block3Container } from "../app/components/Block3Container";
@@ -1677,7 +1677,7 @@ function Frame2() {
   return (
     <div className="content-stretch flex flex-col items-center relative shrink-0">
       <div className="not-italic relative shrink-0 text-foreground text-center w-full max-w-[1056px] whitespace-pre-wrap">
-        <h2 className="block">Mengapa berkontribusi melalui Partisipasi Semesta Pendidikan Bermutu? </h2>
+        <h2 className="block" style={{ fontSize: '28px' }}>Bagaimana kolaborasi melalui PSPB dapat menghasilkan dampak nyata?</h2>
       </div>
     </div>
   );
@@ -2610,7 +2610,7 @@ function Frame21() {
           className="content-stretch flex flex-col items-center justify-center relative w-full px-4 sm:px-6 md:px-8 lg:px-12"
           style={{
             paddingTop: 'calc(var(--spacing-8) * 3)',
-            paddingBottom: 'calc(var(--spacing-8) * 3)',
+paddingBottom: 'calc(var(--spacing-8) * 1)',
             gap: 'var(--spacing-8)'
           }}
         >
@@ -3498,52 +3498,7 @@ function ProgramReachSection() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
-                <div className="relative flex flex-col items-center gap-6 text-center">
-                  <div className="mb-1"><Users className="w-7 h-7 text-blue-600" /></div>
-                  <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>411.233</span>
-                  <p className="text-gray-600 leading-relaxed" style={{ fontFamily: 'Inter' }}><span className="text-gray-900" style={{ fontSize: '16px', fontWeight: 700 }}>Siswa</span> telah merasakan manfaat program pendidikan</p>
-                  <div className="w-full border-t border-gray-200 pt-4">
-                    <div className="flex items-center gap-2 w-full">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                      <span className="text-gray-500 text-left" style={{ fontFamily: 'Inter', fontSize: '14px' }}><span style={{ fontWeight: 700 }}>+891.231</span> lainnya dalam perencanaan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
-                <div className="relative flex flex-col items-center gap-6 text-center">
-                  <div className="mb-1"><Boxes className="w-7 h-7 text-blue-600" /></div>
-                  <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>16.092</span>
-                  <p className="text-gray-600 leading-relaxed" style={{ fontFamily: 'Inter' }}><span className="text-gray-900" style={{ fontSize: '16px', fontWeight: 700 }}>Sekolah</span> telah terbangun kembali</p>
-                  <div className="w-full border-t border-gray-200 pt-4">
-                    <div className="flex items-center gap-2 w-full">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                      <span className="text-gray-500 text-left" style={{ fontFamily: 'Inter', fontSize: '14px' }}><span style={{ fontWeight: 700 }}>+47.091</span> lainnya dalam perencanaan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
-                <div className="relative flex flex-col items-center gap-6 text-center">
-                  <div className="mb-1"><GraduationCap className="w-7 h-7 text-blue-600" /></div>
-                  <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>4.092</span>
-                  <p className="text-gray-600 leading-relaxed" style={{ fontFamily: 'Inter' }}><span className="text-gray-900" style={{ fontSize: '16px', fontWeight: 700 }}>Guru &amp; Fasilitator</span> telah mengikuti pelatihan</p>
-                  <div className="w-full border-t border-gray-200 pt-4">
-                    <div className="flex items-center gap-2 w-full">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                      <span className="text-gray-500 text-left" style={{ fontFamily: 'Inter', fontSize: '14px' }}><span style={{ fontWeight: 700 }}>+12.908</span> lainnya dalam perencanaan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+<div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer shadow-sm">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><BookOpen className="w-7 h-7 text-blue-600" /></div>
@@ -3558,8 +3513,8 @@ function ProgramReachSection() {
                 </div>
               </div>
 
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer shadow-sm">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><Building2 className="w-7 h-7 text-blue-600" /></div>
                   <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>113</span>
@@ -3573,7 +3528,7 @@ function ProgramReachSection() {
                 </div>
               </div>
 
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><MapPin className="w-7 h-7 text-blue-600" /></div>
@@ -3599,37 +3554,22 @@ function WhyContributeAndImpact() {
   return (
     <div className="relative shrink-0 w-full overflow-hidden">
 
-      {/* Mengapa berkontribusi — di atas, gradient putih → abu tipis di penghujung */}
-      <div
-        className="content-stretch flex flex-col gap-10 h-auto items-center relative w-full px-4 sm:px-6 md:px-8 lg:px-12"
-        style={{
-          paddingTop: 'calc(var(--spacing-8) * 3)',
-          paddingBottom: '24px',
-          background: 'linear-gradient(to bottom, #ffffff 60%, #f1f2f4 100%)'
-        }}
-      >
-        <div className="max-w-[1140px] mx-auto w-full flex flex-col gap-10 items-center">
-          <Frame2 />
-          <Frame10 />
-        </div>
-      </div>
-
-      {/* Dampak PSPB — di bawah */}
+      {/* Dampak PSPB — di atas */}
       <div
         className="content-stretch flex flex-col items-center relative w-full px-4 sm:px-6 md:px-8 lg:px-12"
         style={{
-          paddingTop: '8px',
-          paddingBottom: 'calc(var(--spacing-8) * 3)',
+          paddingTop: 'calc(var(--spacing-8) * 3)',
+          paddingBottom: 'calc(var(--spacing-8) * 1)',
           backgroundColor: '#f1f2f4'
         }}
       >
         <div className="max-w-[1140px] w-full mx-auto">
-          <div className="flex flex-col gap-10 items-center">
-            <div className="flex flex-col gap-3 items-center">
-              <h3 className="not-italic relative shrink-0 text-center text-gray-900 w-full whitespace-pre-wrap" style={{ fontFamily: 'Inter' }}>Dampak nyata kolaborasi melalui PSPB:</h3>
+          <div className="flex flex-col gap-[72px] items-center">
+            <div className="flex flex-col gap-4 items-center">
+              <h2 className="not-italic relative shrink-0 text-center text-gray-900 w-full whitespace-pre-wrap" style={{ fontFamily: 'Inter' }}>Dampak nyata kolaborasi melalui PSPB:</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer shadow-sm">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><Users className="w-7 h-7 text-blue-600" /></div>
@@ -3643,7 +3583,7 @@ function WhyContributeAndImpact() {
                   </div>
                 </div>
               </div>
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><BookOpen className="w-7 h-7 text-blue-600" /></div>
@@ -3657,8 +3597,8 @@ function WhyContributeAndImpact() {
                   </div>
                 </div>
               </div>
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer shadow-sm">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><Building2 className="w-7 h-7 text-blue-600" /></div>
                   <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>113</span>
@@ -3671,7 +3611,21 @@ function WhyContributeAndImpact() {
                   </div>
                 </div>
               </div>
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl" />
+                <div className="relative flex flex-col items-center gap-6 text-center">
+                  <div className="mb-1"><CheckCircle className="w-7 h-7 text-blue-600" /></div>
+                  <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>29</span>
+                  <p className="text-gray-600 leading-relaxed" style={{ fontFamily: 'Inter' }}><span className="text-gray-900" style={{ fontSize: '16px', fontWeight: 700 }}>Program kolaborasi</span> berjalan dengan sukses</p>
+                  <div className="w-full border-t border-gray-200 pt-4">
+                    <div className="flex items-center gap-2 w-full">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                      <span className="text-gray-500 text-left" style={{ fontFamily: 'Inter', fontSize: '14px' }}><span style={{ fontWeight: 700 }}>+15 lainnya</span> dalam perencanaan</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><MapPin className="w-7 h-7 text-blue-600" /></div>
@@ -3685,7 +3639,7 @@ function WhyContributeAndImpact() {
                   </div>
                 </div>
               </div>
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
+              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 cursor-pointer">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
                 <div className="relative flex flex-col items-center gap-6 text-center">
                   <div className="mb-1"><Handshake className="w-7 h-7 text-blue-600" /></div>
@@ -3699,22 +3653,23 @@ function WhyContributeAndImpact() {
                   </div>
                 </div>
               </div>
-              <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-100 rounded-full blur-3xl group-hover:bg-gray-200 transition-all" />
-                <div className="relative flex flex-col items-center gap-6 text-center">
-                  <div className="mb-1"><Lightbulb className="w-7 h-7 text-blue-600" /></div>
-                  <span className="text-gray-900 tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, fontFamily: 'Inter' }}>29</span>
-                  <p className="text-gray-600 leading-relaxed" style={{ fontFamily: 'Inter' }}><span className="text-gray-900" style={{ fontSize: '16px', fontWeight: 700 }}>Program kolaborasi</span> telah berjalan dengan sukses</p>
-                  <div className="w-full border-t border-gray-200 pt-4">
-                    <div className="flex items-center gap-2 w-full">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                      <span className="text-gray-500 text-left" style={{ fontFamily: 'Inter', fontSize: '14px' }}><span style={{ fontWeight: 700 }}>+56</span> lainnya dalam perencanaan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bagaimana kolaborasi — di bawah, abu tipis → putih */}
+      <div
+        className="content-stretch flex flex-col gap-10 h-auto items-center relative w-full px-4 sm:px-6 md:px-8 lg:px-12"
+        style={{
+          paddingTop: 'calc(var(--spacing-8) * 4)',
+          paddingBottom: 'calc(var(--spacing-8) * 1)',
+          background: 'linear-gradient(to bottom, #f1f2f4 10%, #ffffff 100%)'
+        }}
+      >
+        <div className="max-w-[1140px] mx-auto w-full flex flex-col gap-10 items-center">
+          <Frame2 />
+          <Frame10 />
         </div>
       </div>
 
