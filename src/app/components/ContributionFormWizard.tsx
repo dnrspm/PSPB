@@ -1189,7 +1189,7 @@ export function ContributionFormWizard({
 
                                               {/* Prasyarat - Show when jenjang is selected */}
                                               {((isGuru && (contribution.jenjangGuru || []).length > 0) || (!isGuru && (contribution.jenjangMurid || []).length > 0)) && (
-                                                <div className="border-t border-border-light pt-3">
+                                                <div className="mt-4">
                                                   <button
                                                     type="button"
                                                     onClick={() => setExpandedPrasyarat(prev => ({...prev, [targetOption.value]: !prev[targetOption.value]}))}
@@ -1206,7 +1206,7 @@ export function ContributionFormWizard({
                                                     </svg>
                                                   </button>
                                                   {expandedPrasyarat[targetOption.value] && (
-                                                    <div className="mt-2">
+                                                    <div className="mt-2 border-t border-border-light pt-3">
                                                       <ContributionPrerequisites
                                                         prasyaratSubstansi={isGuru ? programContent.prasyaratGuru.prasyaratSubstansi : programContent.prasyaratMurid.prasyaratSubstansi}
                                                         prasyaratTeknis={isGuru ? programContent.prasyaratGuru.prasyaratTeknis : programContent.prasyaratMurid.prasyaratTeknis}
