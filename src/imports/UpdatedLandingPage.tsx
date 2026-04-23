@@ -3626,8 +3626,7 @@ function WhyContributeAndImpact() {
         <div className="max-w-[1140px] w-full mx-auto">
           <div className="flex flex-col gap-10 items-center">
             <div className="flex flex-col gap-3 items-center">
-              <h3 className="not-italic relative shrink-0 text-center text-gray-900 w-full whitespace-pre-wrap" style={{ fontFamily: 'Inter' }}>Dampak Program PSPB</h3>
-              <p className="not-italic relative shrink-0 text-center text-gray-600 max-w-[800px] whitespace-pre-wrap text-responsive-body-lg" style={{ fontFamily: 'Inter' }}>Menghimpun kolaborasi untuk meningkatkan mutu pendidikan Indonesia</p>
+              <h3 className="not-italic relative shrink-0 text-center text-gray-900 w-full whitespace-pre-wrap" style={{ fontFamily: 'Inter' }}>Dampak nyata kolaborasi melalui PSPB:</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
               <div className="group relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-gray-300 hover:scale-105 transition-all duration-300 cursor-pointer shadow-sm">
