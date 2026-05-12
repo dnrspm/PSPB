@@ -254,7 +254,7 @@ function Frame53() {
             }
           }}
         >
-          Pelajari Program Kolaborasi
+          Pelajari Program PSPB
           <ArrowDown className="w-4 h-4 animate-bounce" />
         </button>
       </div>
