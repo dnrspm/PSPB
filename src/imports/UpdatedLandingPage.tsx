@@ -231,9 +231,9 @@ function Frame53() {
       className="relative content-stretch flex flex-col gap-2 md:gap-3 items-start px-4 sm:px-6 md:px-8 lg:px-12 not-italic text-white w-full whitespace-pre-wrap"
     >
       <div className="max-w-[1140px] mx-auto w-full flex flex-col gap-2 md:gap-3">
-        <h1 className="relative shrink-0 w-full mb-1">Lebih dari 334 ribu sekolah di Indonesia membutuhkan dukungan peningkatan kualitas pembelajaran</h1>
+        <h1 className="relative shrink-0 w-full mb-1">Tingginya minat mitra untuk memberi dukungan pendidikan memerlukan proses kolaborasi yang efisien</h1>
         <div className="relative shrink-0 w-full md:w-[60%] mt-2 font-[Inter] flex flex-col gap-3">
-          <p className="text-[20px] leading-relaxed text-white/90">Gotong royong dari sektor swasta, lembaga internasional, dan publik diperlukan untuk pemerataan kemajuan pendidikan</p>
+          <p className="text-[20px] leading-relaxed text-white/90">Keterpaduan data hingga pemantauan yang optimal menjadi kunci dukungan pendidikan dari sektor swasta hingga lembaga internasional dapat diterima secara merata.</p>
           <div className="mt-1 p-3 rounded-lg flex" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}>
             <div className="w-1 mr-4 rounded-full" style={{ backgroundColor: '#FCD222' }} />
             <p className="text-[20px] leading-relaxed text-white/90 font-[Inter]"><strong>Partisipasi Semesta Pendidikan Bermutu (PSPB)</strong> hadir untuk menjembatani kolaborasi agar lebih tepat sasaran, mudah, dan transparan.</p>
