@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Wifi, Zap, Building2, BookOpen, ChevronDown, MoreVertical, Trash2 } from "lucide-react";
+import { Wifi, Zap, Building2, BookOpen, ChevronDown, MoreVertical, Trash2, School, Handshake, GraduationCap, Code2, Brain, FileVideo, Image } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./ui/dropdown-menu";
 import svgPathsInternet from "../../imports/svg-rrklaa4o2z";
 import svgPathsElectricity from "../../imports/svg-if2lkdlrqq";
@@ -243,11 +243,35 @@ export default function Block3({ Frame }: Block3Props) {
                     {cardDetails[selectedCard].contributions.map((contribution, index) => (
                       <div key={index} className="flex gap-4">
                         <div className="shrink-0 mt-1">
-                          {contribution.icon === "wifi" ? (
-                            <Wifi className="w-6 h-6 text-primary" />
-                          ) : (
-                            <Zap className="w-6 h-6 text-primary" />
-                          )}
+                          {(() => {
+                            const title = contribution.title.toLowerCase();
+                            if (title.includes('internet') || title.includes('wifi') || title.includes('konektivitas') || title.includes('jaringan')) {
+                              return <Wifi className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('listrik') || title.includes('power') || title.includes('energi')) {
+                              return <Zap className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('renovasi') || title.includes('bangunan') || title.includes('ruang') || title.includes('infrastruktur')) {
+                              return <Building2 className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('konten digital')) {
+                              return <FileVideo className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('video') || title.includes('multimedia')) {
+                              return <Image className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('konten') || title.includes('bahan ajar') || title.includes('belajar')) {
+                              return <BookOpen className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('koding')) {
+                              return <Code2 className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('ai') || title.includes('artificial intelligence')) {
+                              return <Brain className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('pelatihan') || title.includes('kompetensi') || title.includes('gtk') || title.includes('guru')) {
+                              return <GraduationCap className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('kolaborasi') || title.includes('kerjsama') || title.includes('industri') || title.includes('vokasi') || title.includes('mitra') || title.includes('du/di')) {
+                              return <Handshake className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('anak')) {
+                              return <Users className="w-6 h-6 text-primary" />;
+                            } else if (title.includes('sekolah') || title.includes('murid') || title.includes('peserta')) {
+                              return <School className="w-6 h-6 text-primary" />;
+                            }
+                            return <Zap className="w-6 h-6 text-primary" />;
+                          })()}
                         </div>
                         <div className="space-y-1">
                           <h4 className="font-semibold text-foreground">
