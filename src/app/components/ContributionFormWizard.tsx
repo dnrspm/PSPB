@@ -1639,23 +1639,43 @@ return (
                             {/* Multi-school display for Revitalisasi & Infrastruktur Digital */}
                             {isMultiSchoolProgram && formData.contributions[idx]?.schools && formData.contributions[idx].schools.length > 0 ? (
                               <div className="col-span-2">
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-3">
                                   {formData.contributions[idx].schools.map((schoolItem: any, schoolIdx: number) => {
                                     const isSingleSchool = formData.contributions[idx].schools.length === 1;
                                     return (
-                                      <div key={`${idx}-${schoolItem.school.npsn}-${schoolIdx}`} className={isSingleSchool ? 'py-1' : 'p-2 border border-border-light rounded-lg'}>
+                                      <div key={`${idx}-${schoolItem.school.npsn}-${schoolIdx}`} className={`${isSingleSchool ? 'py-2 px-4' : 'p-4'} border border-border-light rounded-lg`}>
                                         {/* Always show school name */}
                                         <p className="text-foreground" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{schoolItem.school.name}</p>
 
-                                        {/* Buildings for Revitalisasi Sekolah - Simplified */}
-                                        {isRevitalisasiSekolah && schoolItem.selectedBuildings && schoolItem.selectedBuildings.length > 0 && (
-                                          <p className="text-foreground" style={{ fontSize: '14px' }}>
-                                            {revitalizationBuildings
-                                              .filter((building) => schoolItem.selectedBuildings.includes(building.id))
-                                              .map((building) => building.buildingName)
-                                              .join(', ')}
-                                          </p>
-                                        )}
+                                        {/* Buildings for Revitalisasi Sekolah - with budget */}
+                                        {isRevitalisasiSekolah && schoolItem.selectedBuildings && schoolItem.selectedBuildings.length > 0 && (() => {
+                                          const selectedBuildingsList = revitalizationBuildings
+                                            .filter((building) => schoolItem.selectedBuildings.includes(building.id));
+                                          
+                                          const schoolTotal = selectedBuildingsList.reduce((total, building) => {
+                                            const budgetStr = building.estimatedBudget.replace(/[^0-9]/g, '');
+                                            return total + parseInt(budgetStr || '0', 10);
+                                          }, 0);
+                                          
+                                          const formatCurrency = (num: number) => {
+                                            return 'Rp' + num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                          };
+                                          
+                                          return (
+                                            <div className="flex flex-col gap-1 mt-1">
+                                              {selectedBuildingsList.map((building) => (
+                                                <div key={building.id} className="flex items-center justify-between py-1">
+                                                  <span style={{ fontSize: '14px', color: '#000' }}>{building.buildingName}</span>
+                                                  <span style={{ fontSize: '14px', color: '#000' }}>{building.estimatedBudget}</span>
+                                                </div>
+                                              ))}
+                                              <div className="flex items-center justify-between py-1 mt-1 pt-2 border-t border-border-light">
+                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#000' }}>Subtotal</span>
+                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#000' }}>{formatCurrency(schoolTotal)}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })()}
 
                                       {/* Packages for Infrastruktur Digital - Simplified */}
                                       {isInfrastrukturDigital && schoolItem.packages && schoolItem.packages.length > 0 && (
@@ -1677,9 +1697,39 @@ return (
                                       </div>
                                     );
                                   })}
+                                  
+                                  {/* Total Estimasi Dana - only show if more than 1 school */}
+                                  {formData.contributions[idx].schools.length > 1 && (() => {
+                                    const totalBudget = formData.contributions[idx].schools.reduce((total: number, schoolItem: any) => {
+                                      if (schoolItem.selectedBuildings && schoolItem.selectedBuildings.length > 0) {
+                                        return total + schoolItem.selectedBuildings.reduce((schoolTotal: number, buildingId: string) => {
+                                          const building = revitalizationBuildings.find(b => b.id === buildingId);
+                                          if (building) {
+                                            const budgetStr = building.estimatedBudget.replace(/[^0-9]/g, '');
+                                            return schoolTotal + parseInt(budgetStr || '0', 10);
+                                          }
+                                          return schoolTotal;
+                                        }, 0);
+                                      }
+                                      return total;
+                                    }, 0);
+                                    
+                                    const formatCurrency = (num: number) => {
+                                      return 'Rp' + num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                    };
+                                    
+                                    return (
+                                      <div className="flex items-center justify-between p-4 bg-surface-subdued rounded-lg">
+                                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#000' }}>Total Estimasi Dana</span>
+                                        <span style={{ fontSize: '16px', fontWeight: 600, color: '#000' }}>{formatCurrency(totalBudget)}</span>
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             ) : null}
+
+                            
                             
                             {/* Selected Topics for non-multi-school programs */}
                             {!isMultiSchoolProgram && ((contribution.selectedTopics && contribution.selectedTopics.length > 0) || contribution.otherTopic) && (() => {
