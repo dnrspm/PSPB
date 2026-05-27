@@ -684,101 +684,105 @@
   }
 }
 
-/* Typography styles */
-h1 {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--headline-small-size);
-  font-weight: var(--headline-small-weight);
-  line-height: var(--headline-small-height);
+@layer base {
+  /* Typography styles — inside @layer base so Tailwind utilities can override */
+  h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--headline-small-size);
+    font-weight: var(--headline-small-weight);
+    line-height: var(--headline-small-height);
+  }
+
+  h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--headline-xsmall-size);
+    font-weight: var(--headline-xsmall-weight);
+    line-height: var(--headline-xsmall-height);
+  }
+
+  h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--display-small-size);
+    font-weight: var(--display-small-weight);
+    line-height: var(--display-small-height);
+  }
+
+  h4 {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--heading-medium-size);
+    font-weight: var(--heading-medium-weight);
+    line-height: var(--heading-medium-height);
+  }
+
+  p {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight);
+    line-height: var(--body-height);
+  }
+
+  span {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--helper-size);
+    font-weight: var(--helper-weight);
+    line-height: var(--helper-height);
+  }
+
+  label {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    font-size: inherit;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    border-radius: var(--radius-button);
+  }
+
+  input, select, textarea {
+    font-family: 'Inter', sans-serif;
+    font-size: inherit;
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
 }
 
-h2 {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--headline-xsmall-size);
-  font-weight: var(--headline-xsmall-weight);
-  line-height: var(--headline-xsmall-height);
-}
+/* Input placeholder styles - inside @layer base so Tailwind utilities can override */
+@layer base {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    font-size: inherit;
+    font-weight: var(--input-placeholder-weight);
+    color: var(--input-placeholder-color);
+    opacity: 1;
+  }
 
-h3 {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--display-small-size);
-  font-weight: var(--display-small-weight);
-  line-height: var(--display-small-height);
-}
+  input::-webkit-input-placeholder,
+  textarea::-webkit-input-placeholder {
+    font-size: inherit;
+    font-weight: var(--input-placeholder-weight);
+    color: var(--input-placeholder-color);
+  }
 
-h4 {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--heading-medium-size);
-  font-weight: var(--heading-medium-weight);
-  line-height: var(--heading-medium-height);
-}
+  input::-moz-placeholder,
+  textarea::-moz-placeholder {
+    font-size: inherit;
+    font-weight: var(--input-placeholder-weight);
+    color: var(--input-placeholder-color);
+    opacity: 1;
+  }
 
-p {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--body-size);
-  font-weight: var(--body-weight);
-  line-height: var(--body-height);
-}
-
-span {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--helper-size);
-  font-weight: var(--helper-weight);
-  line-height: var(--helper-height);
-}
-
-label {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-normal);
-  line-height: 1.5;
-}
-
-button {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.5;
-  border-radius: var(--radius-button);
-}
-
-input {
-  font-family: 'Inter', sans-serif;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-normal);
-  line-height: 1.5;
-}
-
-/* Input placeholder styles - Design System Compliant */
-input::placeholder,
-textarea::placeholder,
-select::placeholder {
-  font-size: var(--input-placeholder-size);
-  font-weight: var(--input-placeholder-weight);
-  color: var(--input-placeholder-color);
-  opacity: 1; /* Firefox fix */
-}
-
-input::-webkit-input-placeholder,
-textarea::-webkit-input-placeholder {
-  font-size: var(--input-placeholder-size);
-  font-weight: var(--input-placeholder-weight);
-  color: var(--input-placeholder-color);
-}
-
-input::-moz-placeholder,
-textarea::-moz-placeholder {
-  font-size: var(--input-placeholder-size);
-  font-weight: var(--input-placeholder-weight);
-  color: var(--input-placeholder-color);
-  opacity: 1;
-}
-
-input:-ms-input-placeholder,
-textarea:-ms-input-placeholder {
-  font-size: var(--input-placeholder-size);
-  font-weight: var(--input-placeholder-weight);
-  color: var(--input-placeholder-color);
+  input:-ms-input-placeholder,
+  textarea:-ms-input-placeholder {
+    font-size: inherit;
+    font-weight: var(--input-placeholder-weight);
+    color: var(--input-placeholder-color);
+  }
 }
 
 html {

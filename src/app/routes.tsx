@@ -1,7 +1,11 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import UpdatedLandingPage from "../imports/UpdatedLandingPage";
 import ContributionPage from "./pages/ContributionPage";
 import ComponentShowcase from "./pages/ComponentShowcase";
+import LoginPageWrapper from "./pages/LoginPageWrapper";
+import WorkspaceLayout from "./pages/WorkspaceLayout";
+import WorkspacePageWrapper from "./pages/WorkspacePageWrapper";
+import ContributionDetailWrapper from "./pages/ContributionDetailWrapper";
 
 // Error Fallback Component
 function ErrorFallback() {
@@ -36,4 +40,23 @@ export const router = createBrowserRouter([
     element: <ComponentShowcase />,
     errorElement: <ErrorFallback />,
   },
+  {
+    path: "/login",
+    element: <LoginPageWrapper />,
+    errorElement: <ErrorFallback />,
+  },
+  {
+    path: "/internal",
+    element: <Navigate to="/workspace" replace />,
+  },
+  {
+    path: "/workspace",
+    element: <WorkspaceLayout />,
+    errorElement: <ErrorFallback />,
+    children: [
+      { index: true, element: <WorkspacePageWrapper /> },
+      { path: ":id", element: <ContributionDetailWrapper /> },
+    ],
+  },
 ]);
+
