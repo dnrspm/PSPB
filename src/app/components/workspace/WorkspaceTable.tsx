@@ -28,7 +28,7 @@ function formatDate(date: Date): string {
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
   if (diffDays === 0) return "Hari ini";
   if (diffDays === 1) return "Kemarin";
-  if (diffDays < 7) return `${diffDays}h lalu`;
+  if (diffDays < 7) return `${diffDays} hari lalu`;
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 }
 
@@ -62,7 +62,7 @@ export function WorkspaceTable({ contributions, currentUser, onActionComplete }:
     { key: "program", label: "Program" },
     { key: "workflowStatus", label: "Status" },
     { key: "pic", label: "PIC" },
-    { key: "lastUpdate", label: "Update" },
+    { key: "lastUpdate", label: "Pembaruan" },
   ];
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -123,7 +123,7 @@ export function WorkspaceTable({ contributions, currentUser, onActionComplete }:
                   <td className="px-3 py-2">
                     {c.pic
                       ? <span className="text-sm text-gray-600">{c.pic}</span>
-                      : <span className="text-sm font-medium text-amber-500">Belum assign</span>
+                      : <span className="text-sm font-medium text-amber-500">Belum ditugaskan</span>
                     }
                   </td>
                   <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">

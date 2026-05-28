@@ -75,7 +75,7 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
         className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
       >
         <option value="">Semua PIC</option>
-        <option value="__unassigned">Belum Assign</option>
+        <option value="__unassigned">Belum Ditugaskan</option>
         {INTERNAL_TEAM.map((u) => (
           <option key={u.id} value={u.name}>{u.name}</option>
         ))}
@@ -87,7 +87,7 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
           className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-50"
         >
           <X className="h-4 w-4" />
-          Reset
+          Atur Ulang
         </button>
       )}
     </div>

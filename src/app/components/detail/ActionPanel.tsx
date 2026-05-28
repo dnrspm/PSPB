@@ -19,7 +19,7 @@ export function ActionPanel({ contribution, currentUser, onActionComplete }: Act
     <div className="rounded-lg border border-gray-200 bg-white p-4">
       <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Aksi Tersedia</h3>
       {isViewOnly ? (
-        <p className="text-sm text-gray-400">Tidak ada aksi tersedia untuk role Anda pada tahap ini.</p>
+        <p className="text-sm text-gray-400">Tidak ada aksi tersedia untuk peran Anda pada tahap ini.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {actions.filter((a) => a !== "view-detail").map((action) => {

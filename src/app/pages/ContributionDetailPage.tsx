@@ -40,7 +40,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
         <div className="text-center">
           <p className="text-gray-500">Kontribusi tidak ditemukan.</p>
           <button onClick={() => navigate("/workspace")} className="mt-3 text-sm text-blue-600 hover:underline">
-            Kembali ke Workspace
+            Kembali ke Dasbor Operasional
           </button>
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Informasi" },
-    { key: "timeline", label: "Workflow Timeline" },
+    { key: "timeline", label: "Riwayat Alur Kerja" },
     { key: "dokumen", label: "Dokumen" },
     ...(c.distribusi ? [{ key: "distribusi" as Tab, label: "Distribusi" }] : []),
   ];
@@ -65,7 +65,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           className="mb-2 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Kembali ke Workspace
+          Kembali ke Dasbor Operasional
         </button>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -78,9 +78,9 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
               <span>·</span>
               <span>{c.paketBantuan}</span>
               <span>·</span>
-              <span>PIC: <strong className="text-gray-600">{c.pic ?? "Belum diassign"}</strong></span>
+              <span>PIC: <strong className="text-gray-600">{c.pic ?? "Belum ditugaskan"}</strong></span>
               <span>·</span>
-              <span>Update: {formatDate(c.lastUpdate)}</span>
+              <span>Diperbarui: {formatDate(c.lastUpdate)}</span>
             </div>
           </div>
 
@@ -223,17 +223,17 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
 
       {(c.reviewNotes || c.legalNotes || c.audiensiResult) && (
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 lg:col-span-2">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-600">Catatan Review</h3>
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-600">Catatan Tinjauan</h3>
           <div className="space-y-2 text-sm">
             {c.reviewNotes && (
               <div>
-                <span className="text-sm font-medium text-amber-700">Review Substansi: </span>
+                <span className="text-sm font-medium text-amber-700">Tinjauan Substansi: </span>
                 <span className="text-sm text-amber-900">{c.reviewNotes}</span>
               </div>
             )}
             {c.legalNotes && (
               <div>
-                <span className="text-sm font-medium text-amber-700">Legal Notes: </span>
+                <span className="text-sm font-medium text-amber-700">Catatan Legal: </span>
                 <span className="text-sm text-amber-900">{c.legalNotes}</span>
               </div>
             )}
@@ -252,7 +252,7 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
 
 function DokumenTab({ contribution: c }: { contribution: Contribution }) {
   const docTypeLabel: Record<string, string> = {
-    proposal: "Proposal", "pks-draft": "Draft PKS", "pks-final": "PKS Final",
+    proposal: "Proposal", "pks-draft": "Draf PKS", "pks-final": "PKS Final",
     bast: "BAST", distribusi: "Dokumentasi Distribusi", notulen: "Notulen",
     adendum: "Adendum", lainnya: "Lainnya",
   };
@@ -268,7 +268,7 @@ function DokumenTab({ contribution: c }: { contribution: Contribution }) {
             <div className="flex-1 min-w-0">
               <div className="truncate text-sm font-medium text-gray-900">{doc.name}</div>
               <div className="text-sm text-gray-400">
-                {docTypeLabel[doc.type] ?? doc.type} · Diupload oleh {doc.uploadedBy} · {new Date(doc.uploadedAt).toLocaleDateString("id-ID")}
+                {docTypeLabel[doc.type] ?? doc.type} · Diunggah oleh {doc.uploadedBy} · {new Date(doc.uploadedAt).toLocaleDateString("id-ID")}
               </div>
             </div>
             <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
@@ -293,8 +293,8 @@ function AktivitasTab({ contribution: c }: { contribution: Contribution }) {
 function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
   const d = c.distribusi!;
   const statusLabel: Record<string, string> = {
-    persiapan: "Persiapan", "in-progress": "In Progress",
-    "on-hold": "On Hold", adendum: "Adendum", completed: "Selesai",
+    persiapan: "Persiapan", "in-progress": "Berlangsung",
+    "on-hold": "Ditunda", adendum: "Adendum", completed: "Selesai",
   };
 
   return (
@@ -308,7 +308,7 @@ function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
         </div>
         <div className="mt-3">
           <div className="flex justify-between text-sm text-gray-500 mb-1">
-            <span>Progress</span>
+            <span>Kemajuan</span>
             <span>{d.progressPercent}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-gray-100">
@@ -323,7 +323,7 @@ function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
         )}
         {d.holdReason && (
           <div className="mt-3 rounded-md bg-red-50 p-2.5 text-sm text-red-700">
-            <strong>Hold: </strong>{d.holdReason}
+            <strong>Alasan penundaan: </strong>{d.holdReason}
           </div>
         )}
       </div>

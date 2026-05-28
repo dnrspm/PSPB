@@ -17,40 +17,40 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
 
   const cards: SummaryCard[] = [
     {
-      label: "Submission & Verifikasi",
+      label: "Pengajuan & Verifikasi",
       count: byState(["submission-review", "verifikasi"]),
-      color: "text-blue-700",
-      bgColor: "bg-blue-50 border-blue-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
     {
-      label: "Audiensi & Review",
+      label: "Audiensi & Tinjauan",
       count: byState(["audiensi", "review-substansi"]),
-      color: "text-purple-700",
-      bgColor: "bg-purple-50 border-purple-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
     {
       label: "Proses PKS",
       count: byState(["draft-pks", "legal-review", "final-pks"]),
-      color: "text-orange-700",
-      bgColor: "bg-orange-50 border-orange-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
     {
       label: "Distribusi Aktif",
       count: byState(["distribusi-persiapan", "distribusi-in-progress", "distribusi-adendum"]),
-      color: "text-teal-700",
-      bgColor: "bg-teal-50 border-teal-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
     {
-      label: "Distribusi On Hold",
+      label: "Distribusi Ditunda",
       count: byState(["distribusi-on-hold"]),
-      color: "text-red-700",
-      bgColor: "bg-red-50 border-red-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
     {
-      label: "Selesai & Published",
+      label: "Selesai & Dipublikasikan",
       count: byState(["distribusi-completed", "published"]),
-      color: "text-green-700",
-      bgColor: "bg-green-50 border-green-200",
+      color: "text-gray-900",
+      bgColor: "bg-white border-gray-200",
     },
   ];
 
@@ -68,10 +68,10 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
         {cards.map((card) => (
           <div
             key={card.label}
-            className={`rounded-md border px-2.5 py-2 ${card.bgColor}`}
+            className={`rounded-lg border px-3 py-3 ${card.bgColor}`}
           >
-            <div className={`text-[20px] font-bold leading-none ${card.color}`}>{card.count}</div>
-            <div className="mt-1.5 text-[12px] text-gray-500 leading-tight">{card.label}</div>
+            <div className={`text-[20px] font-semibold leading-none ${card.color}`}>{card.count}</div>
+            <div className="mt-2 text-[12px] font-medium text-gray-500 leading-snug">{card.label}</div>
           </div>
         ))}
       </div>
@@ -81,7 +81,7 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <span>
-            <strong>{noPic}</strong> kontribusi di Submission Review belum memiliki PIC
+            <strong>{noPic}</strong> kontribusi dalam tahap Pengajuan belum memiliki PIC
           </span>
         </div>
       )}

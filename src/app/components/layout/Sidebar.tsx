@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { LayoutDashboard, TableProperties } from "lucide-react";
+import { TableProperties } from "lucide-react";
 
 interface SidebarProps {
 }
@@ -14,7 +14,7 @@ export function Sidebar({}: SidebarProps) {
           </div>
           <div>
             <div className="text-sm font-bold text-gray-900">PSPB</div>
-            <div className="text-sm text-gray-400">Operational Workspace</div>
+            <div className="text-sm text-gray-400">Dasbor Operasional</div>
           </div>
         </div>
       </div>
@@ -34,20 +34,7 @@ export function Sidebar({}: SidebarProps) {
           }
         >
           <TableProperties className="h-4 w-4" />
-          Workspace
-        </NavLink>
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-              isActive
-                ? "bg-blue-50 font-medium text-blue-700"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`
-          }
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          Portal Publik
+          Dasbor Operasional
         </NavLink>
       </nav>
 
