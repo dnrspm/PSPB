@@ -3480,6 +3480,7 @@ function Footer() {
           </p>
           <div className="flex gap-4">
             <a href="#" className="text-blue-300 hover:text-white transition-colors" style={{ fontFamily: 'Inter', fontSize: '13px' }}>Kebijakan Privasi</a>
+            <a href="/login" className="text-blue-300 hover:text-white transition-colors" style={{ fontFamily: 'Inter', fontSize: '13px' }}>Dasbor Operasional</a>
           </div>
         </div>
       </div>
