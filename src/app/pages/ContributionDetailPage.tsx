@@ -5,7 +5,7 @@ import { getContributionById } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
-import { getAvailableActions, ACTION_LABELS, ACTION_VARIANTS } from "../lib/workflow";
+import { getAvailableActions, ACTION_LABELS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
 import type { Contribution, WorkflowAction } from "../types/contribution";
 
@@ -90,24 +90,19 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             if (actions.length === 0) return null;
             return (
               <div className="flex items-center gap-2">
-                {actions.map((action) => {
-                  const variant = ACTION_VARIANTS[action];
-                  return (
-                    <button
-                      key={action}
-                      onClick={() => setActiveAction(action)}
-                      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${
-                        variant === "destructive"
-                          ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                          : variant === "outline"
-                          ? "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
-                    >
-                      {ACTION_LABELS[action]}
-                    </button>
-                  );
-                })}
+                {actions.map((action, i) => (
+                  <button
+                    key={action}
+                    onClick={() => setActiveAction(action)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                      i === 0
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {ACTION_LABELS[action]}
+                  </button>
+                ))}
               </div>
             );
           })()}

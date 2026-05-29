@@ -4,15 +4,12 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } fro
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { RowActions } from "./RowActions";
-import type { SessionUser } from "../../lib/auth";
 
 type SortKey = "namaMitra" | "program" | "workflowStatus" | "pic" | "lastUpdate";
 type SortDir = "asc" | "desc";
 
 interface WorkspaceTableProps {
   contributions: Contribution[];
-  currentUser: SessionUser;
-  onActionComplete: () => void;
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -34,7 +31,7 @@ function formatDate(date: Date): string {
 
 const PAGE_SIZE = 10;
 
-export function WorkspaceTable({ contributions, currentUser, onActionComplete }: WorkspaceTableProps) {
+export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -110,7 +107,7 @@ export function WorkspaceTable({ contributions, currentUser, onActionComplete }:
                 <tr
                   key={c.id}
                   onClick={() => navigate(`/workspace/${c.id}`)}
-                  className={`group cursor-pointer hover:bg-blue-50/30 transition-colors ${noPic ? "bg-amber-50/20" : ""}`}
+                  className={`group cursor-pointer transition-colors ${noPic ? "bg-amber-50/60 border-l-4 border-l-amber-400 hover:bg-amber-50" : "hover:bg-blue-50/30"}`}
                 >
                   <td className="px-3 py-2">
                     <div className="text-sm font-medium text-gray-800 leading-snug">{c.namaMitra}</div>
@@ -133,11 +130,7 @@ export function WorkspaceTable({ contributions, currentUser, onActionComplete }:
                     <span className="line-clamp-2 text-sm text-gray-500">{c.paketBantuan}</span>
                   </td>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                    <RowActions
-                      contribution={c}
-                      currentUser={currentUser}
-                      onActionComplete={onActionComplete}
-                    />
+                    <RowActions contribution={c} />
                   </td>
                 </tr>
               );

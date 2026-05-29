@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Contribution, WorkflowAction } from "../../types/contribution";
-import { getAvailableActions, ACTION_LABELS, ACTION_VARIANTS } from "../../lib/workflow";
+import { getAvailableActions, ACTION_LABELS } from "../../lib/workflow";
 import { ActionModal } from "../modals/ActionModal";
 import type { SessionUser } from "../../lib/auth";
 
@@ -22,24 +22,19 @@ export function ActionPanel({ contribution, currentUser, onActionComplete }: Act
         <p className="text-sm text-gray-400">Tidak ada aksi tersedia untuk peran Anda pada tahap ini.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {actions.filter((a) => a !== "view-detail").map((action) => {
-            const variant = ACTION_VARIANTS[action];
-            return (
-              <button
-                key={action}
-                onClick={() => setActiveAction(action)}
-                className={`w-full rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  variant === "destructive"
-                    ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                    : variant === "outline"
-                    ? "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                {ACTION_LABELS[action]}
-              </button>
-            );
-          })}
+          {actions.filter((a) => a !== "view-detail").map((action, i) => (
+            <button
+              key={action}
+              onClick={() => setActiveAction(action)}
+              className={`w-full rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                i === 0
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {ACTION_LABELS[action]}
+            </button>
+          ))}
         </div>
       )}
 

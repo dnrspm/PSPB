@@ -1,27 +1,18 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { MonitoringSummary } from "../components/workspace/MonitoringSummary";
 import { FilterBar, type FilterState } from "../components/workspace/FilterBar";
 import { WorkspaceTable } from "../components/workspace/WorkspaceTable";
 import { getContributions } from "../data/mockWorkspace";
 import type { Contribution } from "../types/contribution";
-import type { SessionUser } from "../lib/auth";
 
-interface WorkspacePageProps {
-  currentUser: SessionUser;
-}
-
-export default function WorkspacePage({ currentUser }: WorkspacePageProps) {
-  const [contributions, setContributions] = useState<Contribution[]>(getContributions);
+export default function WorkspacePage() {
+  const [contributions] = useState<Contribution[]>(getContributions);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     program: "",
     status: "",
     pic: "",
   });
-
-  const refresh = useCallback(() => {
-    setContributions(getContributions());
-  }, []);
 
   const programs = useMemo(
     () => [...new Set(contributions.map((c) => c.program))].sort(),
@@ -53,11 +44,7 @@ export default function WorkspacePage({ currentUser }: WorkspacePageProps) {
           <FilterBar filters={filters} onChange={setFilters} programs={programs} />
 
           {/* Table */}
-          <WorkspaceTable
-            contributions={filtered}
-            currentUser={currentUser}
-            onActionComplete={refresh}
-          />
+          <WorkspaceTable contributions={filtered} />
 
         </div>
       </div>
