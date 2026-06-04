@@ -36,7 +36,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
   if (!contribution) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-[#fafafa]">
         <div className="text-center">
           <p className="text-gray-500">Kontribusi tidak ditemukan.</p>
           <button onClick={() => navigate("/workspace")} className="mt-3 text-sm text-blue-600 hover:underline">
@@ -57,7 +57,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   ];
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#fafafa]">
       {/* Header */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
@@ -142,7 +142,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === "info" && <InfoTab contribution={c} />}
           {activeTab === "timeline" && (
-            <div className="max-w-2xl rounded-lg border border-gray-100 bg-white p-4">
+            <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
               <WorkflowTimeline contribution={c} />
             </div>
           )}
@@ -157,7 +157,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 function InfoTab({ contribution: c }: { contribution: Contribution }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-lg border border-gray-100 bg-white p-4">
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
         <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Mitra</h3>
         <dl className="space-y-3 text-sm">
           <div>
@@ -179,7 +179,7 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
         </dl>
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4">
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
         <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
         <dl className="space-y-3 text-sm">
           <div>
@@ -205,7 +205,7 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
         </dl>
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 lg:col-span-2">
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4 lg:col-span-2">
         <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Sekolah Penerima</h3>
         <div className="flex flex-wrap gap-2">
           {c.sekolah.map((s) => (
@@ -258,7 +258,7 @@ function DokumenTab({ contribution: c }: { contribution: Contribution }) {
         <p className="text-sm text-gray-400">Belum ada dokumen.</p>
       ) : (
         c.dokumen.map((doc) => (
-          <div key={doc.id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-3">
+          <div key={doc.id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white shadow-sm p-3">
             <FileText className="h-5 w-5 shrink-0 text-blue-500" />
             <div className="flex-1 min-w-0">
               <div className="truncate text-sm font-medium text-gray-900">{doc.name}</div>
@@ -294,7 +294,7 @@ function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
 
   return (
     <div className="max-w-2xl space-y-4">
-      <div className="rounded-lg border border-gray-100 bg-white p-4">
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">Status Distribusi</h3>
           <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-sm font-medium text-teal-700">
@@ -324,7 +324,7 @@ function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
       </div>
 
       {d.dokumentasi.length > 0 && (
-        <div className="rounded-lg border border-gray-100 bg-white p-4">
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
           <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Dokumentasi Distribusi</h3>
           <div className="space-y-2">
             {d.dokumentasi.map((doc) => (
