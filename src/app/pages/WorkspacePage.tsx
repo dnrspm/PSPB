@@ -33,9 +33,8 @@ export default function WorkspacePage() {
   }, [contributions, filters]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50">
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-screen-2xl space-y-3 p-4">
+    <div className="h-full overflow-y-auto bg-gray-50">
+        <div className="mx-auto max-w-screen-2xl space-y-6 p-6">
 
           {/* Monitoring Summary */}
           <MonitoringSummary contributions={contributions} />
@@ -46,7 +45,6 @@ export default function WorkspacePage() {
           {/* Table */}
           <WorkspaceTable contributions={filtered} />
 
-        </div>
       </div>
     </div>
   );

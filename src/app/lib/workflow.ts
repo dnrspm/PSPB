@@ -17,19 +17,19 @@ export const WORKFLOW_STATE_LABELS: Record<WorkflowState, string> = {
 };
 
 export const WORKFLOW_STATE_COLORS: Record<WorkflowState, { bg: string; text: string; border: string }> = {
-  "submission-review": { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
-  "verifikasi": { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
-  "audiensi": { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-200" },
-  "review-substansi": { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-300" },
-  "draft-pks": { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200" },
-  "legal-review": { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
-  "final-pks": { bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
-  "distribusi-persiapan": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
-  "distribusi-in-progress": { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
-  "distribusi-on-hold": { bg: "bg-red-100", text: "text-red-700", border: "border-red-300" },
-  "distribusi-adendum": { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-300" },
-  "distribusi-completed": { bg: "bg-green-100", text: "text-green-700", border: "border-green-300" },
-  "published": { bg: "bg-green-200", text: "text-green-800", border: "border-green-400" },
+  "submission-review": { bg: "bg-[#FFE9EA]", text: "text-[#2F3031]", border: "border-[#FFE9EA]" },
+  "verifikasi": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "audiensi": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "review-substansi": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "draft-pks": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "legal-review": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "final-pks": { bg: "bg-[#FFDFA3]", text: "text-[#2F3031]", border: "border-[#FFDFA3]" },
+  "distribusi-persiapan": { bg: "bg-[#98DAFB]", text: "text-[#2F3031]", border: "border-[#98DAFB]" },
+  "distribusi-in-progress": { bg: "bg-[#98DAFB]", text: "text-[#2F3031]", border: "border-[#98DAFB]" },
+  "distribusi-on-hold": { bg: "bg-[#98DAFB]", text: "text-[#2F3031]", border: "border-[#98DAFB]" },
+  "distribusi-adendum": { bg: "bg-[#98DAFB]", text: "text-[#2F3031]", border: "border-[#98DAFB]" },
+  "distribusi-completed": { bg: "bg-[#98DAFB]", text: "text-[#2F3031]", border: "border-[#98DAFB]" },
+  "published": { bg: "bg-[#9AE5B9]", text: "text-[#2F3031]", border: "border-[#9AE5B9]" },
 };
 
 const VALID_TRANSITIONS: Partial<Record<WorkflowState, WorkflowState[]>> = {

@@ -35,7 +35,7 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
     onChange({ search: "", program: "", status: "", pic: "" });
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3">
       <div className="relative flex-1 min-w-48">
         <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
         <input

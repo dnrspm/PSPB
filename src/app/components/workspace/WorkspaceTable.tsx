@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useRef, useEffect } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { RowActions } from "./RowActions";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 
 type SortKey = "namaMitra" | "program" | "workflowStatus" | "pic" | "lastUpdate";
 type SortDir = "asc" | "desc";
@@ -21,18 +21,36 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 
 function formatDate(date: Date): string {
   const d = new Date(date);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
-  if (diffDays === 0) return "Hari ini";
-  if (diffDays === 1) return "Kemarin";
-  if (diffDays < 7) return `${diffDays} hari lalu`;
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+function ClampedText({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    if (ref.current) {
+      setOverflow(ref.current.scrollHeight > ref.current.clientHeight);
+    }
+  }, [text]);
+
+  return (
+    <Tooltip open={overflow ? undefined : false}>
+      <TooltipTrigger asChild>
+        <span ref={ref} className="block line-clamp-2 text-sm text-gray-500 cursor-default">{text}</span>
+      </TooltipTrigger>
+      {overflow && (
+        <TooltipContent side="top" className="max-w-xs break-words bg-black text-white" arrowClassName="bg-black fill-black">
+          {text}
+        </TooltipContent>
+      )}
+    </Tooltip>
+  );
 }
 
 const PAGE_SIZE = 10;
 
 export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
-  const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
@@ -44,6 +62,10 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   };
 
   const sorted = [...contributions].sort((a, b) => {
+    const aNoPic = !a.pic ? 1 : 0;
+    const bNoPic = !b.pic ? 1 : 0;
+    if (aNoPic !== bNoPic) return bNoPic - aNoPic;
+
     if (sortKey === "lastUpdate") {
       const diff = new Date(a.lastUpdate).getTime() - new Date(b.lastUpdate).getTime();
       return sortDir === "asc" ? diff : -diff;
@@ -57,9 +79,6 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   const headers: { key: SortKey; label: string }[] = [
     { key: "namaMitra", label: "Nama Mitra" },
     { key: "program", label: "Program" },
-    { key: "workflowStatus", label: "Status" },
-    { key: "pic", label: "PIC" },
-    { key: "lastUpdate", label: "Pembaruan" },
   ];
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -75,15 +94,15 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/80">
+        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+          <thead className="bg-[#F1F1F1]">
+            <tr className="border-b border-gray-200">
               {headers.map((h) => (
                 <th
                   key={h.key}
-                  className="cursor-pointer px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-600 select-none"
+                  className="cursor-pointer bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232] hover:text-gray-600 select-none"
                   onClick={() => handleSort(h.key)}
                 >
                   <div className="flex items-center gap-1">
@@ -92,44 +111,52 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   </div>
                 </th>
               ))}
-              <th className="px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-wide text-gray-400">
+              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
                 Paket Bantuan
               </th>
-              <th className="px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-wide text-gray-400">
+              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
+                PIC
+              </th>
+              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
+                Pembaruan
+              </th>
+              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
+                Status
+              </th>
+              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
                 Aksi
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-200">
             {paginated.map((c) => {
               const noPic = c.workflowStatus === "submission-review" && !c.pic;
               return (
                 <tr
                   key={c.id}
-                  onClick={() => navigate(`/workspace/${c.id}`)}
-                  className={`group cursor-pointer transition-colors ${noPic ? "bg-amber-50/60 border-l-4 border-l-amber-400 hover:bg-amber-50" : "hover:bg-blue-50/30"}`}
+                  className={`transition-colors ${noPic ? "border-l-4 border-l-red-500 hover:bg-gray-50" : "hover:bg-blue-50/30"}`}
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <div className="text-sm font-medium text-gray-800 leading-snug">{c.namaMitra}</div>
                     <div className="text-sm text-gray-400 leading-none mt-0.5">{c.wilayah}</div>
                   </td>
-                  <td className="px-3 py-2 text-sm text-gray-600">{c.program}</td>
-                  <td className="px-3 py-2">
-                    <StatusBadge state={c.workflowStatus} />
+                  <td className="px-4 py-3 text-sm text-gray-600">{c.program}</td>
+                  <td className="px-4 py-3 max-w-36">
+                    <ClampedText text={c.paketBantuan} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     {c.pic
                       ? <span className="text-sm text-gray-600">{c.pic}</span>
-                      : <span className="text-sm font-medium text-amber-500">Belum ditugaskan</span>
+                      : <span className="text-sm font-medium text-red-500">Belum ditugaskan</span>
                     }
                   </td>
-                  <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                     {formatDate(c.lastUpdate)}
                   </td>
-                  <td className="px-3 py-2 max-w-36">
-                    <span className="line-clamp-2 text-sm text-gray-500">{c.paketBantuan}</span>
+                  <td className="px-4 py-3">
+                    <StatusBadge state={c.workflowStatus} />
                   </td>
-                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3">
                     <RowActions contribution={c} />
                   </td>
                 </tr>
@@ -138,7 +165,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
           </tbody>
         </table>
       </div>
-      <div className="border-t border-gray-100 bg-gray-50/50 px-3 py-2 flex items-center justify-between">
+      <div className="border-t border-gray-200 bg-gray-50/50 px-4 py-3 flex items-center justify-between">
         <span className="text-sm text-gray-400">
           {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, sorted.length)} dari {sorted.length} kontribusi
         </span>
