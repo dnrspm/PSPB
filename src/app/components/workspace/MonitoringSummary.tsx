@@ -21,7 +21,7 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
       color: "#C82236",
     },
     {
-      label: "Verifikasi & Tinjauan",
+      label: "Perencanaan",
       count: byState(["verifikasi", "audiensi", "review-substansi", "draft-pks", "legal-review", "final-pks"]),
       color: "#FFC453",
     },
