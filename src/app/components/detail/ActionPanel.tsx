@@ -42,6 +42,7 @@ export function ActionPanel({ contribution, currentUser, onActionComplete }: Act
         <ActionModal
           action={activeAction}
           contribution={contribution}
+          currentUser={currentUser}
           onClose={() => setActiveAction(null)}
           onSuccess={onActionComplete}
         />

@@ -18,10 +18,13 @@ interface FilterBarProps {
 }
 
 const ALL_STATES: WorkflowState[] = [
-  "submission-review", "verifikasi", "audiensi", "review-substansi",
-  "draft-pks", "legal-review", "final-pks", "distribusi-persiapan",
-  "distribusi-in-progress", "distribusi-on-hold", "distribusi-adendum",
-  "distribusi-completed", "published",
+  "kontribusi-masuk", "audiensi-menunggu-jadwal", "audiensi-terjadwal",
+  "audiensi-konfirmasi-lanjut-pks", "perjanjian-draft-pks",
+  "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks",
+  "pelaksanaan-persiapan", "pelaksanaan-dalam-proses",
+  "pelaksanaan-dalam-evaluasi", "pelaksanaan-penyesuaian-pks",
+  "pemantauan-terlaksana", "pemantauan-pemanfaatan",
+  "selesai", "tidak-dilanjutkan",
 ];
 
 export function FilterBar({ filters, onChange, programs }: FilterBarProps) {

@@ -28,14 +28,14 @@ export function clearSession(): void {
 }
 
 export const MOCK_USERS: SessionUser[] = [
-  { id: "u1", name: "Andi Pratama", role: "partnership-operator", email: "andi@pspb.go.id" },
-  { id: "u2", name: "Budi Santoso", role: "partnership-operator", email: "budi@pspb.go.id" },
-  { id: "u3", name: "Citra Dewi", role: "program-reviewer", email: "citra@pspb.go.id" },
-  { id: "u4", name: "Dimas Nugroho", role: "program-reviewer", email: "dimas@pspb.go.id" },
-  { id: "u5", name: "Eka Putri", role: "legal-reviewer", email: "eka@pspb.go.id" },
-  { id: "u6", name: "Fajar Rahman", role: "strategic-reviewer", email: "fajar@pspb.go.id" },
-  { id: "u7", name: "Gita Admin", role: "system-admin", email: "gita@pspb.go.id" },
-  { id: "u8", name: "Hasan Viewer", role: "executive-viewer", email: "hasan@pspb.go.id" },
+  { id: "u1", name: "Andi Pratama", role: "biro-perencanaan", email: "andi@pspb.go.id" },
+  { id: "u2", name: "Budi Santoso", role: "biro-perencanaan", email: "budi@pspb.go.id" },
+  { id: "u3", name: "Citra Dewi", role: "pusat-dir-eselon", email: "citra@pspb.go.id" },
+  { id: "u4", name: "Dimas Nugroho", role: "pusat-dir-eselon", email: "dimas@pspb.go.id" },
+  { id: "u5", name: "Eka Putri", role: "biro-hukum", email: "eka@pspb.go.id" },
+  { id: "u6", name: "Fajar Rahman", role: "pusdatin", email: "fajar@pspb.go.id" },
+  { id: "u7", name: "Gita Sekar", role: "bidang-kemitraan", email: "gita@pspb.go.id" },
+  { id: "u8", name: "Hasan Sadikin", role: "sekjen", email: "hasan@pspb.go.id" },
 ];
 
 export { ROLE_LABELS };

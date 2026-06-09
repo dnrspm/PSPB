@@ -13,7 +13,7 @@ interface ContributionDetailPageProps {
   currentUser: SessionUser;
 }
 
-type Tab = "info" | "timeline" | "dokumen" | "distribusi";
+type Tab = "info" | "timeline" | "dokumen" | "pelaksanaan";
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
@@ -53,7 +53,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
     { key: "info", label: "Informasi" },
     { key: "timeline", label: "Riwayat Alur Kerja" },
     { key: "dokumen", label: "Dokumen" },
-    ...(c.distribusi ? [{ key: "distribusi" as Tab, label: "Distribusi" }] : []),
+    ...(c.workflowStatus.startsWith("pelaksanaan-") ? [{ key: "pelaksanaan" as Tab, label: "Pelaksanaan" }] : []),
   ];
 
   return (
@@ -112,6 +112,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           <ActionModal
             action={activeAction}
             contribution={c}
+            currentUser={currentUser}
             onClose={() => setActiveAction(null)}
             onSuccess={() => { handleActionComplete(); setActiveAction(null); }}
           />
@@ -147,7 +148,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             </div>
           )}
           {activeTab === "dokumen" && <DokumenTab contribution={c} />}
-          {activeTab === "distribusi" && c.distribusi && <DistribusiTab contribution={c} />}
+          {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
         </div>
       </div>
     </div>
@@ -248,7 +249,7 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
 function DokumenTab({ contribution: c }: { contribution: Contribution }) {
   const docTypeLabel: Record<string, string> = {
     proposal: "Proposal", "pks-draft": "Draf PKS", "pks-final": "PKS Final",
-    bast: "BAST", distribusi: "Dokumentasi Distribusi", notulen: "Notulen",
+    bast: "BAST", dokumentasi: "Dokumentasi", notulen: "Notulen",
     adendum: "Adendum", lainnya: "Lainnya",
   };
 
@@ -285,49 +286,51 @@ function AktivitasTab({ contribution: c }: { contribution: Contribution }) {
   );
 }
 
-function DistribusiTab({ contribution: c }: { contribution: Contribution }) {
-  const d = c.distribusi!;
-  const statusLabel: Record<string, string> = {
-    persiapan: "Persiapan", "in-progress": "Berlangsung",
-    "on-hold": "Ditunda", adendum: "Adendum", completed: "Selesai",
-  };
+function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
+  const p = c.pelaksanaan;
+
+  if (!p) {
+    return (
+      <div className="max-w-2xl">
+        <div className="rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center">
+          <p className="text-sm text-gray-400">Belum ada data pelaksanaan.</p>
+          <p className="mt-1 text-sm text-gray-400">Gunakan tombol aksi untuk memulai pelaksanaan.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-4">
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Status Distribusi</h3>
+          <h3 className="text-sm font-semibold text-gray-700">Status Pelaksanaan</h3>
           <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-sm font-medium text-teal-700">
-            {statusLabel[d.status]}
+            {p.progress}%
           </span>
         </div>
         <div className="mt-3">
           <div className="flex justify-between text-sm text-gray-500 mb-1">
             <span>Kemajuan</span>
-            <span>{d.progressPercent}%</span>
+            <span>{p.progress}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-gray-100">
             <div
               className="h-full rounded-full bg-teal-500 transition-all"
-              style={{ width: `${d.progressPercent}%` }}
+              style={{ width: `${p.progress}%` }}
             />
           </div>
         </div>
-        {d.latestUpdate && (
-          <p className="mt-3 text-sm text-gray-600">{d.latestUpdate}</p>
-        )}
-        {d.holdReason && (
-          <div className="mt-3 rounded-md bg-red-50 p-2.5 text-sm text-red-700">
-            <strong>Alasan penundaan: </strong>{d.holdReason}
-          </div>
+        {p.latestUpdate && (
+          <p className="mt-3 text-sm text-gray-600">{p.latestUpdate}</p>
         )}
       </div>
 
-      {d.dokumentasi.length > 0 && (
+      {p.dokumentasi.length > 0 && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-          <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Dokumentasi Distribusi</h3>
+          <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Dokumentasi Pelaksanaan</h3>
           <div className="space-y-2">
-            {d.dokumentasi.map((doc) => (
+            {p.dokumentasi.map((doc) => (
               <div key={doc.id} className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-blue-400" />
                 <span className="flex-1 text-gray-700">{doc.name}</span>

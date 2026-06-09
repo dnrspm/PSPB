@@ -130,7 +130,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginated.map((c) => {
-              const noPic = c.workflowStatus === "submission-review" && !c.pic;
+              const noPic = c.workflowStatus === "kontribusi-masuk" && !c.pic;
               return (
                 <tr
                   key={c.id}

@@ -67,10 +67,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <div className="mt-6 rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
           <p className="font-medium text-gray-600 mb-1">Akun tersedia:</p>
           <ul className="space-y-0.5">
-            <li>• Partnership Operator — akses penuh</li>
-            <li>• Program Reviewer — review substansi</li>
-            <li>• Legal Reviewer — review & finalisasi PKS</li>
-            <li>• Executive Viewer — lihat saja</li>
+            <li>• Biro Perencanaan — akses penuh</li>
+            <li>• Pusat/Direktorat/Eselon II — review &amp; pelaksanaan</li>
+            <li>• Biro Hukum — review hukum &amp; finalisasi PKS</li>
+            <li>• Pusdatin — lihat saja</li>
+            <li>• Bidang Kemitraan — lihat saja</li>
+            <li>• Sekretaris Jenderal — lihat saja</li>
           </ul>
         </div>
       </div>

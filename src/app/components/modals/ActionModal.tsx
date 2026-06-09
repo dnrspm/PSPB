@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { X, Upload } from "lucide-react";
-import type { Contribution, WorkflowAction, WorkflowState } from "../../types/contribution";
+import { X, Upload, Calendar } from "lucide-react";
+import type { Contribution, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 
 interface ActionModalProps {
   action: WorkflowAction;
   contribution: Contribution;
+  currentUser: { name: string; role: UserRole };
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -20,195 +21,184 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date";
   required?: boolean;
   placeholder?: string;
+  options?: { value: string; label: string }[];
+  defaults?: string[];
 }
 
 const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
-  "assign-pic": {
-    title: "Assign PIC",
+  "lanjutkan-kontribusi": {
+    title: "Lanjutkan Kontribusi",
+    toState: "audiensi-menunggu-jadwal",
     fields: [
-      { key: "pic", label: "Pilih PIC", type: "select-pic", required: true },
-      { key: "notes", label: "Catatan (opsional)", type: "textarea", placeholder: "Tambah catatan..." },
+      { key: "unitKerja", label: "Unit Kerja", type: "tags", required: true, defaults: ["INA Digital Edu"], placeholder: "Tulis nama unit kerja..." },
+      { key: "jenisKerjasama", label: "Jenis Kerjasama", type: "select", required: true, options: [
+        { value: "dalam-negeri", label: "Dalam Negeri" },
+        { value: "luar-negeri", label: "Luar Negeri" },
+      ]},
+      { key: "picEmail", label: "Email PIC", type: "multi-email", required: true, placeholder: "pic1@pspb.go.id, pic2@pspb.go.id" },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan untuk kontribusi ini..." },
     ],
   },
-  "move-to-verifikasi": {
-    title: "Pindah ke Verifikasi",
-    toState: "verifikasi",
+  "tidak-dilanjutkan": {
+    title: "Tidak Dilanjutkan",
+    toState: "tidak-dilanjutkan",
     fields: [
-      { key: "notes", label: "Catatan Verifikasi", type: "textarea", placeholder: "Catatan untuk tahap verifikasi..." },
+      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Jelaskan alasan penghentian..." },
     ],
   },
-  "approve-verification": {
-    title: "Approve Verifikasi",
-    toState: "audiensi",
+  "jadwalkan-audiensi": {
+    title: "Jadwalkan Audiensi",
+    toState: "audiensi-terjadwal",
     fields: [
-      { key: "notes", label: "Catatan Verifikasi", type: "textarea", placeholder: "Catatan approval..." },
+      { key: "satuanKerja", label: "Satuan Kerja & Biro Hukum", type: "select", required: true, options: [
+        { value: "pusat-dir", label: "Pusat / Direktorat / Eselon II" },
+        { value: "biro-hukum", label: "Biro Hukum" },
+        { value: "keduanya", label: "Pusat / Direktorat / Eselon II & Biro Hukum" },
+      ]},
+      { key: "tanggal", label: "Tanggal Audiensi", type: "date", required: true, placeholder: "YYYY-MM-DD" },
+      { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penjadwalan..." },
     ],
   },
-  "request-revision": {
-    title: "Request Revisi",
+  "audiensi-terlaksana": {
+    title: "Audiensi Terlaksana",
+    toState: "audiensi-konfirmasi-lanjut-pks",
     fields: [
-      { key: "notes", label: "Catatan Revisi", type: "textarea", required: true, placeholder: "Jelaskan revisi yang diperlukan..." },
+      { key: "file", label: "Notulen & Dokumen Audiensi", type: "file", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil audiensi..." },
     ],
   },
-  "update-audiensi": {
-    title: "Update Hasil Audiensi",
+  "setuju-hasil-audiensi": {
+    title: "Setuju Hasil Audiensi",
+    toState: "perjanjian-draft-pks",
     fields: [
-      { key: "audiensiResult", label: "Hasil Audiensi", type: "textarea", required: true, placeholder: "Ringkasan hasil audiensi..." },
-      { key: "notes", label: "Catatan Tambahan", type: "textarea", placeholder: "Catatan tambahan..." },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persetujuan hasil audiensi..." },
     ],
   },
-  "move-to-review-substansi": {
-    title: "Pindah ke Review Substansi",
-    toState: "review-substansi",
+  "audiensi-ulang": {
+    title: "Audiensi Ulang",
+    toState: "audiensi-menunggu-jadwal",
     fields: [
-      { key: "notes", label: "Ringkasan Audiensi", type: "textarea", required: true, placeholder: "Ringkasan hasil audiensi untuk review substansi..." },
+      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Alasan audiensi ulang..." },
     ],
   },
-  "approve-contribution": {
-    title: "Approve Kontribusi",
-    toState: "draft-pks",
+  "ajukan-perjanjian": {
+    title: "Ajukan Perjanjian ke Biro Hukum",
+    toState: "perjanjian-pembahasan-pks",
     fields: [
-      { key: "notes", label: "Catatan Approval", type: "textarea", placeholder: "Catatan approval substansi..." },
+      { key: "picEmail", label: "Email PIC Biro Hukum", type: "text", required: true, placeholder: "pic.hukum@pspb.go.id" },
+      { key: "file", label: "Draft PKS", type: "file", required: true },
+      { key: "fileRencana", label: "Rencana Kerja Sama", type: "file", required: true },
+      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pengajuan PKS..." },
     ],
   },
-  "reject-contribution": {
-    title: "Reject Kontribusi",
+  "lanjutkan-pembahasan": {
+    title: "Lanjutkan Pembahasan",
+    toState: "perjanjian-finalisasi-pks",
     fields: [
-      { key: "notes", label: "Alasan Penolakan", type: "textarea", required: true, placeholder: "Jelaskan alasan penolakan kontribusi..." },
+      { key: "tanggal", label: "Tanggal Pembahasan", type: "date", required: true },
+      { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pembahasan..." },
     ],
   },
-  "request-adjustment": {
-    title: "Request Penyesuaian",
+  "perjanjian-disetujui": {
+    title: "Perjanjian Telah Disetujui",
+    toState: "pelaksanaan-persiapan",
     fields: [
-      { key: "notes", label: "Catatan Penyesuaian", type: "textarea", required: true, placeholder: "Jelaskan penyesuaian yang diperlukan..." },
+      { key: "file", label: "PKS Final", type: "file", required: true },
+      { key: "fileRencana", label: "Rencana Kerja Final", type: "file", required: true },
+      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
   },
-  "move-to-draft-pks": {
-    title: "Buat Draft PKS",
-    toState: "draft-pks",
+  "lanjut-pelaksanaan": {
+    title: "Lanjut Pelaksanaan",
+    toState: "pelaksanaan-dalam-proses",
     fields: [
-      { key: "notes", label: "Catatan Persiapan PKS", type: "textarea", placeholder: "Catatan untuk persiapan PKS..." },
+      { key: "jumlahMurid", label: "Jumlah Murid Terdampak", type: "text", required: true, placeholder: "Contoh: 500" },
+      { key: "jumlahGuru", label: "Jumlah Guru Terdampak", type: "text", required: true, placeholder: "Contoh: 50" },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "text", required: true, placeholder: "Contoh: 10 sekolah" },
+      { key: "kabupatenKota", label: "Kabupaten/Kota", type: "text", required: true, placeholder: "Contoh: Bandung, Cimahi" },
+      { key: "file", label: "Dokumen Pendukung", type: "file" },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pelaksanaan..." },
     ],
   },
-  "upload-draft-pks": {
-    title: "Upload Draft PKS",
+  "update-progress": {
+    title: "Update Progress",
     fields: [
-      { key: "file", label: "File Draft PKS", type: "file", required: true },
-      { key: "notes", label: "Catatan", type: "textarea", placeholder: "Catatan draft PKS..." },
+      { key: "progress", label: "Progress Pelaksanaan", type: "select-progress", required: true },
+      { key: "file", label: "Foto / Dokumen Pendukung", type: "file" },
+      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Deskripsi progress terkini..." },
     ],
   },
-  "send-to-legal-review": {
-    title: "Kirim ke Legal Review",
-    toState: "legal-review",
+  "terlaksana": {
+    title: "Terlaksana",
+    toState: "pemantauan-terlaksana",
     fields: [
-      { key: "confirm", label: "Konfirmasi pengiriman ke Legal Review", type: "checkbox", required: true },
-      { key: "notes", label: "Catatan", type: "textarea", placeholder: "Catatan untuk tim legal..." },
+      { key: "file", label: "Upload BAST", type: "file", required: true },
+      { key: "fileFoto", label: "Upload Foto", type: "file", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil pelaksanaan..." },
     ],
   },
-  "upload-legal-revision": {
-    title: "Upload Revisi PKS",
+  "dalam-evaluasi": {
+    title: "Dalam Evaluasi",
+    toState: "pelaksanaan-dalam-evaluasi",
     fields: [
-      { key: "file", label: "File PKS yang Direvisi", type: "file", required: true },
-      { key: "notes", label: "Catatan Legal", type: "textarea", placeholder: "Catatan revisi legal..." },
+      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Alasan evaluasi..." },
     ],
   },
-  "request-legal-revision": {
-    title: "Request Revisi ke Draft PKS",
-    toState: "draft-pks",
+  "ajukan-addendum": {
+    title: "Ajukan Addendum PKS",
+    toState: "pelaksanaan-penyesuaian-pks",
     fields: [
-      { key: "notes", label: "Catatan Revisi", type: "textarea", required: true, placeholder: "Jelaskan poin-poin yang perlu direvisi..." },
+      { key: "file", label: "Draft Addendum PKS", type: "file", required: true },
+      { key: "fileRencana", label: "Rencana Kerja Sama", type: "file", required: true },
+      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan addendum..." },
     ],
   },
-  "finalize-pks": {
-    title: "Finalisasi PKS",
-    toState: "final-pks",
+  "pemantauan-selesai": {
+    title: "Pemantauan Selesai",
+    toState: "selesai",
     fields: [
-      { key: "file", label: "File PKS Final", type: "file", required: true },
-      { key: "notes", label: "Catatan Legal", type: "textarea", placeholder: "Catatan finalisasi..." },
-      { key: "confirm", label: "Konfirmasi PKS sudah sesuai dan siap ditandatangani", type: "checkbox", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pemantauan..." },
     ],
   },
-  "move-to-distribusi": {
-    title: "Mulai Persiapan Distribusi",
-    toState: "distribusi-persiapan",
+  "pemantauan-pemanfaatan": {
+    title: "Pemantauan Pemanfaatan (Opsional)",
+    toState: "pemantauan-pemanfaatan",
     fields: [
-      { key: "notes", label: "Catatan Distribusi", type: "textarea", placeholder: "Catatan untuk persiapan distribusi..." },
+      { key: "notes", label: "Keterangan (link form)", type: "textarea", placeholder: "Masukkan link form pemantauan..." },
     ],
   },
-  "start-distribusi": {
-    title: "Start Distribusi",
-    toState: "distribusi-in-progress",
+  "pemantauan-pemanfaatan-selesai": {
+    title: "Pemantauan Pemanfaatan Selesai",
+    toState: "selesai",
     fields: [
-      { key: "notes", label: "Catatan Mulai", type: "textarea", placeholder: "Catatan memulai distribusi..." },
-    ],
-  },
-  "update-distribusi": {
-    title: "Update Distribusi",
-    fields: [
-      { key: "progress", label: "Persentase Progress", type: "select-progress", required: true },
-      { key: "notes", label: "Update Terbaru", type: "textarea", required: true, placeholder: "Deskripsi progress terkini..." },
-    ],
-  },
-  "upload-dokumentasi": {
-    title: "Upload Dokumentasi Distribusi",
-    fields: [
-      { key: "file", label: "File Dokumentasi", type: "file", required: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Keterangan dokumentasi..." },
-    ],
-  },
-  "put-on-hold": {
-    title: "Hold Distribusi",
-    toState: "distribusi-on-hold",
-    fields: [
-      { key: "notes", label: "Alasan Hold", type: "textarea", required: true, placeholder: "Jelaskan alasan distribusi di-hold..." },
-    ],
-  },
-  "resume-distribusi": {
-    title: "Resume Distribusi",
-    toState: "distribusi-in-progress",
-    fields: [
-      { key: "notes", label: "Catatan Resume", type: "textarea", required: true, placeholder: "Catatan melanjutkan distribusi..." },
-    ],
-  },
-  "create-adendum": {
-    title: "Buat Adendum",
-    toState: "distribusi-adendum",
-    fields: [
-      { key: "file", label: "File Adendum", type: "file", required: true },
-      { key: "notes", label: "Keterangan Adendum", type: "textarea", required: true, placeholder: "Jelaskan perubahan dalam adendum..." },
-    ],
-  },
-  "upload-adendum": {
-    title: "Upload Adendum",
-    fields: [
-      { key: "file", label: "File Adendum", type: "file", required: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Keterangan adendum..." },
-    ],
-  },
-  "mark-completed": {
-    title: "Tandai Distribusi Selesai",
-    toState: "distribusi-completed",
-    fields: [
-      { key: "file", label: "Bukti Penyelesaian (BAST/Foto)", type: "file", required: true },
-      { key: "notes", label: "Catatan Penyelesaian", type: "textarea", placeholder: "Ringkasan hasil distribusi..." },
-    ],
-  },
-  "mark-publish": {
-    title: "Publikasikan Kontribusi",
-    toState: "published",
-    fields: [
-      { key: "confirm", label: "Konfirmasi kontribusi ini siap dipublikasikan", type: "checkbox", required: true },
-      { key: "notes", label: "Catatan Publikasi", type: "textarea", placeholder: "Catatan akhir publikasi..." },
+      { key: "file", label: "Upload Report", type: "file", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan hasil pemantauan..." },
     ],
   },
 };
 
-export function ActionModal({ action, contribution, onClose, onSuccess }: ActionModalProps) {
+export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
   const config = MODAL_CONFIGS[action];
-  const [values, setValues] = useState<Record<string, string | boolean>>({});
+  const [values, setValues] = useState<Record<string, string | boolean>>(() => {
+    const initial: Record<string, string | boolean> = {};
+    if (config) {
+      for (const field of config.fields) {
+        if (field.defaults) {
+          initial[field.key] = field.defaults.join(", ");
+        }
+      }
+    }
+    return initial;
+  });
+  const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
@@ -217,14 +207,50 @@ export function ActionModal({ action, contribution, onClose, onSuccess }: Action
   const set = (key: string, value: string | boolean) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
+  const toggleCheckbox = (key: string, optionValue: string) => {
+    setValues((prev) => {
+      const current = (prev[key] as string) || "";
+      const items = current ? current.split(", ").filter(Boolean) : [];
+      const idx = items.indexOf(optionValue);
+      if (idx >= 0) items.splice(idx, 1);
+      else items.push(optionValue);
+      return { ...prev, [key]: items.join(", ") };
+    });
+  };
+
+  const addTag = (key: string, defaults: string[] = []) => {
+    const input = (tagInputs[key] || "").trim();
+    if (!input) return;
+    setValues((prev) => {
+      const current = (prev[key] as string) || "";
+      const items = current ? current.split(", ").filter(Boolean) : [];
+      if (!items.includes(input)) items.push(input);
+      return { ...prev, [key]: items.join(", ") };
+    });
+    setTagInputs((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const removeTag = (key: string, value: string, defaults: string[] = []) => {
+    if (defaults.includes(value)) return;
+    setValues((prev) => {
+      const current = (prev[key] as string) || "";
+      const items = current ? current.split(", ").filter(Boolean) : [];
+      const idx = items.indexOf(value);
+      if (idx >= 0) items.splice(idx, 1);
+      return { ...prev, [key]: items.join(", ") };
+    });
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     for (const field of config.fields) {
       if (field.required) {
         const val = values[field.key];
-        if (!val || val === "" || val === false) {
+        const isTags = field.type === "tags";
+        const tagsVal = isTags ? (val as string || "").split(", ").filter(Boolean) : [];
+        if (isTags ? tagsVal.length === 0 : (!val || val === "" || val === false)) {
           newErrors[field.key] =
-            field.type === "checkbox"
+            field.type === "checkbox" || field.type === "checkboxes"
               ? "Harus dicentang untuk melanjutkan"
               : "Field ini wajib diisi";
         }
@@ -240,6 +266,15 @@ export function ActionModal({ action, contribution, onClose, onSuccess }: Action
 
     setTimeout(() => {
       const now = new Date();
+      const fieldLabels: Record<string, string> = {};
+      for (const f of config.fields) fieldLabels[f.key] = f.label;
+      const fields: Record<string, string> = {};
+      for (const f of config.fields) {
+        if (f.key === "notes") continue;
+        const val = values[f.key];
+        if (val === undefined || val === false || val === "") continue;
+        fields[f.label] = String(val);
+      }
       const updated: Contribution = {
         ...contribution,
         lastUpdate: now,
@@ -248,39 +283,39 @@ export function ActionModal({ action, contribution, onClose, onSuccess }: Action
           {
             id: `a${Date.now()}`,
             timestamp: now,
-            actor: "Anda",
-            actorRole: "partnership-operator",
+            actor: currentUser.name,
+            actorRole: currentUser.role,
             action: ACTION_LABELS[action],
             notes: values.notes as string | undefined,
-            fromState: config.toState ? contribution.workflowStatus : undefined,
-            toState: config.toState,
+            fields: Object.keys(fields).length > 0 ? fields : undefined,
+            fromState: contribution.workflowStatus,
+            toState: config.toState ? contribution.workflowStatus : undefined,
           },
         ],
       };
 
       if (config.toState) updated.workflowStatus = config.toState;
-      if (action === "assign-pic") updated.pic = values.pic as string;
-      if (action === "update-audiensi") {
-        updated.audiensiResult = values.audiensiResult as string;
-        updated.audiensiDate = now;
-      }
-      if (action === "update-distribusi" && updated.distribusi) {
-        updated.distribusi = {
-          ...updated.distribusi,
-          progressPercent: parseInt(values.progress as string) || updated.distribusi.progressPercent,
-          latestUpdate: values.notes as string,
-        };
-      }
-      if (config.toState?.startsWith("distribusi") && updated.distribusi) {
-        const distStatus = config.toState.replace("distribusi-", "") as "persiapan" | "in-progress" | "on-hold" | "adendum" | "completed";
-        updated.distribusi = { ...updated.distribusi, status: distStatus };
-        if (distStatus === "in-progress" && !updated.distribusi.startDate) {
-          updated.distribusi.startDate = now;
+
+      if (config.toState === "pelaksanaan-dalam-proses" || action === "update-progress") {
+        if (!updated.pelaksanaan) {
+          updated.pelaksanaan = { progress: 0, dokumentasi: [] };
         }
-        if (distStatus === "completed") updated.distribusi.completionDate = now;
-      }
-      if (action === "put-on-hold" && updated.distribusi) {
-        updated.distribusi = { ...updated.distribusi, holdReason: values.notes as string };
+        if (action === "update-progress" && updated.pelaksanaan) {
+          updated.pelaksanaan = {
+            ...updated.pelaksanaan,
+            progress: parseInt(values.progress as string) || updated.pelaksanaan.progress,
+            latestUpdate: values.notes as string,
+          };
+        }
+        if (config.toState === "pelaksanaan-dalam-proses" && !updated.pelaksanaan.startDate) {
+          updated.pelaksanaan = { ...updated.pelaksanaan!, startDate: now };
+        }
+        if (config.toState === "pemantauan-terlaksana" && updated.pelaksanaan) {
+          updated.pelaksanaan = { ...updated.pelaksanaan, completionDate: now };
+        }
+        if (config.toState === "selesai" && updated.pelaksanaan) {
+          updated.pelaksanaan = { ...updated.pelaksanaan, completionDate: now };
+        }
       }
 
       updateContribution(updated);
@@ -341,6 +376,31 @@ export function ActionModal({ action, contribution, onClose, onSuccess }: Action
                 />
               )}
 
+              {field.type === "date" && (
+                <div className="relative">
+                  <Calendar className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={(values[field.key] as string) || ""}
+                    onChange={(e) => set(field.key, e.target.value)}
+                    className="w-full rounded-md border border-gray-200 pl-8 pr-3 py-2 text-sm outline-none focus:border-blue-400"
+                  />
+                </div>
+              )}
+
+              {field.type === "select" && field.options && (
+                <select
+                  value={(values[field.key] as string) || ""}
+                  onChange={(e) => set(field.key, e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400"
+                >
+                  <option value="">Pilih...</option>
+                  {field.options.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              )}
+
               {field.type === "select-pic" && (
                 <select
                   value={(values[field.key] as string) || ""}
@@ -398,6 +458,72 @@ export function ActionModal({ action, contribution, onClose, onSuccess }: Action
                   />
                   <span className="text-sm text-gray-600">{field.label}</span>
                 </label>
+              )}
+
+              {field.type === "tags" && (() => {
+                const current = (values[field.key] as string) || "";
+                const items = current ? current.split(", ").filter(Boolean) : [];
+                const def = field.defaults || [];
+                return (
+                  <div>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {items.map((item) => {
+                        const isDefault = def.includes(item);
+                        return (
+                          <span
+                            key={item}
+                            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm ${
+                              isDefault
+                                ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                : "bg-gray-100 text-gray-700 border border-gray-200"
+                            }`}
+                          >
+                            {item}
+                            {!isDefault && (
+                              <button
+                                type="button"
+                                onClick={() => removeTag(field.key, item, def)}
+                                className="text-gray-400 hover:text-red-500 leading-none"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={tagInputs[field.key] || ""}
+                        onChange={(e) => setTagInputs((p) => ({ ...p, [field.key]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(field.key, def); } }}
+                        placeholder={field.placeholder || "Tambah unit kerja..."}
+                        className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addTag(field.key, def)}
+                        className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {field.type === "multi-email" && (
+                <div>
+                  <textarea
+                    rows={3}
+                    value={(values[field.key] as string) || ""}
+                    onChange={(e) => set(field.key, e.target.value)}
+                    placeholder={field.placeholder || "pic1@pspb.go.id, pic2@pspb.go.id"}
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Pisahkan setiap email dengan koma</p>
+                </div>
               )}
 
               {errors[field.key] && (

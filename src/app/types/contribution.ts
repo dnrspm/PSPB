@@ -1,30 +1,32 @@
 export type WorkflowState =
-  | "submission-review"
-  | "verifikasi"
-  | "audiensi"
-  | "review-substansi"
-  | "draft-pks"
-  | "legal-review"
-  | "final-pks"
-  | "distribusi-persiapan"
-  | "distribusi-in-progress"
-  | "distribusi-on-hold"
-  | "distribusi-adendum"
-  | "distribusi-completed"
-  | "published";
+  | "kontribusi-masuk"
+  | "audiensi-menunggu-jadwal"
+  | "audiensi-terjadwal"
+  | "audiensi-konfirmasi-lanjut-pks"
+  | "perjanjian-draft-pks"
+  | "perjanjian-pembahasan-pks"
+  | "perjanjian-finalisasi-pks"
+  | "pelaksanaan-persiapan"
+  | "pelaksanaan-dalam-proses"
+  | "pelaksanaan-dalam-evaluasi"
+  | "pelaksanaan-penyesuaian-pks"
+  | "pemantauan-terlaksana"
+  | "pemantauan-pemanfaatan"
+  | "selesai"
+  | "tidak-dilanjutkan";
 
 export type UserRole =
-  | "partnership-operator"
-  | "program-reviewer"
-  | "strategic-reviewer"
-  | "legal-reviewer"
-  | "system-admin"
-  | "executive-viewer";
+  | "biro-perencanaan"
+  | "pusat-dir-eselon"
+  | "biro-hukum"
+  | "pusdatin"
+  | "bidang-kemitraan"
+  | "sekjen";
 
 export interface Document {
   id: string;
   name: string;
-  type: "proposal" | "pks-draft" | "pks-final" | "bast" | "distribusi" | "notulen" | "adendum" | "lainnya";
+  type: "proposal" | "pks-draft" | "pks-final" | "bast" | "dokumentasi" | "notulen" | "adendum" | "lainnya";
   uploadedAt: Date;
   uploadedBy: string;
   url?: string;
@@ -37,17 +39,15 @@ export interface ActivityLog {
   actorRole: UserRole;
   action: string;
   notes?: string;
+  fields?: Record<string, string>;
   fromState?: WorkflowState;
   toState?: WorkflowState;
 }
 
-export interface DistribusiInfo {
-  status: "persiapan" | "in-progress" | "on-hold" | "adendum" | "completed";
-  progressPercent: number;
+export interface PelaksanaanInfo {
+  progress: number;
   startDate?: Date;
   completionDate?: Date;
-  holdReason?: string;
-  adendumActive?: boolean;
   latestUpdate?: string;
   dokumentasi: Document[];
 }
@@ -73,12 +73,14 @@ export interface Contribution {
   nilaiKontribusi: string;
   dokumen: Document[];
   aktivitas: ActivityLog[];
-  distribusi?: DistribusiInfo;
+  pelaksanaan?: PelaksanaanInfo;
   reviewNotes?: string;
   legalNotes?: string;
   audiensiNotes?: string;
   audiensiDate?: Date;
   audiensiResult?: string;
+  evaluasiNotes?: string;
+  pemantauanNotes?: string;
 }
 
 export interface WorkspaceUser {
@@ -89,29 +91,21 @@ export interface WorkspaceUser {
 }
 
 export type WorkflowAction =
-  | "assign-pic"
-  | "move-to-verifikasi"
-  | "approve-verification"
-  | "request-revision"
-  | "update-audiensi"
-  | "move-to-review-substansi"
-  | "approve-contribution"
-  | "reject-contribution"
-  | "request-adjustment"
-  | "move-to-draft-pks"
-  | "upload-draft-pks"
-  | "send-to-legal-review"
-  | "upload-legal-revision"
-  | "request-legal-revision"
-  | "finalize-pks"
-  | "move-to-distribusi"
-  | "start-distribusi"
-  | "update-distribusi"
-  | "upload-dokumentasi"
-  | "put-on-hold"
-  | "resume-distribusi"
-  | "create-adendum"
-  | "upload-adendum"
-  | "mark-completed"
-  | "mark-publish"
+  | "lanjutkan-kontribusi"
+  | "tidak-dilanjutkan"
+  | "jadwalkan-audiensi"
+  | "audiensi-terlaksana"
+  | "setuju-hasil-audiensi"
+  | "audiensi-ulang"
+  | "ajukan-perjanjian"
+  | "lanjutkan-pembahasan"
+  | "perjanjian-disetujui"
+  | "lanjut-pelaksanaan"
+  | "update-progress"
+  | "terlaksana"
+  | "dalam-evaluasi"
+  | "ajukan-addendum"
+  | "pemantauan-selesai"
+  | "pemantauan-pemanfaatan"
+  | "pemantauan-pemanfaatan-selesai"
   | "view-detail";

@@ -1,4 +1,5 @@
 import type { Contribution } from "../../types/contribution";
+import { WORKFLOW_PHASES } from "../../lib/workflow";
 
 interface MonitoringSummaryProps {
   contributions: Contribution[];
@@ -11,31 +12,16 @@ interface SummaryCard {
 }
 
 export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
-  const byState = (states: string[]) =>
+  const byPhase = (states: string[]) =>
     contributions.filter((c) => states.includes(c.workflowStatus)).length;
 
-  const cards: SummaryCard[] = [
-    {
-      label: "Pengajuan",
-      count: byState(["submission-review"]),
-      color: "#C82236",
-    },
-    {
-      label: "Perencanaan",
-      count: byState(["verifikasi", "audiensi", "review-substansi", "draft-pks", "legal-review", "final-pks"]),
-      color: "#FFC453",
-    },
-    {
-      label: "Distribusi",
-      count: byState(["distribusi-persiapan", "distribusi-in-progress", "distribusi-on-hold", "distribusi-adendum", "distribusi-completed"]),
-      color: "#0B5FEF",
-    },
-    {
-      label: "Dipublikasikan",
-      count: byState(["published"]),
-      color: "#35825A",
-    },
-  ];
+  const cards: SummaryCard[] = WORKFLOW_PHASES
+    .filter((p) => p.label !== "Tidak Dilanjutkan")
+    .map((phase) => ({
+      label: phase.label,
+      count: byPhase(phase.states),
+      color: phase.color,
+    }));
 
   return (
     <div className="space-y-4">
@@ -43,7 +29,7 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
         <h2 className="text-[24px] font-semibold text-black">Ringkasan Operasional</h2>
         <span className="text-sm text-gray-400">{contributions.length} total kontribusi</span>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {cards.map((card) => (
           <div
             key={card.label}
