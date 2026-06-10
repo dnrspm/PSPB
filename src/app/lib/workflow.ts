@@ -116,14 +116,6 @@ const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
     "view-detail",
   ],
   "pusat-dir-eselon": [
-    "lanjut-pelaksanaan",
-    "update-progress",
-    "terlaksana",
-    "dalam-evaluasi",
-    "ajukan-addendum",
-    "pemantauan-selesai",
-    "pemantauan-pemanfaatan",
-    "pemantauan-pemanfaatan-selesai",
     "view-detail",
   ],
   "biro-hukum": [
@@ -131,7 +123,6 @@ const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
     "lanjutkan-pembahasan",
     "perjanjian-disetujui",
     "tidak-dilanjutkan",
-    "lanjut-pelaksanaan",
     "view-detail",
   ],
   "pusdatin": ["view-detail"],
@@ -153,9 +144,20 @@ export function getAvailableActions(state: WorkflowState, role: UserRole): Workf
 }
 
 export const STATE_OWNERS: Partial<Record<WorkflowState, UserRole>> = {
+  "kontribusi-masuk": "biro-perencanaan",
+  "audiensi-menunggu-jadwal": "biro-perencanaan",
+  "audiensi-terjadwal": "biro-perencanaan",
+  "audiensi-konfirmasi-lanjut-pks": "biro-perencanaan",
   "perjanjian-draft-pks": "biro-hukum",
   "perjanjian-pembahasan-pks": "biro-hukum",
   "perjanjian-finalisasi-pks": "biro-hukum",
+  "pelaksanaan-persiapan": "biro-perencanaan",
+  "pelaksanaan-dalam-proses": "biro-perencanaan",
+  "pelaksanaan-dalam-evaluasi": "biro-perencanaan",
+  "pelaksanaan-penyesuaian-pks": "biro-perencanaan",
+  "pemantauan-terlaksana": "biro-perencanaan",
+  "pemantauan-pemanfaatan": "biro-perencanaan",
+  "selesai": "biro-perencanaan",
 };
 
 export const ACTION_VARIANTS: Partial<Record<WorkflowAction, "default" | "destructive" | "outline">> = {

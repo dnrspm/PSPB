@@ -515,10 +515,15 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
     const fromEntry = c.aktivitas.find(a => a.fromState === state);
     const date = toEntry?.timestamp || fromEntry?.timestamp || (isCurrent ? c.lastUpdate : undefined);
     const dokumenTerkait = c.dokumen.filter(d => {
-      if (state === "perjanjian-finalisasi-pks") return d.type === "pks-final";
-      if (state === "pemantauan-terlaksana") return d.type === "bast";
+      if (state === "kontribusi-masuk") return d.type === "proposal";
+      if (state === "audiensi-terjadwal" || state === "audiensi-konfirmasi-lanjut-pks") return d.type === "notulen";
       if (state === "perjanjian-draft-pks") return d.type === "pks-draft";
-      if (state === "audiensi-terjadwal" || state === "audiensi-terlaksana") return d.type === "notulen";
+      if (state === "perjanjian-pembahasan-pks") return d.type === "pks-draft";
+      if (state === "perjanjian-finalisasi-pks") return d.type === "pks-final";
+      if (state === "pelaksanaan-dalam-proses") return d.type === "dokumentasi";
+      if (state === "pelaksanaan-penyesuaian-pks") return d.type === "adendum";
+      if (state === "pemantauan-terlaksana") return d.type === "bast";
+      if (d.type === "lainnya" && isCurrent) return true;
       return false;
     });
     return { date, dokumenTerkait };
@@ -571,7 +576,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                   {(isPast || isCurrent) && info.date && (
                     <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(info.date)}</p>
                   )}
-                  {isPast && info.dokumenTerkait.length > 0 && (
+                  {(isPast || isCurrent) && info.dokumenTerkait.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {info.dokumenTerkait.map(doc => (
                         <a

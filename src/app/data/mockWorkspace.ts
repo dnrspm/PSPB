@@ -242,6 +242,7 @@ export const mockContributions: Contribution[] = [
     dokumen: [
       { id: "d010", name: "Proposal Pertamina.pdf", type: "proposal", uploadedAt: d(75), uploadedBy: "Dewi Anggraeni" },
       { id: "d011", name: "Draft PKS Pertamina v2.pdf", type: "pks-draft", uploadedAt: d(15), uploadedBy: "Eka Putri" },
+      { id: "d024", name: "PKS Final - Pertamina.pdf", type: "pks-final", uploadedAt: d(1), uploadedBy: "Eka Putri" },
     ],
     aktivitas: [
       { id: "a014", timestamp: d(75), actor: "Dewi Anggraeni", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },

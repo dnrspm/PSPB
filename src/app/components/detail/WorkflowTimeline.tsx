@@ -1,4 +1,5 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 import type { Contribution } from "../../types/contribution";
 import { WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS } from "../../lib/workflow";
 
@@ -20,6 +21,16 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
   const activities = [...contribution.aktivitas].reverse();
   const currentColors = WORKFLOW_STATE_COLORS[contribution.workflowStatus];
   const hasActivityInCurrentState = contribution.aktivitas.some((a) => a.toState === contribution.workflowStatus);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleCollapse = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div className="relative">
@@ -66,44 +77,54 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
 
               {/* Card */}
               <div className="flex-1 rounded-lg border border-gray-200 bg-white p-3">
-                <div className="text-xs">
-                  {log.action === "Kontribusi masuk" ? (
-                    <div>
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        {log.toState && stateColors && (
-                          <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
-                            {WORKFLOW_STATE_LABELS[log.toState]}
-                          </span>
+                <button
+                  onClick={() => toggleCollapse(log.id)}
+                  className="flex w-full items-center justify-between text-left"
+                >
+                  <div className="text-xs flex-1 min-w-0">
+                    {log.action === "Kontribusi masuk" ? (
+                      <div>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          {log.toState && stateColors && (
+                            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
+                              {WORKFLOW_STATE_LABELS[log.toState]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 italic text-gray-400">Oleh: Sistem · {formatDateTime(log.timestamp)}</div>
+                        {contribution.workflowStatus === "kontribusi-masuk" && (
+                          <p className="mt-2 text-xs text-gray-400">Belum ada aksi di status ini.</p>
                         )}
                       </div>
-                      <div className="mt-1 italic text-gray-400">Oleh: Sistem · {formatDateTime(log.timestamp)}</div>
-                      {contribution.workflowStatus === "kontribusi-masuk" && (
-                        <p className="mt-2 text-xs text-gray-400">Belum ada aksi di status ini.</p>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        {log.toState && stateColors ? (
-                          <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
-                            {WORKFLOW_STATE_LABELS[log.toState]}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                        <span className="text-gray-300 mx-0.5">→</span>
-                        <span className="font-medium text-gray-400">Aksi:</span>
-                        <span className="text-gray-700">{log.action}</span>
-                      </div>
-                      <div className="mt-1 text-gray-400">
-                        <span>Oleh: {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}</span>
-                      </div>
-                    </>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          {log.toState && stateColors ? (
+                            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
+                              {WORKFLOW_STATE_LABELS[log.toState]}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                          <span className="text-gray-300 mx-0.5">→</span>
+                          <span className="font-medium text-gray-400">Aksi:</span>
+                          <span className="text-gray-700">{log.action}</span>
+                        </div>
+                        <div className="mt-1 text-gray-400">
+                          <span>Oleh: {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {(log.fields || log.notes) && (
+                    <span className="ml-2 shrink-0 text-gray-300">
+                      {collapsed.has(log.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                    </span>
                   )}
-                </div>
+                </button>
 
                 {/* Fields */}
-                {(log.fields || log.notes) && (
+                {!collapsed.has(log.id) && (log.fields || log.notes) && (
                   <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs">
                     <table className="w-full">
                       <colgroup>
