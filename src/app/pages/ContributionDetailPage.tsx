@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, MapPin, Users, DollarSign, Phone, Mail, FileText, Download } from "lucide-react";
+import { ArrowLeft, MapPin, Users, DollarSign, Phone, Mail, FileText, Download, Eye } from "lucide-react";
 import { getContributionById } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -267,9 +267,14 @@ function DokumenTab({ contribution: c }: { contribution: Contribution }) {
                 {docTypeLabel[doc.type] ?? doc.type} · Diunggah oleh {doc.uploadedBy} · {new Date(doc.uploadedAt).toLocaleDateString("id-ID")}
               </div>
             </div>
-            <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
-              <Download className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
+                <Eye className="h-4 w-4" />
+              </button>
+              <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
+                <Download className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ))
       )}
@@ -334,6 +339,9 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
               <div key={doc.id} className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-blue-400" />
                 <span className="flex-1 text-gray-700">{doc.name}</span>
+                <button className="rounded border border-gray-200 p-1 text-gray-400 hover:text-blue-600">
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
                 <button className="rounded border border-gray-200 p-1 text-gray-400 hover:text-blue-600">
                   <Download className="h-3.5 w-3.5" />
                 </button>

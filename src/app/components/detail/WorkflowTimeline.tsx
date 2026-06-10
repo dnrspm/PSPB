@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import type { Contribution } from "../../types/contribution";
 import { WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS } from "../../lib/workflow";
 
@@ -23,7 +24,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
   return (
     <div className="relative">
       {/* Current status card */}
-      {currentColors && (
+      {currentColors && contribution.workflowStatus !== "kontribusi-masuk" && (
         <div className="relative flex gap-4 mb-5">
           <div className="relative z-10 mt-[14px] flex h-4 w-4 shrink-0 items-center justify-center">
             <div className="absolute h-4 w-4 animate-ping rounded-full bg-blue-400 opacity-50" />
@@ -66,25 +67,39 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
               {/* Card */}
               <div className="flex-1 rounded-lg border border-gray-200 bg-white p-3">
                 <div className="text-xs">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {log.toState && stateColors ? (
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
-                        {WORKFLOW_STATE_LABELS[log.toState]}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">-</span>
-                    )}
-                    <span className="text-gray-300 mx-0.5">→</span>
-                    <span className="font-medium text-gray-400">Aksi:</span>
-                    <span className="text-gray-700">{log.action}</span>
-                  </div>
-                  <div className="mt-1 text-gray-400">
-                    {log.action === "Kontribusi masuk" ? (
-                      <span className="italic">Oleh: Sistem</span>
-                    ) : (
-                      <span>Oleh: {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}</span>
-                    )}
-                  </div>
+                  {log.action === "Kontribusi masuk" ? (
+                    <div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        {log.toState && stateColors && (
+                          <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
+                            {WORKFLOW_STATE_LABELS[log.toState]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 italic text-gray-400">Oleh: Sistem · {formatDateTime(log.timestamp)}</div>
+                      {contribution.workflowStatus === "kontribusi-masuk" && (
+                        <p className="mt-2 text-xs text-gray-400">Belum ada aksi di status ini.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        {log.toState && stateColors ? (
+                          <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stateColors.bg} ${stateColors.text} ${stateColors.border}`}>
+                            {WORKFLOW_STATE_LABELS[log.toState]}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                        <span className="text-gray-300 mx-0.5">→</span>
+                        <span className="font-medium text-gray-400">Aksi:</span>
+                        <span className="text-gray-700">{log.action}</span>
+                      </div>
+                      <div className="mt-1 text-gray-400">
+                        <span>Oleh: {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Fields */}
@@ -96,12 +111,27 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                         <col />
                       </colgroup>
                       <tbody>
-                        {log.fields && Object.entries(log.fields).map(([label, value]) => (
-                          <tr key={label}>
-                            <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>
-                            <td className="pb-1 align-top text-gray-500">: {value}</td>
-                          </tr>
-                        ))}
+                        {log.fields && Object.entries(log.fields).map(([label, value]) => {
+                          const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report/i.test(label);
+                          return (
+                            <tr key={label}>
+                              <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>
+                              <td className="pb-1 align-top text-gray-500">
+                                : {isFile ? (
+                                  <a
+                                    href={`#`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
+                                  >
+                                    {value}
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                  </a>
+                                ) : value}
+                              </td>
+                            </tr>
+                          );
+                        })}
                         {log.notes && (
                           <tr>
                             <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">Keterangan</td>

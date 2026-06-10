@@ -98,7 +98,23 @@ export const ACTION_LABELS: Record<WorkflowAction, string> = {
 };
 
 const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
-  "biro-perencanaan": "all",
+  "biro-perencanaan": [
+    "lanjutkan-kontribusi",
+    "tidak-dilanjutkan",
+    "jadwalkan-audiensi",
+    "audiensi-terlaksana",
+    "setuju-hasil-audiensi",
+    "audiensi-ulang",
+    "lanjut-pelaksanaan",
+    "update-progress",
+    "terlaksana",
+    "dalam-evaluasi",
+    "ajukan-addendum",
+    "pemantauan-selesai",
+    "pemantauan-pemanfaatan",
+    "pemantauan-pemanfaatan-selesai",
+    "view-detail",
+  ],
   "pusat-dir-eselon": [
     "lanjut-pelaksanaan",
     "update-progress",
@@ -127,8 +143,20 @@ export function getAvailableActions(state: WorkflowState, role: UserRole): Workf
   const stateActions = ACTIONS_BY_STATE[state];
   const roleAllowed = ROLE_ALLOWED_ACTIONS[role];
   if (roleAllowed === "all") return stateActions;
-  return stateActions.filter((a) => roleAllowed.includes(a));
+  let allowed = stateActions.filter((a) => roleAllowed.includes(a));
+  allowed = allowed.filter((a) => {
+    if (a !== "tidak-dilanjutkan") return true;
+    const owner = STATE_OWNERS[state];
+    return !owner || owner === role;
+  });
+  return allowed;
 }
+
+export const STATE_OWNERS: Partial<Record<WorkflowState, UserRole>> = {
+  "perjanjian-draft-pks": "biro-hukum",
+  "perjanjian-pembahasan-pks": "biro-hukum",
+  "perjanjian-finalisasi-pks": "biro-hukum",
+};
 
 export const ACTION_VARIANTS: Partial<Record<WorkflowAction, "default" | "destructive" | "outline">> = {
   "tidak-dilanjutkan": "destructive",
@@ -177,7 +205,7 @@ export const INTERNAL_TEAM: { id: string; name: string; role: UserRole }[] = [
 
 export const WORKFLOW_PHASES: { label: string; states: WorkflowState[]; color: string }[] = [
   {
-    label: "Kontribusi",
+    label: "Masuk",
     states: ["kontribusi-masuk"],
     color: "#C82236",
   },
@@ -212,3 +240,12 @@ export const WORKFLOW_PHASES: { label: string; states: WorkflowState[]; color: s
     color: "#999999",
   },
 ];
+
+export const PROGRAM_UNIT_KERJA_DEFAULTS: Record<string, string> = {
+  "Infrastruktur Digital": "INA Digital Infra",
+  "Pengembangan Platform Digital": "INA Digital Platform",
+  "Pendampingan Pelatihan GTK": "INA Digital Edu",
+  "Bahan Ajar Digital": "INA Digital Murid",
+  "Revitalisasi Sekolah": "INA Digital Revit",
+  "Kebutuhan Pendidikan Lainnya": "INA Digital Ops",
+};

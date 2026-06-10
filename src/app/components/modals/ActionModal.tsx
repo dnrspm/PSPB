@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Upload, Calendar } from "lucide-react";
 import type { Contribution, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
-import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM } from "../../lib/workflow";
+import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 
 interface ActionModalProps {
@@ -21,7 +21,7 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -33,12 +33,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Lanjutkan Kontribusi",
     toState: "audiensi-menunggu-jadwal",
     fields: [
-      { key: "unitKerja", label: "Unit Kerja", type: "tags", required: true, defaults: ["INA Digital Edu"], placeholder: "Tulis nama unit kerja..." },
+      { key: "unitKerjaEmail", label: "Unit Kerja Utama", type: "unit-kerja-email", required: true },
       { key: "jenisKerjasama", label: "Jenis Kerjasama", type: "select", required: true, options: [
         { value: "dalam-negeri", label: "Dalam Negeri" },
         { value: "luar-negeri", label: "Luar Negeri" },
       ]},
-      { key: "picEmail", label: "Email PIC", type: "multi-email", required: true, placeholder: "pic1@pspb.go.id, pic2@pspb.go.id" },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan untuk kontribusi ini..." },
     ],
   },
@@ -201,6 +200,26 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; email: string }>>(() => {
+    if (!config) return [];
+    const field = config.fields.find(f => f.type === "unit-kerja-email");
+    const defaultUnitKerja = PROGRAM_UNIT_KERJA_DEFAULTS[contribution.program] || (field?.defaults?.[0]) || "";
+    return field ? [{ unitKerja: defaultUnitKerja, email: "" }] : [];
+  });
+
+  const addUnitKerjaEmailPair = () => {
+    setUnitKerjaEmailPairs(prev => [...prev, { unitKerja: "", email: "" }]);
+  };
+
+  const updateUnitKerjaEmailPair = (index: number, field: 'unitKerja' | 'email', value: string) => {
+    setUnitKerjaEmailPairs(prev => prev.map((pair, i) =>
+      i === index ? { ...pair, [field]: value } : pair
+    ));
+  };
+
+  const removeUnitKerjaEmailPair = (index: number) => {
+    setUnitKerjaEmailPairs(prev => prev.filter((_, i) => i !== index));
+  };
 
   if (!config) return null;
 
@@ -245,6 +264,13 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     const newErrors: Record<string, string> = {};
     for (const field of config.fields) {
       if (field.required) {
+        if (field.type === "unit-kerja-email") {
+          const hasEmpty = unitKerjaEmailPairs.some(p => !p.unitKerja.trim() || !p.email.trim());
+          if (hasEmpty || unitKerjaEmailPairs.length === 0) {
+            newErrors[field.key] = "Setiap unit kerja harus memiliki email PIC";
+          }
+          continue;
+        }
         const val = values[field.key];
         const isTags = field.type === "tags";
         const tagsVal = isTags ? (val as string || "").split(", ").filter(Boolean) : [];
@@ -271,6 +297,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
       const fields: Record<string, string> = {};
       for (const f of config.fields) {
         if (f.key === "notes") continue;
+        if (f.type === "unit-kerja-email") {
+          const formatted = unitKerjaEmailPairs
+            .filter(p => p.unitKerja.trim() && p.email.trim())
+            .map(p => `${p.unitKerja} (${p.email})`)
+            .join(", ");
+          if (formatted) fields[f.label] = formatted;
+          continue;
+        }
         const val = values[f.key];
         if (val === undefined || val === false || val === "") continue;
         fields[f.label] = String(val);
@@ -348,7 +382,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           </div>
         )}
 
-        <div className="space-y-3 px-4 py-3">
+        <div className="space-y-5 px-4 py-3">
           {config.fields.map((field) => (
             <div key={field.key}>
               <label className="mb-1 block text-sm font-medium text-gray-600">
@@ -512,6 +546,57 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   </div>
                 );
               })()}
+
+              {field.type === "unit-kerja-email" && (
+                <div className="space-y-0">
+                  {unitKerjaEmailPairs.map((pair, index) => {
+                    const isDefault = index === 0;
+                    return (
+                      <div key={index}>
+                        {index > 0 && <hr className="my-3 border-gray-100" />}
+                        {!isDefault && <p className="mb-1.5 text-xs font-medium text-gray-500">Unit Kerja Pendukung</p>}
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 space-y-1.5">
+                            <input
+                              type="text"
+                              value={pair.unitKerja}
+                              onChange={(e) => updateUnitKerjaEmailPair(index, 'unitKerja', e.target.value)}
+                              placeholder="Nama unit kerja"
+                              disabled={isDefault}
+                              className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+                            />
+                            <input
+                              type="email"
+                              value={pair.email}
+                              onChange={(e) => updateUnitKerjaEmailPair(index, 'email', e.target.value)}
+                              placeholder="email PIC"
+                              className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                            />
+                          </div>
+                          {unitKerjaEmailPairs.length > 1 && !isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => removeUnitKerjaEmailPair(index)}
+                              className="mt-1 text-gray-400 hover:text-red-500"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={addUnitKerjaEmailPair}
+                      className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      + Tambah Unit Kerja
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {field.type === "multi-email" && (
                 <div>

@@ -191,6 +191,23 @@ export const pelatihanGTKContent: ProgramContentConfig = {
         "Menyediakan silabus, modul, atau dokumen pendukung pelatihan lainnya yang terdokumentasi dengan baik dan dapat dikaji oleh pihak kementerian sebelum pelaksanaan.",
         "Narasumber, pelatih, atau fasilitator yang ditugaskan oleh mitra memiliki latar belakang dan keahlian yang sesuai dengan topik pelatihan yang disampaikan."
       ]
+    },
+    {
+      value: "lainnya",
+      label: "Lainnya",
+      prasyaratSubstansi: [
+        "Telah memiliki pengalaman dalam menyelenggarakan pelatihan pengembangan kompetensi Guru dan Tenaga Kependidikan, sesuai dengan bidang prioritas khususnya yang relevan dengan topik-topik prioritas terkait.",
+        "Menyediakan materi pelatihan yang sesuai dengan kebutuhan pengembangan kompetensi Guru & Tenaga Kependidikan dan mendukung pencapaian tujuan pembelajaran sesuai dengan kebijakan Kemendikdasmen.",
+        "Memiliki bukti atau dokumentasi yang menunjukkan dampak positif dari pelatihan yang telah dilaksanakan, seperti peningkatan hasil belajar, dan atau evaluasi peserta.",
+        "Berkomitmen untuk tidak melakukan monetisasi terhadap peserta pada saat proses pelaksanaan pelatihan atau dalam pelaksanaan perjanjian kerjasama berlangsung."
+      ],
+      prasyaratTeknis: [
+        "Mitra memiliki dukungan sumber daya yang memadai, termasuk narasumber, fasilitator, dan tim teknis, yang mampu mendukung pelaksanaan pelatihan secara daring, luring, maupun hybrid.",
+        "Menyediakan media pembelajaran yang sesuai dengan kebutuhan pelatihan, seperti presentasi, video, bahan ajar interaktif, serta mendukung keterpaduan dengan platform digital yang digunakan.",
+        "Bersedia memfasilitasi kebutuhan pelatihan, termasuk akomodasi penyediaan ruang daring atau lokasi kegiatan luring, konsumsi, transportasi, ATK serta suvenir atau goodie bag.",
+        "Menyediakan silabus, modul, atau dokumen pendukung pelatihan lainnya yang terdokumentasi dengan baik dan dapat dikaji oleh pihak kementerian sebelum pelaksanaan.",
+        "Narasumber, pelatih, atau fasilitator yang ditugaskan oleh mitra memiliki latar belakang dan keahlian yang sesuai dengan topik pelatihan yang disampaikan."
+      ]
     }
   ]
 };
@@ -233,9 +250,94 @@ export const kebutuhanLainnyaContent: ProgramContentConfig = {
   ]
 };
 
+// 5. INFRASTRUKTUR DIGITAL
+export const infrastrukturDigitalContent: ProgramContentConfig = {
+  fieldLabel: "Pilihan Kontribusi",
+  placeholder: "Pilih kontribusi",
+  options: [
+    {
+      value: "jaringan-internet",
+      label: "Jaringan Internet",
+      prasyaratSubstansi: [
+        "Kemitraan berjalan dengan skema non komersial",
+        "Penyediaan konektivitas internet untuk mendukung akses sumber belajar digital",
+        "Dukungan berkelanjutan untuk pemeliharaan konektivitas"
+      ],
+      prasyaratTeknis: [
+        "Kecepatan internet sesuai standar minimal yang ditetapkan",
+        "Infrastruktur jaringan yang andal dan siap pakai",
+        "Cakupan area yang memadai untuk seluruh pengguna di satuan pendidikan"
+      ]
+    },
+    {
+      value: "instalasi-listrik",
+      label: "Instalasi Listrik",
+      prasyaratSubstansi: [
+        "Kemitraan berjalan dengan skema non komersial",
+        "Penyediaan sumber daya listrik yang stabil untuk proses pembelajaran",
+        "Dukungan pemeliharaan sistem kelistrikan"
+      ],
+      prasyaratTeknis: [
+        "Sistem kelistrikan sesuai standar SNI",
+        "Daya listrik memenuhi kebutuhan satuan pendidikan",
+        "Terdapat sistem pengaman dan proteksi sesuai regulasi"
+      ]
+    }
+  ]
+};
+
+// 6. REVITALISASI SEKOLAH
+export const revitalisasiSekolahContent: ProgramContentConfig = {
+  fieldLabel: "Pilihan Revitalisasi",
+  placeholder: "Pilih revitalisasi",
+  options: [
+    {
+      value: "lapangan",
+      label: "Lapangan",
+      prasyaratSubstansi: [
+        "Kemitraan berjalan dengan skema non komersial",
+        "Pembangunan atau renovasi fasilitas lapangan untuk kegiatan belajar dan olahraga"
+      ],
+      prasyaratTeknis: [
+        "Lahan tersedia dan sesuai peruntukan",
+        "Desain sesuai standar fasilitas pendidikan",
+        "Material bangunan sesuai spesifikasi teknis yang ditentukan"
+      ]
+    },
+    {
+      value: "toilet",
+      label: "Toilet",
+      prasyaratSubstansi: [
+        "Kemitraan berjalan dengan skema non komersial",
+        "Pembangunan atau renovasi fasilitas sanitasi sekolah"
+      ],
+      prasyaratTeknis: [
+        "Sistem plumbing sesuai standar",
+        "Jumlah unit toilet sesuai rasio pengguna",
+        "Fasilitas ramah disabilitas"
+      ]
+    },
+    {
+      value: "laboratorium",
+      label: "Laboratorium",
+      prasyaratSubstansi: [
+        "Kemitraan berjalan dengan skema non komersial",
+        "Penyediaan atau renovasi laboratorium untuk mendukung pembelajaran praktik"
+      ],
+      prasyaratTeknis: [
+        "Ruangan memenuhi standar laboratorium pendidikan",
+        "Peralatan laboratorium sesuai kebutuhan kurikulum",
+        "Sistem keselamatan kerja tersedia"
+      ]
+    }
+  ]
+};
+
 // Mapping program title ke content config
 export const programContentMapping: Record<string, any> = {
+  "Infrastruktur Digital": infrastrukturDigitalContent,
   "Pengembangan Platform Digital": platformDigitalContent,
+  "Revitalisasi Sekolah": revitalisasiSekolahContent,
   "Bahan Ajar Digital": bahanAjarDigitalContent,
   "Pendampingan Pelatihan GTK": pelatihanGTKContent,
   "Kebutuhan Pendidikan Lainnya": kebutuhanLainnyaContent,

@@ -4,8 +4,9 @@ import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { RowActions } from "./RowActions";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+import { PROGRAM_UNIT_KERJA_DEFAULTS } from "../../lib/workflow";
 
-type SortKey = "namaMitra" | "program" | "workflowStatus" | "pic" | "lastUpdate";
+type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate";
 type SortDir = "asc" | "desc";
 
 interface WorkspaceTableProps {
@@ -62,9 +63,9 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   };
 
   const sorted = [...contributions].sort((a, b) => {
-    const aNoPic = !a.pic ? 1 : 0;
-    const bNoPic = !b.pic ? 1 : 0;
-    if (aNoPic !== bNoPic) return bNoPic - aNoPic;
+    const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
+    const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
+    if (aMasuk !== bMasuk) return bMasuk - aMasuk;
 
     if (sortKey === "lastUpdate") {
       const diff = new Date(a.lastUpdate).getTime() - new Date(b.lastUpdate).getTime();
@@ -76,9 +77,28 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     return sortDir === "asc" ? cmp : -cmp;
   });
 
-  const headers: { key: SortKey; label: string }[] = [
-    { key: "namaMitra", label: "Nama Mitra" },
-    { key: "program", label: "Program" },
+  function getUnitKerja(c: Contribution): string {
+    for (let i = c.aktivitas.length - 1; i >= 0; i--) {
+      const a = c.aktivitas[i];
+      if (a.fields) {
+        for (const [label, value] of Object.entries(a.fields)) {
+          if (label.toLowerCase().includes("unit kerja")) {
+            return value.split(", ").map(part => part.split(" (")[0]).join(", ");
+          }
+        }
+      }
+    }
+    return PROGRAM_UNIT_KERJA_DEFAULTS[c.program] || "-";
+  }
+
+  const headers: { key: SortKey | null; label: string }[] = [
+    { key: "instansi", label: "Nama Instansi" },
+    { key: "program", label: "Paket Dukungan" },
+    { key: "paketBantuan", label: "Pilihan Kontribusi / Topik" },
+    { key: null, label: "Unit Kerja" },
+    { key: "workflowStatus", label: "Status Workflow" },
+    { key: "lastUpdate", label: "Last Update" },
+    { key: null, label: "Action" },
   ];
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -101,60 +121,39 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
             <tr className="border-b border-gray-200">
               {headers.map((h) => (
                 <th
-                  key={h.key}
-                  className="cursor-pointer bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232] hover:text-gray-600 select-none"
-                  onClick={() => handleSort(h.key)}
+                  key={h.label}
+                  className={`bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232] ${h.key ? "cursor-pointer hover:text-gray-600 select-none" : ""}`}
+                  onClick={() => h.key && handleSort(h.key)}
                 >
                   <div className="flex items-center gap-1">
                     {h.label}
-                    <SortIcon active={sortKey === h.key} dir={sortDir} />
+                    {h.key && <SortIcon active={sortKey === h.key} dir={sortDir} />}
                   </div>
                 </th>
               ))}
-              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
-                Paket Bantuan
-              </th>
-              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
-                PIC
-              </th>
-              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
-                Pembaruan
-              </th>
-              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
-                Status
-              </th>
-              <th className="bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232]">
-                Aksi
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginated.map((c) => {
-              const noPic = c.workflowStatus === "kontribusi-masuk" && !c.pic;
+              const isNew = c.workflowStatus === "kontribusi-masuk";
               return (
                 <tr
                   key={c.id}
-                  className={`transition-colors ${noPic ? "border-l-4 border-l-red-500 hover:bg-gray-50" : "hover:bg-blue-50/30"}`}
+                  className={`transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-50" : "hover:bg-blue-50/30"}`}
                 >
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-800 leading-snug">{c.namaMitra}</div>
-                    <div className="text-sm text-gray-400 leading-none mt-0.5">{c.wilayah}</div>
+                    <div className="text-sm font-medium text-gray-800 leading-snug">{c.instansi}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{c.program}</td>
                   <td className="px-4 py-3 max-w-36">
                     <ClampedText text={c.paketBantuan} />
                   </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{getUnitKerja(c)}</td>
                   <td className="px-4 py-3">
-                    {c.pic
-                      ? <span className="text-sm text-gray-600">{c.pic}</span>
-                      : <span className="text-sm font-medium text-red-500">Belum ditugaskan</span>
-                    }
+                    <StatusBadge state={c.workflowStatus} />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                     {formatDate(c.lastUpdate)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge state={c.workflowStatus} />
                   </td>
                   <td className="px-4 py-3">
                     <RowActions contribution={c} />

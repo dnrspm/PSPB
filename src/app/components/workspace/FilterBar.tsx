@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { WORKFLOW_STATE_LABELS } from "../../lib/workflow";
 import type { WorkflowState } from "../../types/contribution";
-import { INTERNAL_TEAM } from "../../lib/workflow";
 
 export interface FilterState {
   search: string;
   program: string;
   status: WorkflowState | "";
-  pic: string;
 }
 
 interface FilterBarProps {
@@ -32,10 +29,10 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
     onChange({ ...filters, [key]: value });
 
   const hasActiveFilters =
-    filters.search || filters.program || filters.status || filters.pic;
+    filters.search || filters.program || filters.status;
 
   const reset = () =>
-    onChange({ search: "", program: "", status: "", pic: "" });
+    onChange({ search: "", program: "", status: "" });
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -43,7 +40,7 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
         <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          placeholder="Cari nama mitra, program, PIC..."
+          placeholder="Cari nama mitra, program..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
@@ -69,18 +66,6 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
         <option value="">Semua Status</option>
         {ALL_STATES.map((s) => (
           <option key={s} value={s}>{WORKFLOW_STATE_LABELS[s]}</option>
-        ))}
-      </select>
-
-      <select
-        value={filters.pic}
-        onChange={(e) => set("pic", e.target.value)}
-        className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
-      >
-        <option value="">Semua PIC</option>
-        <option value="__unassigned">Belum Ditugaskan</option>
-        {INTERNAL_TEAM.map((u) => (
-          <option key={u.id} value={u.name}>{u.name}</option>
         ))}
       </select>
 

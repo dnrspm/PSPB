@@ -11,7 +11,6 @@ export default function WorkspacePage() {
     search: "",
     program: "",
     status: "",
-    pic: "",
   });
 
   const programs = useMemo(
@@ -22,12 +21,10 @@ export default function WorkspacePage() {
   const filtered = useMemo(() => {
     const q = filters.search.toLowerCase();
     return contributions.filter((c) => {
-      if (q && ![c.namaMitra, c.program, c.pic ?? ""].some((s) => s.toLowerCase().includes(q)))
+      if (q && ![c.namaMitra, c.program].some((s) => s.toLowerCase().includes(q)))
         return false;
       if (filters.program && c.program !== filters.program) return false;
       if (filters.status && c.workflowStatus !== filters.status) return false;
-      if (filters.pic === "__unassigned" && c.pic) return false;
-      if (filters.pic && filters.pic !== "__unassigned" && c.pic !== filters.pic) return false;
       return true;
     });
   }, [contributions, filters]);
