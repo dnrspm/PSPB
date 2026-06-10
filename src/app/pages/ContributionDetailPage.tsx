@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, MapPin, Users, DollarSign, Phone, Mail, FileText, Download, Eye } from "lucide-react";
+import { ArrowLeft, ExternalLink, MapPin, Users, DollarSign, Phone, Mail, FileText, Download, Eye } from "lucide-react";
 import { getContributionById } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -58,7 +58,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#fafafa]">
-      {/* Header */}
+      {/* Header Summary */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
           onClick={() => navigate("/workspace")}
@@ -67,19 +67,17 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           <ArrowLeft className="h-3.5 w-3.5" />
           Kembali ke Dasbor Operasional
         </button>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
               <h1 className="text-[24px] font-semibold text-black">{c.namaMitra}</h1>
               <StatusBadge state={c.workflowStatus} />
             </div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-gray-400">
-              <span>{c.program}</span>
-              <span>·</span>
-              <span>{c.paketBantuan}</span>
-              <span>·</span>
-              <span>PIC: <strong className="text-gray-600">{c.pic ?? "Belum ditugaskan"}</strong></span>
-              <span>·</span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
+              <span>{c.program}: <strong>{c.paketBantuan}</strong></span>
+              <span className="text-gray-300">|</span>
+              <span>Unit Kerja: <strong>{c.unitKerja || "-"}</strong></span>
+              <span className="text-gray-300">|</span>
               <span>Diperbarui: {formatDate(c.lastUpdate)}</span>
             </div>
           </div>
@@ -155,96 +153,247 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   );
 }
 
+/* ────────────── Informasi Tab ────────────── */
+
 function InfoTab({ contribution: c }: { contribution: Contribution }) {
+  const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
+  const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
+  const isBahanAjar = c.program === "Bahan Ajar Digital";
+  const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-        <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Mitra</h3>
-        <dl className="space-y-3 text-sm">
+    <div className="max-w-4xl space-y-6">
+      {/* Informasi Mitra */}
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Mitra</h3>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
           <div>
-            <dt className="text-sm text-gray-400">Instansi</dt>
+            <dt className="text-gray-400">Badan Hukum</dt>
+            <dd className="font-medium text-gray-900">{c.badanHukum || "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-400">Status Mitra</dt>
+            <dd className="font-medium text-gray-900">{c.statusMitra || "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-400">Nama Instansi</dt>
             <dd className="font-medium text-gray-900">{c.instansi}</dd>
           </div>
           <div>
-            <dt className="text-sm text-gray-400">Narahubung</dt>
+            <dt className="text-gray-400">Nama Narahubung</dt>
             <dd className="text-gray-700">{c.narahubung}</dd>
           </div>
           <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-sm text-gray-700">{c.kontak}</span>
+            <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <div>
+              <dt className="text-gray-400">Nomor Telepon Narahubung</dt>
+              <dd className="text-gray-700">{c.kontak}</dd>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-sm text-gray-700">{c.email}</span>
+            <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <div>
+              <dt className="text-gray-400">Email Narahubung</dt>
+              <dd className="text-gray-700">{c.email}</dd>
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-gray-400">Jabatan &amp; Posisi</dt>
+            <dd className="font-medium text-gray-900">{c.jabatan || "-"}</dd>
           </div>
         </dl>
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-        <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
-        <dl className="space-y-3 text-sm">
-          <div>
-            <dt className="text-sm text-gray-400">Program</dt>
-            <dd className="font-medium text-gray-900">{c.program}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-gray-400">Paket Bantuan</dt>
-            <dd className="text-gray-700">{c.paketBantuan}</dd>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-sm text-gray-700">{c.wilayah}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-sm text-gray-700">{c.targetPenerima}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-sm font-medium text-gray-900">{c.nilaiKontribusi}</span>
-          </div>
-        </dl>
-      </div>
+      {/* Informasi Bantuan – Sekolah (Infrastruktur Digital & Revitalisasi Sekolah) */}
+      {isSchoolProgram && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <div>
+                <dt className="text-gray-400">Target Penerima</dt>
+                <dd className="text-gray-700">{c.targetPenerima}</dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <div>
+                <dt className="text-gray-400">Wilayah</dt>
+                <dd className="text-gray-700">{c.wilayah}</dd>
+              </div>
+            </div>
+          </dl>
 
-      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4 lg:col-span-2">
-        <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Sekolah Penerima</h3>
-        <div className="flex flex-wrap gap-2">
-          {c.sekolah.map((s) => (
-            <span key={s} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              {s}
-            </span>
-          ))}
+          {(c.sekolahDetail && c.sekolahDetail.length > 0) && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Nama Satuan Pendidikan</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">NPSN</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Lokasi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Link Lokasi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Pilihan Kontribusi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Estimasi Dana</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Catatan Satuan Pendidikan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {c.sekolahDetail.map((s, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{s.npsn}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-40">{s.lokasi}</td>
+                      <td className="px-3 py-2">
+                        <a
+                          href={s.linkLokasi}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                        >
+                          Lihat <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </td>
+                      <td className="px-3 py-2 text-gray-700">{s.kontribusi}</td>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{s.estimasiDana}</td>
+                      <td className="px-3 py-2 text-gray-500 max-w-40">{s.catatan}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {(c.reviewNotes || c.legalNotes || c.audiensiResult) && (
-        <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 lg:col-span-2">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-600">Catatan Tinjauan</h3>
-          <div className="space-y-2 text-sm">
-            {c.reviewNotes && (
+      {/* Informasi Bantuan – Platform Digital / Pelatihan GTK */}
+      {isPlatformGtk && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
               <div>
-                <span className="text-sm font-medium text-amber-700">Tinjauan Substansi: </span>
-                <span className="text-sm text-amber-900">{c.reviewNotes}</span>
+                <dt className="text-gray-400">Target Penerima</dt>
+                <dd className="text-gray-700">{c.targetPenerima}</dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <div>
+                <dt className="text-gray-400">Wilayah</dt>
+                <dd className="text-gray-700">{c.wilayah}</dd>
+              </div>
+            </div>
+            <div>
+              <dt className="text-gray-400">Topik</dt>
+              <dd className="font-medium text-gray-900">{c.topik || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-700">{c.infoTambahan}</dd>
               </div>
             )}
-            {c.legalNotes && (
+          </dl>
+        </div>
+      )}
+
+      {/* Informasi Bantuan – Bahan Ajar Digital */}
+      {isBahanAjar && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
               <div>
-                <span className="text-sm font-medium text-amber-700">Catatan Legal: </span>
-                <span className="text-sm text-amber-900">{c.legalNotes}</span>
+                <dt className="text-gray-400">Target Penerima</dt>
+                <dd className="text-gray-700">{c.targetPenerima}</dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <div>
+                <dt className="text-gray-400">Wilayah</dt>
+                <dd className="text-gray-700">{c.wilayah}</dd>
+              </div>
+            </div>
+            <div>
+              <dt className="text-gray-400">Untuk Siapa</dt>
+              <dd className="font-medium text-gray-900">{c.untukSiapa || "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Jenjang Sekolah</dt>
+              <dd className="font-medium text-gray-900">{c.jenjangSekolah || "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Topik / Materi</dt>
+              <dd className="text-gray-700">{c.topikMateri || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-700">{c.infoTambahan}</dd>
               </div>
             )}
-            {c.audiensiResult && (
+          </dl>
+        </div>
+      )}
+
+      {/* Informasi Bantuan – Beragam Dukungan Pendidikan */}
+      {isLainnya && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
               <div>
-                <span className="text-sm font-medium text-amber-700">Hasil Audiensi: </span>
-                <span className="text-sm text-amber-900">{c.audiensiResult}</span>
+                <dt className="text-gray-400">Target Penerima</dt>
+                <dd className="text-gray-700">{c.targetPenerima}</dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <div>
+                <dt className="text-gray-400">Wilayah</dt>
+                <dd className="text-gray-700">{c.wilayah}</dd>
+              </div>
+            </div>
+            <div>
+              <dt className="text-gray-400">Jenis Dukungan</dt>
+              <dd className="font-medium text-gray-900">{c.jenisDukungan || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-700">{c.infoTambahan}</dd>
               </div>
             )}
-          </div>
+          </dl>
         </div>
       )}
     </div>
   );
 }
+
+/* ────────────── Dokumen Tab ────────────── */
 
 function DokumenTab({ contribution: c }: { contribution: Contribution }) {
   const docTypeLabel: Record<string, string> = {
@@ -282,14 +431,7 @@ function DokumenTab({ contribution: c }: { contribution: Contribution }) {
   );
 }
 
-function AktivitasTab({ contribution: c }: { contribution: Contribution }) {
-  const activities = [...c.aktivitas].reverse();
-  return (
-    <div className="max-w-2xl">
-      <WorkflowTimeline contribution={{ ...c, aktivitas: activities.reverse() }} />
-    </div>
-  );
-}
+/* ────────────── Pelaksanaan Tab ────────────── */
 
 function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
   const p = c.pelaksanaan;

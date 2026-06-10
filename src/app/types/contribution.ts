@@ -52,6 +52,16 @@ export interface PelaksanaanInfo {
   dokumentasi: Document[];
 }
 
+export interface SekolahDetail {
+  name: string;
+  npsn: string;
+  lokasi: string;
+  linkLokasi: string;
+  kontribusi: string;
+  estimasiDana: string;
+  catatan: string;
+}
+
 export interface Contribution {
   id: string;
   namaMitra: string;
@@ -65,12 +75,23 @@ export interface Contribution {
   narahubung: string;
   kontak: string;
   email: string;
+  badanHukum?: string;
+  statusMitra?: string;
+  jabatan?: string;
   companyProfile?: string;
   targetPenerima: string;
   wilayah: string;
   sekolah: string[];
+  sekolahDetail?: SekolahDetail[];
   jumlahPenerima: number;
   nilaiKontribusi: string;
+  unitKerja?: string;
+  topik?: string;
+  infoTambahan?: string;
+  untukSiapa?: string;
+  jenjangSekolah?: string;
+  topikMateri?: string;
+  jenisDukungan?: string;
   dokumen: Document[];
   aktivitas: ActivityLog[];
   pelaksanaan?: PelaksanaanInfo;
