@@ -1,13 +1,13 @@
 import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, MapPin, Users, DollarSign, Phone, Mail, FileText, Download, Eye } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route } from "lucide-react";
 import { getContributionById } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
-import { getAvailableActions, ACTION_LABELS } from "../lib/workflow";
+import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
-import type { Contribution, WorkflowAction } from "../types/contribution";
+import type { Contribution, WorkflowAction, WorkflowState } from "../types/contribution";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
@@ -57,7 +57,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   ];
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#fafafa]">
+    <div className="flex h-screen flex-col gap-3 overflow-hidden bg-white">
       {/* Header Summary */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
@@ -78,7 +78,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
               <span className="text-gray-300">|</span>
               <span>Unit Kerja: <strong>{c.unitKerja || "-"}</strong></span>
               <span className="text-gray-300">|</span>
-              <span>Diperbarui: {formatDate(c.lastUpdate)}</span>
+              <span>Diperbarui: <strong>{formatDate(c.lastUpdate)}</strong></span>
             </div>
           </div>
 
@@ -120,26 +120,38 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Tabs */}
         <div className="border-b border-gray-100 bg-white px-6">
-          <div className="flex gap-0">
+          <div className="flex">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
                   activeTab === tab.key
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
+                    ? "text-blue-600"
+                    : "text-gray-400 hover:text-gray-600"
                 }`}
               >
                 {tab.label}
+                {activeTab === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
+                )}
               </button>
             ))}
           </div>
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === "info" && <InfoTab contribution={c} />}
+        <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6">
+          {activeTab === "info" && (
+            <div className="flex gap-6">
+              <div className="flex-1 max-w-4xl">
+                <InfoTab contribution={c} />
+              </div>
+              <div className="w-80 shrink-0">
+                <WorkflowStepsSidebar contribution={c} />
+              </div>
+            </div>
+          )}
           {activeTab === "timeline" && (
             <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
               <WorkflowTimeline contribution={c} />
@@ -165,41 +177,41 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
     <div className="max-w-4xl space-y-6">
       {/* Informasi Mitra */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Mitra</h3>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Building2 className="h-4 w-4" /> Informasi Mitra</h3>
+
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
+          <div className="sm:col-span-2">
+            <dt className="text-gray-400">Nama Instansi</dt>
+            <dd className="text-gray-900">{c.instansi}</dd>
+          </div>
           <div>
             <dt className="text-gray-400">Badan Hukum</dt>
-            <dd className="font-medium text-gray-900">{c.badanHukum || "-"}</dd>
+            <dd className="text-gray-900">{c.badanHukum || "-"}</dd>
           </div>
           <div>
-            <dt className="text-gray-400">Status Mitra</dt>
-            <dd className="font-medium text-gray-900">{c.statusMitra || "-"}</dd>
+            <dt className="text-gray-400">Status Mitra (Lama/Baru)</dt>
+            <dd className="text-gray-900">{c.statusMitra || "-"}</dd>
           </div>
-          <div>
-            <dt className="text-gray-400">Nama Instansi</dt>
-            <dd className="font-medium text-gray-900">{c.instansi}</dd>
-          </div>
+        </dl>
+
+        <hr className="mb-5 border-gray-100" />
+
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
           <div>
             <dt className="text-gray-400">Nama Narahubung</dt>
-            <dd className="text-gray-700">{c.narahubung}</dd>
+            <dd className="text-gray-900">{c.narahubung}</dd>
           </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-            <div>
-              <dt className="text-gray-400">Nomor Telepon Narahubung</dt>
-              <dd className="text-gray-700">{c.kontak}</dd>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-            <div>
-              <dt className="text-gray-400">Email Narahubung</dt>
-              <dd className="text-gray-700">{c.email}</dd>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
+          <div>
             <dt className="text-gray-400">Jabatan &amp; Posisi</dt>
-            <dd className="font-medium text-gray-900">{c.jabatan || "-"}</dd>
+            <dd className="text-gray-900">{c.jabatan || "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-400">Nomor Telepon</dt>
+            <dd className="text-gray-900">{c.kontak}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-400">Email</dt>
+            <dd className="text-gray-900">{c.email}</dd>
           </div>
         </dl>
       </div>
@@ -207,25 +219,19 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Sekolah (Infrastruktur Digital & Revitalisasi Sekolah) */}
       {isSchoolProgram && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-700">{c.targetPenerima}</dd>
-              </div>
+                <dd className="text-gray-900">{c.targetPenerima}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-700">{c.wilayah}</dd>
-              </div>
+                <dd className="text-gray-900">{c.wilayah}</dd>
             </div>
           </dl>
 
@@ -274,34 +280,28 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Platform Digital / Pelatihan GTK */}
       {isPlatformGtk && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-700">{c.targetPenerima}</dd>
-              </div>
+                <dd className="text-gray-900">{c.targetPenerima}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-700">{c.wilayah}</dd>
-              </div>
+                <dd className="text-gray-900">{c.wilayah}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Topik</dt>
-              <dd className="font-medium text-gray-900">{c.topik || "-"}</dd>
+              <dd className="text-gray-900">{c.topik || "-"}</dd>
             </div>
             {c.infoTambahan && (
               <div className="sm:col-span-2">
                 <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-700">{c.infoTambahan}</dd>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
           </dl>
@@ -311,42 +311,36 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Bahan Ajar Digital */}
       {isBahanAjar && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-700">{c.targetPenerima}</dd>
-              </div>
+                <dd className="text-gray-900">{c.targetPenerima}</dd>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
+            <div>
                 <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-700">{c.wilayah}</dd>
-              </div>
+                <dd className="text-gray-900">{c.wilayah}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Untuk Siapa</dt>
-              <dd className="font-medium text-gray-900">{c.untukSiapa || "-"}</dd>
+              <dd className="text-gray-900">{c.untukSiapa || "-"}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Jenjang Sekolah</dt>
-              <dd className="font-medium text-gray-900">{c.jenjangSekolah || "-"}</dd>
+              <dd className="text-gray-900">{c.jenjangSekolah || "-"}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Topik / Materi</dt>
-              <dd className="text-gray-700">{c.topikMateri || "-"}</dd>
+              <dd className="text-gray-900">{c.topikMateri || "-"}</dd>
             </div>
             {c.infoTambahan && (
               <div className="sm:col-span-2">
                 <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-700">{c.infoTambahan}</dd>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
           </dl>
@@ -356,34 +350,28 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Beragam Dukungan Pendidikan */}
       {isLainnya && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Informasi Bantuan</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="font-medium text-gray-900">{c.paketBantuan}</dd>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
-                <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-700">{c.targetPenerima}</dd>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <div>
-                <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-700">{c.wilayah}</dd>
-              </div>
+              <dd className="text-gray-900">{c.program}</dd>
             </div>
             <div>
-              <dt className="text-gray-400">Jenis Dukungan</dt>
-              <dd className="font-medium text-gray-900">{c.jenisDukungan || "-"}</dd>
+              <dt className="text-gray-400">Pilihan Kontribusi/Topik</dt>
+              <dd className="text-gray-900">{c.jenisDukungan || "-"}</dd>
+            </div>
+            <div>
+                <dt className="text-gray-400">Target Penerima</dt>
+                <dd className="text-gray-900">{c.targetPenerima}</dd>
+            </div>
+            <div>
+                <dt className="text-gray-400">Wilayah</dt>
+                <dd className="text-gray-900">{c.wilayah}</dd>
             </div>
             {c.infoTambahan && (
               <div className="sm:col-span-2">
                 <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-700">{c.infoTambahan}</dd>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
           </dl>
@@ -492,6 +480,118 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ────────────── Workflow Steps Sidebar ────────────── */
+
+const HAPPY_FLOW: WorkflowState[] = [
+  "kontribusi-masuk",
+  "audiensi-menunggu-jadwal",
+  "audiensi-terjadwal",
+  "audiensi-konfirmasi-lanjut-pks",
+  "perjanjian-draft-pks",
+  "perjanjian-pembahasan-pks",
+  "perjanjian-finalisasi-pks",
+  "pelaksanaan-persiapan",
+  "pelaksanaan-dalam-proses",
+  "pemantauan-terlaksana",
+  "selesai",
+];
+
+function formatDateTime(date: Date): string {
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+}
+
+function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution }) {
+  const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
+  const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
+
+  const getStepInfo = (state: WorkflowState, isCurrent: boolean) => {
+    const toEntry = c.aktivitas.find(a => a.toState === state);
+    const fromEntry = c.aktivitas.find(a => a.fromState === state);
+    const date = toEntry?.timestamp || fromEntry?.timestamp || (isCurrent ? c.lastUpdate : undefined);
+    const dokumenTerkait = c.dokumen.filter(d => {
+      if (state === "perjanjian-finalisasi-pks") return d.type === "pks-final";
+      if (state === "pemantauan-terlaksana") return d.type === "bast";
+      if (state === "perjanjian-draft-pks") return d.type === "pks-draft";
+      if (state === "audiensi-terjadwal" || state === "audiensi-terlaksana") return d.type === "notulen";
+      return false;
+    });
+    return { date, dokumenTerkait };
+  };
+
+  return (
+    <div className="sticky top-0 rounded-lg border border-gray-100 bg-white shadow-sm p-4">
+      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Route className="h-4 w-4" /> Alur Status</h3>
+      <div className="relative">
+        <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-gray-100" />
+
+        <div className="space-y-0">
+          {HAPPY_FLOW.map((state, i) => {
+            const isCurrent = c.workflowStatus === state;
+            const isPast = currentIndex >= 0 && i < currentIndex;
+            const isFuture = currentIndex >= 0 && i > currentIndex;
+            const info = getStepInfo(state, isCurrent);
+
+            return (
+              <div key={state} className="relative flex items-start gap-3 pb-4 last:pb-0">
+                <div className="relative z-10 mt-0.5 shrink-0">
+                  {isCurrent ? (
+                    <span className="flex h-[18px] w-[18px] items-center justify-center">
+                      <span className="absolute h-[18px] w-[18px] animate-ping rounded-full bg-blue-400 opacity-40" />
+                      <span className="relative h-[18px] w-[18px] rounded-full border-2 border-blue-600 bg-white" />
+                    </span>
+                  ) : isPast ? (
+                    <div className="h-[18px] w-[18px] rounded-full bg-blue-600 flex items-center justify-center">
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  ) : isTerminal && i > currentIndex ? (
+                    <div className="h-[18px] w-[18px] rounded-full bg-gray-200" />
+                  ) : (
+                    <div className="h-[18px] w-[18px] rounded-full border-2 border-gray-200 bg-white" />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p className={`text-sm leading-tight whitespace-nowrap ${
+                    isCurrent
+                      ? "font-semibold text-blue-700"
+                      : isPast
+                        ? "font-medium text-gray-600"
+                        : "text-gray-400"
+                  }`}>
+                    {WORKFLOW_STATE_LABELS[state]}
+                  </p>
+                  {(isPast || isCurrent) && info.date && (
+                    <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(info.date)}</p>
+                  )}
+                  {isPast && info.dokumenTerkait.length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {info.dokumenTerkait.map(doc => (
+                        <a
+                          key={doc.id}
+                          href="#"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-xs text-blue-500 hover:text-blue-700 hover:underline truncate max-w-56"
+                        >
+                          {doc.name}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
