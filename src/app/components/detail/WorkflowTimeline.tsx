@@ -21,7 +21,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
   const activities = [...contribution.aktivitas].reverse();
   const currentColors = WORKFLOW_STATE_COLORS[contribution.workflowStatus];
   const hasActivityInCurrentState = contribution.aktivitas.some((a) => a.toState === contribution.workflowStatus);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set(contribution.aktivitas.map(a => a.id)));
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -132,8 +132,8 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                         <col />
                       </colgroup>
                       <tbody>
-                        {log.fields && Object.entries(log.fields).map(([label, value]) => {
-                          const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report/i.test(label);
+                        {log.fields && Object.entries(log.fields).filter(([label]) => !label.startsWith("_")).map(([label, value]) => {
+                          const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report|rencana/i.test(label);
                           return (
                             <tr key={label}>
                               <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>

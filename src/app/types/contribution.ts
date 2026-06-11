@@ -26,7 +26,7 @@ export type UserRole =
 export interface Document {
   id: string;
   name: string;
-  type: "proposal" | "pks-draft" | "pks-final" | "bast" | "dokumentasi" | "notulen" | "adendum" | "lainnya";
+  type: "proposal" | "pks-draft" | "pks-final" | "rencana-kerja-final" | "bast" | "dokumentasi" | "notulen" | "adendum" | "lainnya";
   uploadedAt: Date;
   uploadedBy: string;
   url?: string;

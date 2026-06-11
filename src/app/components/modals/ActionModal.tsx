@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Upload, Calendar } from "lucide-react";
-import type { Contribution, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
+import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 
@@ -184,6 +184,23 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
   },
 };
 
+const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
+  file: (action) => {
+    switch (action) {
+      case "audiensi-terlaksana": return "notulen";
+      case "ajukan-perjanjian": return "pks-draft";
+      case "perjanjian-disetujui": return "pks-final";
+      case "terlaksana": return "bast";
+      case "ajukan-addendum": return "adendum";
+      case "update-progress": return "dokumentasi";
+      default: return "lainnya";
+    }
+  },
+  fileRencana: () => "rencana-kerja-final",
+  fileLainnya: () => "lainnya",
+  fileFoto: () => "dokumentasi",
+};
+
 export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
   const config = MODAL_CONFIGS[action];
   const [values, setValues] = useState<Record<string, string | boolean>>(() => {
@@ -309,9 +326,25 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         if (val === undefined || val === false || val === "") continue;
         fields[f.label] = String(val);
       }
+      const newDocs = config.fields
+        .filter(f => f.type === "file" && values[f.key])
+        .map(f => {
+          const docType = FILE_DOC_TYPE[f.key]?.(action) || "lainnya";
+          return {
+            id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            name: `${f.label}_${now.toISOString().slice(0, 10)}.pdf`,
+            type: docType as Document["type"],
+            uploadedAt: now,
+            uploadedBy: currentUser.name,
+          };
+        });
+
+      const newDocIds = newDocs.map(d => d.id);
+
       const updated: Contribution = {
         ...contribution,
         lastUpdate: now,
+        dokumen: [...contribution.dokumen, ...newDocs],
         aktivitas: [
           ...contribution.aktivitas,
           {
@@ -321,7 +354,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             actorRole: currentUser.role,
             action: ACTION_LABELS[action],
             notes: values.notes as string | undefined,
-            fields: Object.keys(fields).length > 0 ? fields : undefined,
+            fields: {
+              ...fields,
+              ...(newDocIds.length > 0 ? { _docIds: newDocIds.join(",") } : {}),
+            },
             fromState: contribution.workflowStatus,
             toState: config.toState ? contribution.workflowStatus : undefined,
           },

@@ -7,13 +7,13 @@ import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
 import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
-import type { Contribution, WorkflowAction, WorkflowState } from "../types/contribution";
+import type { Contribution, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
 }
 
-type Tab = "info" | "timeline" | "dokumen" | "pelaksanaan";
+type Tab = "info" | "timeline" | "pelaksanaan";
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
@@ -52,12 +52,11 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Informasi" },
     { key: "timeline", label: "Riwayat Alur Kerja" },
-    { key: "dokumen", label: "Dokumen" },
     ...(c.workflowStatus.startsWith("pelaksanaan-") ? [{ key: "pelaksanaan" as Tab, label: "Pelaksanaan" }] : []),
   ];
 
   return (
-    <div className="flex h-screen flex-col gap-3 overflow-hidden bg-white">
+    <div className="h-dvh grid bg-white" style={{ gridTemplateRows: "auto auto 1fr" }}>
       {/* Header Summary */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
@@ -117,51 +116,50 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
         )}
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Tabs */}
-        <div className="border-b border-gray-100 bg-white px-6">
-          <div className="flex">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? "text-blue-600"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                {tab.label}
-                {activeTab === tab.key && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6">
-          {activeTab === "info" && (
-            <div className="flex gap-6">
-              <div className="flex-1 max-w-4xl">
-                <InfoTab contribution={c} />
-              </div>
-              <div className="w-80 shrink-0">
-                <WorkflowStepsSidebar contribution={c} />
-              </div>
-            </div>
-          )}
-          {activeTab === "timeline" && (
-            <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-              <WorkflowTimeline contribution={c} />
-            </div>
-          )}
-          {activeTab === "dokumen" && <DokumenTab contribution={c} />}
-          {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
+      {/* Tabs */}
+      <div className="border-b border-gray-100 bg-white px-6">
+        <div className="flex">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "text-blue-600"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
-    </div>
+
+      {/* Tab Content */}
+      <div className="overflow-y-auto bg-[#fafafa]">
+        <div className="p-6">
+            {activeTab === "info" && (
+              <div className="flex gap-6">
+                <div className="flex-1 max-w-4xl">
+                  <InfoTab contribution={c} />
+                </div>
+                <div className="w-80 shrink-0">
+                  <WorkflowStepsSidebar contribution={c} />
+                </div>
+              </div>
+            )}
+            {activeTab === "timeline" && (
+              <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
+                <WorkflowTimeline contribution={c} />
+              </div>
+            )}
+            {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
+          </div>
+        </div>
+      </div>
   );
 }
 
@@ -381,44 +379,6 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
   );
 }
 
-/* ────────────── Dokumen Tab ────────────── */
-
-function DokumenTab({ contribution: c }: { contribution: Contribution }) {
-  const docTypeLabel: Record<string, string> = {
-    proposal: "Proposal", "pks-draft": "Draf PKS", "pks-final": "PKS Final",
-    bast: "BAST", dokumentasi: "Dokumentasi", notulen: "Notulen",
-    adendum: "Adendum", lainnya: "Lainnya",
-  };
-
-  return (
-    <div className="max-w-2xl space-y-2">
-      {c.dokumen.length === 0 ? (
-        <p className="text-sm text-gray-400">Belum ada dokumen.</p>
-      ) : (
-        c.dokumen.map((doc) => (
-          <div key={doc.id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white shadow-sm p-3">
-            <FileText className="h-5 w-5 shrink-0 text-blue-500" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate text-sm font-medium text-gray-900">{doc.name}</div>
-              <div className="text-sm text-gray-400">
-                {docTypeLabel[doc.type] ?? doc.type} · Diunggah oleh {doc.uploadedBy} · {new Date(doc.uploadedAt).toLocaleDateString("id-ID")}
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
-                <Eye className="h-4 w-4" />
-              </button>
-              <button className="shrink-0 rounded-md border border-gray-200 p-1.5 text-gray-400 hover:text-blue-600">
-                <Download className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
-
 /* ────────────── Pelaksanaan Tab ────────────── */
 
 function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
@@ -514,18 +474,16 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
     const toEntry = c.aktivitas.find(a => a.toState === state);
     const fromEntry = c.aktivitas.find(a => a.fromState === state);
     const date = toEntry?.timestamp || fromEntry?.timestamp || (isCurrent ? c.lastUpdate : undefined);
-    const dokumenTerkait = c.dokumen.filter(d => {
-      if (state === "kontribusi-masuk") return d.type === "proposal";
-      if (state === "audiensi-terjadwal" || state === "audiensi-konfirmasi-lanjut-pks") return d.type === "notulen";
-      if (state === "perjanjian-draft-pks") return d.type === "pks-draft";
-      if (state === "perjanjian-pembahasan-pks") return d.type === "pks-draft";
-      if (state === "perjanjian-finalisasi-pks") return d.type === "pks-final";
-      if (state === "pelaksanaan-dalam-proses") return d.type === "dokumentasi";
-      if (state === "pelaksanaan-penyesuaian-pks") return d.type === "adendum";
-      if (state === "pemantauan-terlaksana") return d.type === "bast";
-      if (d.type === "lainnya" && isCurrent) return true;
-      return false;
-    });
+    let dokumenTerkait: Document[] = [];
+    if (state === "kontribusi-masuk") {
+      dokumenTerkait = c.dokumen.filter(d => d.type === "proposal");
+    } else if (state === "perjanjian-finalisasi-pks" && !isCurrent) {
+      const fromEntry = c.aktivitas.find(a => a.fromState === state);
+      if (fromEntry?.fields?._docIds) {
+        const ids = fromEntry.fields._docIds.split(",");
+        dokumenTerkait = c.dokumen.filter(d => ids.includes(d.id));
+      }
+    }
     return { date, dokumenTerkait };
   };
 
