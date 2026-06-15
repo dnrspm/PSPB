@@ -56,7 +56,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   ];
 
   return (
-    <div className="h-screen grid bg-white" style={{ gridTemplateRows: "auto auto 1fr" }}>
+    <div className="h-full flex flex-col bg-white">
       {/* Header Summary */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
@@ -139,7 +139,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
       </div>
 
       {/* Tab Content */}
-      <div className="overflow-y-auto bg-[#fafafa] min-h-0 h-full">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-[#fafafa]">
         <div className="p-6">
             {activeTab === "info" && (
               <div className="flex gap-6">
