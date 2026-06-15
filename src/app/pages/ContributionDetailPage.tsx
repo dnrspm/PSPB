@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users } from "lucide-react";
 import { getContributionById } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -56,7 +56,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   ];
 
   return (
-    <div className="h-dvh grid bg-white" style={{ gridTemplateRows: "auto auto 1fr" }}>
+    <div className="h-screen grid bg-white" style={{ gridTemplateRows: "auto auto 1fr" }}>
       {/* Header Summary */}
       <div className="border-b border-gray-100 bg-white px-6 py-3">
         <button
@@ -139,7 +139,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
       </div>
 
       {/* Tab Content */}
-      <div className="overflow-y-auto bg-[#fafafa]">
+      <div className="overflow-y-auto bg-[#fafafa] min-h-0 h-full">
         <div className="p-6">
             {activeTab === "info" && (
               <div className="flex gap-6">
@@ -165,11 +165,40 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
 /* ────────────── Informasi Tab ────────────── */
 
+function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
+  for (let i = aktivitas.length - 1; i >= 0; i--) {
+    const fields = aktivitas[i].fields;
+    if (!fields) continue;
+    const raw = fields["Unit Kerja dan PIC"];
+    if (!raw) continue;
+    const result: Array<{ unitKerja: string; emails: string[] }> = [];
+    const regex = /([^(]+)\(([^)]*)\)/g;
+    let match;
+    while ((match = regex.exec(raw)) !== null) {
+      const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "");
+      const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
+      if (unitKerja) result.push({ unitKerja, emails });
+    }
+    return result;
+  }
+  return [];
+}
+
 function InfoTab({ contribution: c }: { contribution: Contribution }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
+  const unitKerjaPIC = useMemo(() => {
+    const parsed = parseUnitKerjaPIC(c.aktivitas);
+    const grouped: Record<string, string[]> = {};
+    for (const item of parsed) {
+      const key = item.unitKerja.toUpperCase();
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(...item.emails);
+    }
+    return Object.entries(grouped).map(([unitKerja, emails]) => ({ unitKerja, emails }));
+  }, [c.aktivitas]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -373,6 +402,34 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
               </div>
             )}
           </dl>
+        </div>
+      )}
+
+      {/* Unit Kerja dan PIC */}
+      {unitKerjaPIC.length > 0 && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+          <div className="space-y-4">
+            {unitKerjaPIC.map((item, i) => (
+              <div key={i}>
+                {i > 0 && <hr className="mb-4 border-gray-100" />}
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-gray-400">Unit Kerja</dt>
+                    <dd className="mt-0.5 font-medium text-gray-900 text-sm">{item.unitKerja}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-400">Email PIC</dt>
+                    <dd className="mt-0.5 text-gray-900 text-sm">
+                      {item.emails.map((email, j) => (
+                        <span key={j} className="text-sm">{email}{j < item.emails.length - 1 && <br />}</span>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

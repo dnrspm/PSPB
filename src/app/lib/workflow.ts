@@ -244,10 +244,19 @@ export const WORKFLOW_PHASES: { label: string; states: WorkflowState[]; color: s
 ];
 
 export const PROGRAM_UNIT_KERJA_DEFAULTS: Record<string, string> = {
-  "Infrastruktur Digital": "INA Digital Infra",
-  "Pengembangan Platform Digital": "INA Digital Platform",
-  "Pendampingan Pelatihan GTK": "INA Digital Edu",
-  "Bahan Ajar Digital": "INA Digital Murid",
-  "Revitalisasi Sekolah": "INA Digital Revit",
-  "Kebutuhan Pendidikan Lainnya": "INA Digital Ops",
+  "Infrastruktur Digital": "Ditjen PDM",
+  "Pengembangan Platform Digital": "Pusdatin",
+  "Pendampingan Pelatihan GTK": "Ditjen GTK",
+  "Bahan Ajar Digital": "Pusdatin",
+  "Revitalisasi Sekolah": "Ditjen PDM",
+  "Kebutuhan Pendidikan Lainnya": "",
+};
+
+export const SUB_TYPE_UNIT_KERJA_MAP: Record<string, string> = {
+  "Beasiswa": "Puslapdik",
+  "Penanganan Anak Tidak Sekolah": "Ditjen Dikmen Diksus",
+  "Beragam Dukungan Pendidikan Vokasi": "Ditjen Dikmen Diksus",
+  "Kegiatan Pendidikan": "BKPDM",
+  "Publikasi dan Komunikasi": "BKHM",
+  "Lainnya": "BPKS",
 };

@@ -4,7 +4,7 @@ import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { RowActions } from "./RowActions";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
-import { PROGRAM_UNIT_KERJA_DEFAULTS } from "../../lib/workflow";
+import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate";
 type SortDir = "asc" | "desc";
@@ -22,7 +22,9 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 
 function formatDate(date: Date): string {
   const d = new Date(date);
-  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  const formattedDate = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  const formattedTime = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return `${formattedDate}, ${formattedTime}`;
 }
 
 function ClampedText({ text }: { text: string }) {
@@ -88,7 +90,12 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
         }
       }
     }
-    return PROGRAM_UNIT_KERJA_DEFAULTS[c.program] || "-";
+    const defaultUnit = PROGRAM_UNIT_KERJA_DEFAULTS[c.program];
+    if (defaultUnit) return defaultUnit;
+    if (c.program === "Kebutuhan Pendidikan Lainnya" && c.paketBantuan) {
+      return SUB_TYPE_UNIT_KERJA_MAP[c.paketBantuan] || "-";
+    }
+    return "-";
   }
 
   const headers: { key: SortKey | null; label: string }[] = [

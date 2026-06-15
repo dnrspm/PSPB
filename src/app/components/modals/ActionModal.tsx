@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Upload, Calendar } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
-import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS } from "../../lib/workflow";
+import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 
 interface ActionModalProps {
@@ -33,7 +33,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Lanjutkan Kontribusi",
     toState: "audiensi-menunggu-jadwal",
     fields: [
-      { key: "unitKerjaEmail", label: "Unit Kerja Utama", type: "unit-kerja-email", required: true },
+      { key: "unitKerjaEmail", label: "Unit Kerja dan PIC", type: "unit-kerja-email", required: true },
       { key: "jenisKerjasama", label: "Jenis Kerjasama", type: "select", required: true, options: [
         { value: "dalam-negeri", label: "Dalam Negeri" },
         { value: "luar-negeri", label: "Luar Negeri" },
@@ -217,20 +217,42 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; email: string }>>(() => {
+  const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
     if (!config) return [];
     const field = config.fields.find(f => f.type === "unit-kerja-email");
-    const defaultUnitKerja = PROGRAM_UNIT_KERJA_DEFAULTS[contribution.program] || (field?.defaults?.[0]) || "";
-    return field ? [{ unitKerja: defaultUnitKerja, email: "" }] : [];
+    let defaultUnitKerja = PROGRAM_UNIT_KERJA_DEFAULTS[contribution.program];
+    if (!defaultUnitKerja && contribution.program === "Kebutuhan Pendidikan Lainnya" && contribution.paketBantuan) {
+      defaultUnitKerja = SUB_TYPE_UNIT_KERJA_MAP[contribution.paketBantuan] || "";
+    }
+    defaultUnitKerja = defaultUnitKerja || (field?.defaults?.[0]) || "";
+    return field ? [{ unitKerja: defaultUnitKerja, emails: [""] }] : [];
   });
 
   const addUnitKerjaEmailPair = () => {
-    setUnitKerjaEmailPairs(prev => [...prev, { unitKerja: "", email: "" }]);
+    setUnitKerjaEmailPairs(prev => [...prev, { unitKerja: "", emails: [""] }]);
   };
 
-  const updateUnitKerjaEmailPair = (index: number, field: 'unitKerja' | 'email', value: string) => {
+  const updateUnitKerja = (index: number, value: string) => {
     setUnitKerjaEmailPairs(prev => prev.map((pair, i) =>
-      i === index ? { ...pair, [field]: value } : pair
+      i === index ? { ...pair, unitKerja: value } : pair
+    ));
+  };
+
+  const updateEmail = (pairIndex: number, emailIndex: number, value: string) => {
+    setUnitKerjaEmailPairs(prev => prev.map((pair, i) =>
+      i === pairIndex ? { ...pair, emails: pair.emails.map((e, j) => j === emailIndex ? value : e) } : pair
+    ));
+  };
+
+  const addEmailToPair = (pairIndex: number) => {
+    setUnitKerjaEmailPairs(prev => prev.map((pair, i) =>
+      i === pairIndex ? { ...pair, emails: [...pair.emails, ""] } : pair
+    ));
+  };
+
+  const removeEmailFromPair = (pairIndex: number, emailIndex: number) => {
+    setUnitKerjaEmailPairs(prev => prev.map((pair, i) =>
+      i === pairIndex ? { ...pair, emails: pair.emails.filter((_, j) => j !== emailIndex) } : pair
     ));
   };
 
@@ -282,7 +304,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     for (const field of config.fields) {
       if (field.required) {
         if (field.type === "unit-kerja-email") {
-          const hasEmpty = unitKerjaEmailPairs.some(p => !p.unitKerja.trim() || !p.email.trim());
+          const hasEmpty = unitKerjaEmailPairs.some(p => !p.unitKerja.trim() || p.emails.some(e => !e.trim()));
           if (hasEmpty || unitKerjaEmailPairs.length === 0) {
             newErrors[field.key] = "Setiap unit kerja harus memiliki email PIC";
           }
@@ -316,9 +338,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         if (f.key === "notes") continue;
         if (f.type === "unit-kerja-email") {
           const formatted = unitKerjaEmailPairs
-            .filter(p => p.unitKerja.trim() && p.email.trim())
-            .map(p => `${p.unitKerja} (${p.email})`)
-            .join(", ");
+            .filter(p => p.unitKerja.trim() && p.emails.some(e => e.trim()))
+            .map(p => `${p.unitKerja} (${p.emails.filter(e => e.trim()).join(", ")})`)
+            .join(" || ");
           if (formatted) fields[f.label] = formatted;
           continue;
         }
@@ -399,24 +421,11 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
-            <p className="mt-0.5 text-sm text-gray-400">
-              {contribution.namaMitra} ·{" "}
-              <span className="font-medium text-gray-500">{WORKFLOW_STATE_LABELS[contribution.workflowStatus]}</span>
-            </p>
-          </div>
+          <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {config.toState && (
-          <div className="mx-4 mt-3 rounded-md bg-blue-50 px-3 py-1.5 text-sm text-blue-600">
-            Status akan berubah ke:{" "}
-            <strong>{WORKFLOW_STATE_LABELS[config.toState]}</strong>
-          </div>
-        )}
 
         <div className="space-y-5 px-4 py-3">
           {config.fields.map((field) => (
@@ -584,36 +593,66 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
               })()}
 
               {field.type === "unit-kerja-email" && (
-                <div className="space-y-0">
-                  {unitKerjaEmailPairs.map((pair, index) => {
-                    const isDefault = index === 0;
+                <div className="space-y-3">
+                  {unitKerjaEmailPairs.map((pair, pairIndex) => {
+                    const isDefault = pairIndex === 0;
                     return (
-                      <div key={index}>
-                        {index > 0 && <hr className="my-3 border-gray-100" />}
-                        {!isDefault && <p className="mb-1.5 text-xs font-medium text-gray-500">Unit Kerja Pendukung</p>}
+                      <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-50/50 p-3">
                         <div className="flex items-start gap-2">
-                          <div className="flex-1 space-y-1.5">
-                            <input
-                              type="text"
-                              value={pair.unitKerja}
-                              onChange={(e) => updateUnitKerjaEmailPair(index, 'unitKerja', e.target.value)}
-                              placeholder="Nama unit kerja"
-                              disabled={isDefault}
-                              className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
-                            />
-                            <input
-                              type="email"
-                              value={pair.email}
-                              onChange={(e) => updateUnitKerjaEmailPair(index, 'email', e.target.value)}
-                              placeholder="email PIC"
-                              className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
-                            />
+                          <div className="flex-1">
+                            <div className="mb-3">
+                              <p className="mb-1 text-xs font-medium text-gray-500">Unit Kerja</p>
+                              {isDefault ? (
+                                <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={pair.unitKerja}
+                                  onChange={(e) => updateUnitKerja(pairIndex, e.target.value.toUpperCase())}
+                                  placeholder="NAMA UNIT KERJA"
+                                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm uppercase outline-none focus:border-blue-400"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <p className="mb-1 text-xs font-medium text-gray-500">Email PIC</p>
+                              <div className="space-y-1.5">
+                                {pair.emails.map((email, emailIndex) => (
+                                  <div key={emailIndex} className="flex items-center gap-1.5">
+                                    <input
+                                      type="email"
+                                      value={email}
+                                      onChange={(e) => updateEmail(pairIndex, emailIndex, e.target.value)}
+                                      placeholder={`Email PIC ${emailIndex + 1}`}
+                                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                                    />
+                                    {pair.emails.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeEmailFromPair(pairIndex, emailIndex)}
+                                        className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => addEmailToPair(pairIndex)}
+                                className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                Tambah Email
+                              </button>
+                            </div>
                           </div>
                           {unitKerjaEmailPairs.length > 1 && !isDefault && (
                             <button
                               type="button"
-                              onClick={() => removeUnitKerjaEmailPair(index)}
-                              className="mt-1 text-gray-400 hover:text-red-500"
+                              onClick={() => removeUnitKerjaEmailPair(pairIndex)}
+                              className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -622,15 +661,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       </div>
                     );
                   })}
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={addUnitKerjaEmailPair}
-                      className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-                    >
-                      + Tambah Unit Kerja
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={addUnitKerjaEmailPair}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Tambah Unit Kerja
+                  </button>
                 </div>
               )}
 

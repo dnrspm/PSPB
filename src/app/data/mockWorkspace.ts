@@ -25,7 +25,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "GM Corporate Social Responsibility",
-    unitKerja: "INA Digital Infra",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SMPN 1 Bandung", npsn: "20200001", lokasi: "Jl. Merdeka No. 1, Bandung", linkLokasi: "https://maps.google.com/?q=SMPN+1+Bandung", kontribusi: "Jaringan Internet", estimasiDana: "Rp 750.000.000", catatan: "Instalasi fiber optik untuk 20 titik akses" },
       { name: "SMA 3 Bandung", npsn: "20200002", lokasi: "Jl. Belitung No. 8, Bandung", linkLokasi: "https://maps.google.com/?q=SMA+3+Bandung", kontribusi: "Jaringan Internet", estimasiDana: "Rp 750.000.000", catatan: "Upgrade bandwidth dan WiFi coverage" },
@@ -58,7 +58,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "Yayasan",
     statusMitra: "Aktif",
     jabatan: "Ketua Yayasan",
-    unitKerja: "INA Digital Platform",
+    unitKerja: "Pusdatin",
     topik: "Integrasi SSO Belajar.id untuk Sekolah Binaan",
     infoTambahan: "Menyediakan akses SSO Akun Belajar.id untuk 30 sekolah binaan yayasan di wilayah DKI Jakarta",
     dokumen: [
@@ -91,7 +91,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "CSR Manager",
-    unitKerja: "INA Digital Revit",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SMPN 5 Surabaya", npsn: "20500001", lokasi: "Jl. Kusuma Bangsa No. 5, Surabaya", linkLokasi: "https://maps.google.com/?q=SMPN+5+Surabaya", kontribusi: "Laboratorium", estimasiDana: "Rp 1.400.000.000", catatan: "Laboratorium komputer 30 unit dengan server" },
       { name: "SMPN 12 Surabaya", npsn: "20500002", lokasi: "Jl. Raya Mulyosari, Surabaya", linkLokasi: "https://maps.google.com/?q=SMPN+12+Surabaya", kontribusi: "Laboratorium", estimasiDana: "Rp 1.400.000.000", catatan: "Laboratorium IPA terpadu dengan alat peraga" },
@@ -129,7 +129,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Head of CSR",
-    unitKerja: "INA Digital Edu",
+    unitKerja: "Ditjen GTK",
     topik: "Literasi Numerasi",
     infoTambahan: "Pelatihan literasi dan numerasi untuk 5.000 guru di 50 sekolah mitra binaan Gojek",
     dokumen: [
@@ -163,7 +163,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Manager Corporate Citizenship",
-    unitKerja: "INA Digital Infra",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SDN Serpong 1", npsn: "20600001", lokasi: "Jl. Raya Serpong KM 7, Tangerang Selatan", linkLokasi: "https://maps.google.com/?q=SDN+Serpong+1", kontribusi: "Instalasi Listrik", estimasiDana: "Rp 1.266.666.667", catatan: "Pemasangan panel surya 5 kWp" },
       { name: "SDN Cisauk", npsn: "20600002", lokasi: "Jl. Cisauk Indah, Tangerang", linkLokasi: "https://maps.google.com/?q=SDN+Cisauk", kontribusi: "Instalasi Listrik", estimasiDana: "Rp 1.266.666.667", catatan: "Perluasan jaringan listrik ke 6 ruang kelas" },
@@ -199,7 +199,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Head of Social Impact",
-    unitKerja: "INA Digital Murid",
+    unitKerja: "Pusdatin",
     untukSiapa: "Murid dan Guru",
     jenjangSekolah: "SMK",
     topikMateri: "E-Commerce dan Pemasaran Digital",
@@ -234,7 +234,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Program Director",
-    unitKerja: "INA Digital Revit",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SMPN 1 Balikpapan", npsn: "20700001", lokasi: "Jl. Jenderal Sudirman No. 1, Balikpapan", linkLokasi: "https://maps.google.com/?q=SMPN+1+Balikpapan", kontribusi: "Lapangan", estimasiDana: "Rp 4.250.000.000", catatan: "Renovasi lapangan olahraga multifungsi" },
       { name: "SMA 2 Samarinda", npsn: "20700002", lokasi: "Jl. Pahlawan No. 22, Samarinda", linkLokasi: "https://maps.google.com/?q=SMA+2+Samarinda", kontribusi: "Lapangan", estimasiDana: "Rp 4.250.000.000", catatan: "Pembangunan lapangan basket dan voli standar" },
@@ -269,7 +269,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "CSR & Sustainability Manager",
-    unitKerja: "INA Digital Edu",
+    unitKerja: "Ditjen GTK",
     topik: "Bimbingan Konseling",
     infoTambahan: "Program pelatihan bimbingan konseling untuk 600 kepala sekolah dan guru senior di Sumatera Selatan",
     dokumen: [
@@ -306,7 +306,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "VP Corporate Social Responsibility",
-    unitKerja: "INA Digital Infra",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SMAN 1 Makassar", npsn: "20900001", lokasi: "Jl. Bonto Duri No. 1, Makassar", linkLokasi: "https://maps.google.com/?q=SMAN+1+Makassar", kontribusi: "Jaringan Internet", estimasiDana: "Rp 1.733.333.333", catatan: "Instalasi WiFi 6 coverage seluruh area sekolah" },
       { name: "SMAN 2 Makassar", npsn: "20900002", lokasi: "Jl. Gunung Latimojong, Makassar", linkLokasi: "https://maps.google.com/?q=SMAN+2+Makassar", kontribusi: "Jaringan Internet", estimasiDana: "Rp 1.733.333.333", catatan: "Fiber optik dedicated 100 Mbps" },
@@ -351,7 +351,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Public Affairs Lead",
-    unitKerja: "INA Digital Murid",
+    unitKerja: "Pusdatin",
     untukSiapa: "Murid dan Guru",
     jenjangSekolah: "SMK",
     topikMateri: "Digital Marketing dan E-Commerce",
@@ -390,7 +390,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Head of Public Affairs",
-    unitKerja: "INA Digital Platform",
+    unitKerja: "Pusdatin",
     topik: "Integrasi Layanan Transportasi ke Platform Rumah Pendidikan",
     infoTambahan: "Integrasi layanan Grab untuk mendukung mobilitas guru dan tenaga kependidikan di Jawa Tengah",
     dokumen: [
@@ -428,7 +428,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "CSR Division Head",
-    unitKerja: "INA Digital Revit",
+    unitKerja: "Ditjen PDM",
     sekolahDetail: [
       { name: "SMKN 1 Cimahi", npsn: "21200001", lokasi: "Jl. Raden Demang No. 1, Cimahi", linkLokasi: "https://maps.google.com/?q=SMKN+1+Cimahi", kontribusi: "Toilet", estimasiDana: "Rp 3.900.000.000", catatan: "Renovasi 20 unit toilet siswa standar kebersihan" },
       { name: "SMKN 4 Bandung", npsn: "21200002", lokasi: "Jl. Ciliwung No. 4, Bandung", linkLokasi: "https://maps.google.com/?q=SMKN+4+Bandung", kontribusi: "Toilet", estimasiDana: "Rp 3.900.000.000", catatan: "Pembangunan 15 unit toilet baru ramah disabilitas" },
@@ -471,7 +471,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "CSR Program Manager",
-    unitKerja: "INA Digital Murid",
+    unitKerja: "Pusdatin",
     untukSiapa: "Murid dan Guru",
     jenjangSekolah: "SMP",
     topikMateri: "STEM dan Literasi Digital",
@@ -515,7 +515,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "CSR Director",
-    unitKerja: "INA Digital Edu",
+    unitKerja: "Ditjen GTK",
     topik: "Lainnya (Kesehatan dan Gizi Sekolah)",
     infoTambahan: "Pelatihan kesehatan dan gizi bagi guru serta tenaga kesehatan sekolah di 100 sekolah binaan Indofood",
     dokumen: [
@@ -547,7 +547,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "PT",
     statusMitra: "Aktif",
     jabatan: "Government Relations & Public Policy Lead",
-    unitKerja: "INA Digital Platform",
+    unitKerja: "Pusdatin",
     topik: "Integrasi Google Workspace dengan Belajar.id",
     infoTambahan: "Menyediakan akses Google Workspace for Education untuk 200 sekolah melalui SSO Belajar.id secara nasional",
     dokumen: [
@@ -581,7 +581,7 @@ export const mockContributions: Contribution[] = [
     badanHukum: "Yayasan",
     statusMitra: "Aktif",
     jabatan: "Ketua Yayasan",
-    unitKerja: "INA Digital Ops",
+    unitKerja: "Puslapdik",
     jenisDukungan: "Beasiswa",
     infoTambahan: "Beasiswa pendidikan bagi 500 siswa SMA/SMK kurang mampu di Jawa Timur selama 1 tahun ajaran, mencakup SPP, buku, dan alat tulis",
     dokumen: [
