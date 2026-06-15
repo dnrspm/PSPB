@@ -419,15 +419,15 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3">
+      <div className="flex w-full max-w-md flex-col rounded-xl bg-white shadow-xl max-h-[85vh]">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 shrink-0">
           <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-5 px-4 py-3">
+        <div className="overflow-y-auto px-4 py-3 space-y-5 flex-1 min-h-0">
           {config.fields.map((field) => (
             <div key={field.key}>
               <label className="mb-1 block text-sm font-medium text-gray-600">
@@ -692,7 +692,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           ))}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-3">
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-3 shrink-0">
           <button
             onClick={onClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
