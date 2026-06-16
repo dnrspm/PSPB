@@ -990,17 +990,24 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                           </button>
                         </div>
                         <div className="px-5 py-3 max-h-96 overflow-y-auto">
-                          {c.aktivitas.filter(a => a.fromState === state || a.toState === state).length === 0 && (
-                            <p className="text-sm text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
-                          )}
-                          <div className="space-y-3">
-                            {c.aktivitas
+                          {(() => {
+                            const aktivitasForState = c.aktivitas
                               .filter(a => a.fromState === state || a.toState === state)
-                              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                              .map((log, idx) => (
-                              <ActivityDetailCard key={log.id} log={log} defaultExpanded={idx === 0} isLatestVisit={idx === 0} />
-                            ))}
-                          </div>
+                              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                            const hasCurrentVisitEntry = isPreviouslyVisited && aktivitasForState.some(a => {
+                              const docIds = a.fields?._docIds ? String(a.fields._docIds).split(",").map(s => s.trim()).filter(Boolean) : [];
+                              return docIds.some(id => info.latestVisitDocIds.includes(id));
+                            });
+                            return aktivitasForState.length === 0 ? (
+                              <p className="text-sm text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {aktivitasForState.map((log, idx) => (
+                                  <ActivityDetailCard key={log.id} log={log} defaultExpanded={idx === 0} isLatestVisit={isPreviouslyVisited ? (hasCurrentVisitEntry && idx === 0) : idx === 0} />
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
