@@ -633,7 +633,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                                       value={email}
                                       onChange={(e) => updateEmail(pairIndex, emailIndex, e.target.value)}
                                       placeholder={`Email PIC ${emailIndex + 1}`}
-                                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                                     />
                                     {pair.emails.length > 1 && (
                                       <button
