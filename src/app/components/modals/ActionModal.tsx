@@ -94,7 +94,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     toState: "perjanjian-draft-pks",
     fields: [
       { key: "template", label: "Unduh Template Rencana Kerjasama", type: "download-template" },
-      { key: "fileRencana", label: "Upload Rencana Kerja Sama", type: "file", required: true, multiple: true },
+      { key: "fileRencana", label: "Upload Rencana Kerja Sama", type: "file", required: true },
       { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persetujuan hasil audiensi..." },
     ],
