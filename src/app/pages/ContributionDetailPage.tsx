@@ -406,11 +406,11 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
               <dt className="text-gray-400">Guru</dt>
               <dd className="text-gray-900">{targetPenerima["Guru"]}</dd>
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <dt className="text-gray-400">Satuan Pendidikan</dt>
               <dd className="text-gray-900">{targetPenerima["Satuan Pendidikan"]}</dd>
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <dt className="text-gray-400">Wilayah</dt>
               <dd className="text-gray-900">
                 {(() => {
