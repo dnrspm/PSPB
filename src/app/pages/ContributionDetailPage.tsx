@@ -879,7 +879,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
 
                 <div className="min-w-0 flex-1 pt-0.5">
                   <button
-                    className={`group flex items-center gap-1 text-sm leading-tight cursor-pointer ${
+                    className={`group flex items-center gap-1 text-sm leading-tight cursor-pointer transition-colors duration-200 ${
                     isRejected
                       ? "font-semibold text-red-600 hover:text-red-700"
                       : isPreviouslyVisited && isCurrent
@@ -893,7 +893,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                     onClick={() => setDetailState(detailState === state ? null : state)}
                   >
                     {WORKFLOW_STATE_LABELS[state]}
-                    <ChevronRight className="h-3 w-3 shrink-0 opacity-30 group-hover:opacity-60" />
+                    <ChevronRight className="h-3 w-3 shrink-0 opacity-50 transition-all duration-200 group-hover:opacity-80 group-hover:translate-x-0.5" />
                   </button>
                   {info.dokumenTerkait.length > 0 && (
                     <button
