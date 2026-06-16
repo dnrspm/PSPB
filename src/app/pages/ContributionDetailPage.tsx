@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users } from "lucide-react";
-import { getContributionById } from "../data/mockWorkspace";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload } from "lucide-react";
+import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -32,6 +32,10 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const contribution = id ? getContributionById(id) : undefined;
 
   const handleActionComplete = useCallback(() => {
+    forceRefresh((n) => n + 1);
+  }, []);
+
+  const handleDokumenChange = useCallback(() => {
     forceRefresh((n) => n + 1);
   }, []);
 
@@ -145,7 +149,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "info" && (
               <div className="flex gap-6">
                 <div className="flex-1 max-w-4xl">
-                  <InfoTab contribution={c} />
+                  <InfoTab contribution={c} onDokumenChange={handleDokumenChange} />
                 </div>
                 <div className="w-80 shrink-0">
                   <WorkflowStepsSidebar contribution={c} />
@@ -197,7 +201,7 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
   return null;
 }
 
-function InfoTab({ contribution: c }: { contribution: Contribution }) {
+function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribution; onDokumenChange?: () => void }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -224,7 +228,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
     <div className="max-w-4xl space-y-6">
       {/* Informasi Mitra */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Building2 className="h-4 w-4" /> Informasi Mitra</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Building2 className="h-4 w-4" /> Informasi Mitra</h3>
+        </div>
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
           <div className="sm:col-span-2">
@@ -266,7 +272,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Sekolah (Infrastruktur Digital & Revitalisasi Sekolah) */}
       {isSchoolProgram && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
@@ -319,7 +327,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Platform Digital / Pelatihan GTK */}
       {isPlatformGtk && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
@@ -342,7 +352,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Bahan Ajar Digital */}
       {isBahanAjar && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
@@ -373,7 +385,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Informasi Bantuan – Beragam Dukungan Pendidikan */}
       {isLainnya && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
@@ -396,7 +410,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Target Penerima */}
       {targetPenerima && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Target Penerima</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Target Penerima</h3>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Siswa</dt>
@@ -434,7 +450,9 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
       {/* Unit Kerja dan PIC */}
       {unitKerjaPIC.length > 0 && (
         <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+          </div>
           <div className="space-y-4">
             {unitKerjaPIC.map((item, i) => (
               <div key={i}>
@@ -470,6 +488,106 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
           </div>
         </div>
       )}
+
+      {/* Dokumen */}
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+            <FileText className="h-4 w-4" /> Dokumen
+          </h3>
+          <DocumentUpload contribution={c} onDokumenChange={onDokumenChange} />
+        </div>
+
+        {c.dokumen.length === 0 ? (
+          <p className="text-sm text-gray-400">Belum ada dokumen.</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {c.dokumen.map(doc => (
+              <div key={doc.id} className="flex items-start gap-3 py-2">
+                <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-900 text-sm truncate block">{doc.name}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(doc.uploadedAt)}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                  <a
+                    href={doc.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    Lihat
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = getContributionById(c.id);
+                      if (updated) {
+                        updated.dokumen = updated.dokumen.filter(d => d.id !== doc.id);
+                        updateContribution(updated);
+                        onDokumenChange?.();
+                      }
+                    }}
+                    className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Contribution; onDokumenChange?: () => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newDocs: Document[] = Array.from(files).map((file, idx) => ({
+      id: `doc-${Date.now()}-${idx}`,
+      name: file.name,
+      type: "lainnya" as Document["type"],
+      uploadedAt: new Date(),
+      uploadedBy: "Admin",
+    }));
+
+    const updated = getContributionById(c.id);
+    if (updated) {
+      updated.dokumen = [...updated.dokumen, ...newDocs];
+      updateContribution(updated);
+    }
+    setUploading(false);
+    onDokumenChange?.();
+
+    if (e.target) e.target.value = "";
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="file"
+        multiple
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+        onChange={handleFileChange}
+        className="hidden"
+        id="dokumen-upload-input"
+      />
+      <button
+        type="button"
+        onClick={() => document.getElementById("dokumen-upload-input")?.click()}
+        disabled={uploading}
+        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        {uploading ? "Mengunggah..." : "Upload Dokumen"}
+      </button>
     </div>
   );
 }
