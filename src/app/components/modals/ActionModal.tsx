@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Upload, Calendar, FileText } from "lucide-react";
+import { X, Upload, Calendar, Download, FileText } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
@@ -21,7 +21,7 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -83,7 +83,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Audiensi Terlaksana",
     toState: "audiensi-konfirmasi-lanjut-pks",
     fields: [
-      { key: "file", label: "Notulen & Dokumen Audiensi", type: "file", required: true },
+      { key: "file", label: "Notulen & Dokumen Audiensi", type: "file", required: true, multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil audiensi..." },
     ],
   },
@@ -91,6 +91,9 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Setuju Hasil Audiensi",
     toState: "perjanjian-draft-pks",
     fields: [
+      { key: "template", label: "Unduh Template Rencana Kerjasama", type: "download-template" },
+      { key: "fileRencana", label: "Upload Rencana Kerja Sama", type: "file", required: true, multiple: true },
+      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persetujuan hasil audiensi..." },
     ],
   },
@@ -105,10 +108,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Ajukan Perjanjian ke Biro Hukum",
     toState: "perjanjian-pembahasan-pks",
     fields: [
-      { key: "picEmail", label: "Email PIC Biro Hukum", type: "text", required: true, placeholder: "pic.hukum@pspb.go.id" },
+      { key: "templatePKS", label: "Download Template PKS", type: "download-template" },
+      { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Draft PKS", type: "file", required: true },
-      { key: "fileRencana", label: "Rencana Kerja Sama", type: "file", required: true },
-      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
+      { key: "fileSuratKuasa", label: "Upload Surat Kuasa", type: "file", required: true },
+      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pengajuan PKS..." },
     ],
   },
@@ -460,8 +464,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex w-full max-w-md flex-col rounded-xl bg-white shadow-xl max-h-[85vh]">
-        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 shrink-0">
+      <div className="flex w-full max-w-lg flex-col rounded-xl bg-white shadow-xl max-h-[85vh]">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-5 shrink-0">
           <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
@@ -469,333 +473,406 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         </div>
 
         <div className="overflow-y-auto px-4 py-3 space-y-5 flex-1 min-h-0">
-          {config.fields.map((field) => (
-            <div key={field.key}>
-              <label className="mb-1 block text-sm font-medium text-gray-600">
-                {field.label}
-                {field.required && <span className="ml-0.5 text-red-400">*</span>}
-              </label>
+          {(() => {
+            const renderedFields: React.ReactNode[] = [];
+            for (let i = 0; i < config.fields.length; i++) {
+              const field = config.fields[i];
+              const nextField = config.fields[i + 1];
+              const isDownloadPair = field.type === "download-template" && nextField?.type === "download-template";
 
-              {field.type === "textarea" && (
-                <textarea
-                  rows={3}
-                  value={(values[field.key] as string) || ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
-                />
-              )}
-
-              {field.type === "text" && (
-                <input
-                  type="text"
-                  value={(values[field.key] as string) || ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
-                />
-              )}
-
-              {field.type === "date" && (
-                <div className="relative">
-                  <Calendar className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={(values[field.key] as string) || ""}
-                    onChange={(e) => set(field.key, e.target.value)}
-                    className="w-full rounded-md border border-gray-200 pl-8 pr-3 py-2 text-sm outline-none focus:border-blue-400"
-                  />
-                </div>
-              )}
-
-              {field.type === "select" && field.options && (
-                <select
-                  value={(values[field.key] as string) || ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
-                >
-                  <option value="" disabled>Pilih...</option>
-                  {field.options.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              )}
-
-              {field.type === "select-pic" && (
-                <select
-                  value={(values[field.key] as string) || ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
-                >
-                  <option value="" disabled>Pilih PIC...</option>
-                  {INTERNAL_TEAM.map((u) => (
-                    <option key={u.id} value={u.name}>
-                      {u.name} ({u.role.replace(/-/g, " ")})
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              {field.type === "select-progress" && (
-                <select
-                  value={(values[field.key] as string) || ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
-                >
-                  <option value="" disabled>Pilih progress...</option>
-                  {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
-                    <option key={p} value={String(p)}>{p}%</option>
-                  ))}
-                </select>
-              )}
-
-              {field.type === "file" && !field.multiple && (
-                <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
-                  <Upload className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="text-sm text-gray-400">
-                    {values[field.key] ? (
-                      <span className="text-blue-600 font-medium">{values[field.key] as string}</span>
-                    ) : (
-                      "Pilih file..."
-                    )}
-                  </span>
-                  <button
-                    onClick={() => set(field.key, `${field.label}_${Date.now()}.pdf`)}
-                    className="ml-auto rounded border border-gray-200 bg-white px-2 py-1 text-sm hover:bg-gray-50"
-                  >
-                    Browse
-                  </button>
-                </div>
-              )}
-
-              {field.type === "file" && field.multiple && (
-                <div className="space-y-2">
-                  {(values[field.key] as string || "").split(", ").filter(Boolean).length > 0 && (
-                    <div className="space-y-1.5">
-                      {(values[field.key] as string || "").split(", ").filter(Boolean).map((fname, i) => (
-                        <div key={i} className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                          <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                          <span className="flex-1 truncate text-sm text-gray-700">{fname}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const list = (values[field.key] as string || "").split(", ").filter(Boolean);
-                              list.splice(i, 1);
-                              set(field.key, list.join(", "));
-                            }}
-                            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length === 0) return;
-                      const existing = (values[field.key] as string || "").split(", ").filter(Boolean);
-                      for (const file of files) {
-                        existing.push(file.name);
-                      }
-                      set(field.key, existing.join(", "));
-                      e.target.value = "";
-                    }}
-                    className="hidden"
-                    id={`file-input-${field.key}`}
-                  />
-                  <label
-                    htmlFor={`file-input-${field.key}`}
-                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Pilih file...
-                  </label>
-                </div>
-              )}
-
-              {field.type === "checkbox" && (
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={(values[field.key] as boolean) || false}
-                    onChange={(e) => set(field.key, e.target.checked)}
-                    className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 accent-blue-600"
-                  />
-                  <span className="text-sm text-gray-600">{field.label}</span>
-                </label>
-              )}
-
-              {field.type === "tags" && (() => {
-                const current = (values[field.key] as string) || "";
-                const items = current ? current.split(", ").filter(Boolean) : [];
-                const def = field.defaults || [];
-                return (
-                  <div>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {items.map((item) => {
-                        const isDefault = def.includes(item);
-                        return (
-                          <span
-                            key={item}
-                            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm ${
-                              isDefault
-                                ? "bg-blue-100 text-blue-700 border border-blue-200"
-                                : "bg-gray-100 text-gray-700 border border-gray-200"
-                            }`}
-                          >
-                            {item}
-                            {!isDefault && (
-                              <button
-                                type="button"
-                                onClick={() => removeTag(field.key, item, def)}
-                                className="text-gray-400 hover:text-red-500 leading-none"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        );
-                      })}
-                    </div>
+              if (isDownloadPair) {
+                renderedFields.push(
+                  <div key={field.key} className="-mx-4 px-4 py-3 bg-gray-50 border-b border-gray-200 -mt-3">
                     <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={tagInputs[field.key] || ""}
-                        onChange={(e) => setTagInputs((p) => ({ ...p, [field.key]: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(field.key, def); } }}
-                        placeholder={field.placeholder || "Tambah unit kerja..."}
-                        className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => addTag(field.key, def)}
-                        className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                      >
-                        Tambah
-                      </button>
+                      <div className="flex-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = "#";
+                            link.download = "Template_Rencana_Kerjasama.docx";
+                            link.click();
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
+                        >
+                          <Download className="h-3.5 w-3.5 shrink-0" />
+                          {field.label.replace("Download", "Unduh")}
+                        </button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = "#";
+                            link.download = "Template_Surat_Kuasa.docx";
+                            link.click();
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
+                        >
+                          <Download className="h-3.5 w-3.5 shrink-0" />
+                          {nextField.label.replace("Download", "Unduh")}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
-              })()}
+                i++;
+                continue;
+              }
 
-              {field.type === "unit-kerja-email" && (
-                <div className="space-y-3">
-                  {unitKerjaEmailPairs.map((pair, pairIndex) => {
-                    const isDefault = pairIndex === 0;
-                    const showText = isDefault || field.readonlyUnitKerja;
-                    const usedUnitKerja = unitKerjaEmailPairs
-                      .filter((_, i) => i !== pairIndex)
-                      .map(p => p.unitKerja)
-                      .filter(Boolean);
-                    return (
-                      <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <div className="mb-3">
-                              <p className="mb-1 text-xs font-medium text-gray-500">Unit Kerja</p>
-                              {showText ? (
-                                <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
-                              ) : (
-                                <select
-                                  value={pair.unitKerja}
-                                  onChange={(e) => updateUnitKerja(pairIndex, e.target.value)}
-                                  className={`w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 ${pair.unitKerja ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
-                                >
-                                  <option value="" disabled>Pilih Unit Kerja...</option>
-                                  {UNIT_KERJA_OPTIONS
-                                    .filter(opt => !usedUnitKerja.includes(opt))
-                                    .map((opt) => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
-                            <div>
-                              <p className="mb-1 text-xs font-medium text-gray-500">{field.readonlyUnitKerja ? "Email Satuan Kerja" : "Email Sekretariat Unit Utama"}</p>
-                              <div className="space-y-1.5">
-                                {pair.emails.map((email, emailIndex) => (
-                                  <div key={emailIndex} className="flex items-center gap-1.5">
-                                    <input
-                                      type="email"
-                                      value={email}
-                                      onChange={(e) => updateEmail(pairIndex, emailIndex, e.target.value)}
-                                      placeholder={`Email PIC ${emailIndex + 1}`}
-                                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
-                                    />
-                                    {pair.emails.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => removeEmailFromPair(pairIndex, emailIndex)}
-                                        className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+              renderedFields.push(
+                <div key={field.key}>
+                  {field.type !== "download-template" && (
+                    <label className="mb-1 block text-sm font-medium text-gray-600">
+                      {field.label}
+                      {field.required && <span className="ml-0.5 text-red-400">*</span>}
+                    </label>
+                  )}
+
+                  {field.type === "download-template" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = "#";
+                        link.download = "Template_Rencana_Kerjasama.docx";
+                        link.click();
+                      }}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 truncate"
+                    >
+                      <Download className="h-3.5 w-3.5 shrink-0" />
+                      {field.label.replace("Download", "Unduh")}
+                    </button>
+                  )}
+
+                  {field.type === "textarea" && (
+                    <textarea
+                      rows={3}
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
+                    />
+                  )}
+
+                  {field.type === "text" && (
+                    <input
+                      type="text"
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                    />
+                  )}
+
+                  {field.type === "date" && (
+                    <div className="relative">
+                      <Calendar className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="date"
+                        value={(values[field.key] as string) || ""}
+                        onChange={(e) => set(field.key, e.target.value)}
+                        className="w-full rounded-md border border-gray-200 pl-8 pr-3 py-2 text-sm outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  )}
+
+                  {field.type === "select" && field.options && (
+                    <select
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
+                    >
+                      <option value="" disabled>Pilih...</option>
+                      {field.options.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {field.type === "select-pic" && (
+                    <select
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
+                    >
+                      <option value="" disabled>Pilih PIC...</option>
+                      {INTERNAL_TEAM.map((u) => (
+                        <option key={u.id} value={u.name}>
+                          {u.name} ({u.role.replace(/-/g, " ")})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {field.type === "select-progress" && (
+                    <select
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
+                    >
+                      <option value="" disabled>Pilih progress...</option>
+                      {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                        <option key={p} value={String(p)}>{p}%</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {field.type === "file" && !field.multiple && (
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
+                      <FileText className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="text-sm text-gray-400">
+                        {values[field.key] ? (
+                          <span className="text-sm text-gray-900">{values[field.key] as string}</span>
+                        ) : (
+                          "Format file PDF ukuran max 200kb"
+                        )}
+                      </span>
+                      <button
+                        onClick={() => set(field.key, `${field.label}_${Date.now()}.pdf`)}
+                        className="ml-auto rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                      >
+                        {values[field.key] ? "Ganti" : "Tambah Dokumen"}
+                      </button>
+                    </div>
+                  )}
+
+                  {field.type === "file" && field.multiple && (
+                    <div className="space-y-2">
+                      {(values[field.key] as string || "").split(", ").filter(Boolean).length > 0 && (
+                        <div className="space-y-1.5">
+                          {(values[field.key] as string || "").split(", ").filter(Boolean).map((fname, i) => (
+                            <div key={i} className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
+                              <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                              <span className="flex-1 truncate text-sm text-gray-900">{fname}</span>
                               <button
                                 type="button"
-                                onClick={() => addEmailToPair(pairIndex)}
-                                className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                                onClick={() => {
+                                  const list = (values[field.key] as string || "").split(", ").filter(Boolean);
+                                  list.splice(i, 1);
+                                  set(field.key, list.join(", "));
+                                }}
+                                className="ml-auto rounded-md border border-gray-200 bg-white px-2 py-1 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-500"
                               >
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                Tambah Email
+                                X
                               </button>
                             </div>
-                          </div>
-                          {unitKerjaEmailPairs.length > 1 && !isDefault && !field.readonlyUnitKerja && (
-                            <button
-                              type="button"
-                              onClick={() => removeUnitKerjaEmailPair(pairIndex)}
-                              className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
+                        <FileText className="h-3.5 w-3.5 text-gray-400" />
+                        <span className="text-sm text-gray-400">Format file PDF ukuran max 200kb</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length === 0) return;
+                            const existing = (values[field.key] as string || "").split(", ").filter(Boolean);
+                            for (const file of files) {
+                              existing.push(file.name);
+                            }
+                            set(field.key, existing.join(", "));
+                            e.target.value = "";
+                          }}
+                          className="hidden"
+                          id={`file-input-${field.key}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById(`file-input-${field.key}`)?.click()}
+                          className="ml-auto rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Tambah Dokumen
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {field.type === "checkbox" && (
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(values[field.key] as boolean) || false}
+                        onChange={(e) => set(field.key, e.target.checked)}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 accent-blue-600"
+                      />
+                      <span className="text-sm text-gray-600">{field.label}</span>
+                    </label>
+                  )}
+
+                  {field.type === "tags" && (() => {
+                    const current = (values[field.key] as string) || "";
+                    const items = current ? current.split(", ").filter(Boolean) : [];
+                    const def = field.defaults || [];
+                    return (
+                      <div>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {items.map((item) => {
+                            const isDefault = def.includes(item);
+                            return (
+                              <span
+                                key={item}
+                                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm ${
+                                  isDefault
+                                    ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                    : "bg-gray-100 text-gray-700 border border-gray-200"
+                                }`}
+                              >
+                                {item}
+                                {!isDefault && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTag(field.key, item, def)}
+                                    className="text-gray-400 hover:text-red-500 leading-none"
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={tagInputs[field.key] || ""}
+                            onChange={(e) => setTagInputs((p) => ({ ...p, [field.key]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(field.key, def); } }}
+                            placeholder={field.placeholder || "Tambah unit kerja..."}
+                            className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addTag(field.key, def)}
+                            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                          >
+                            Tambah
+                          </button>
                         </div>
                       </div>
                     );
-                  })}
-                  {!field.readonlyUnitKerja && (
-                    <button
-                      type="button"
-                      onClick={addUnitKerjaEmailPair}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                      Tambah Unit Kerja
-                    </button>
+                  })()}
+
+                  {field.type === "unit-kerja-email" && (
+                    <div className="space-y-3">
+                      {unitKerjaEmailPairs.map((pair, pairIndex) => {
+                        const isDefault = pairIndex === 0;
+                        const showText = isDefault || field.readonlyUnitKerja;
+                        const usedUnitKerja = unitKerjaEmailPairs
+                          .filter((_, i) => i !== pairIndex)
+                          .map(p => p.unitKerja)
+                          .filter(Boolean);
+                        return (
+                          <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1">
+                                <div className="mb-3">
+                                  <p className="mb-1 text-xs font-medium text-gray-500">Unit Kerja</p>
+                                  {showText ? (
+                                    <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
+                                  ) : (
+                                    <select
+                                      value={pair.unitKerja}
+                                      onChange={(e) => updateUnitKerja(pairIndex, e.target.value)}
+                                      className={`w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 ${pair.unitKerja ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
+                                    >
+                                      <option value="" disabled>Pilih Unit Kerja...</option>
+                                      {UNIT_KERJA_OPTIONS
+                                        .filter(opt => !usedUnitKerja.includes(opt))
+                                        .map((opt) => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="mb-1 text-xs font-medium text-gray-500">{field.readonlyUnitKerja ? "Email Satuan Kerja" : "Email Sekretariat Unit Utama"}</p>
+                                  <div className="space-y-1.5">
+                                    {pair.emails.map((email, emailIndex) => (
+                                      <div key={emailIndex} className="flex items-center gap-1.5">
+                                        <input
+                                          type="email"
+                                          value={email}
+                                          onChange={(e) => updateEmail(pairIndex, emailIndex, e.target.value)}
+                                          placeholder={`Email PIC ${emailIndex + 1}`}
+                                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                                        />
+                                        {pair.emails.length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeEmailFromPair(pairIndex, emailIndex)}
+                                            className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => addEmailToPair(pairIndex)}
+                                    className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                                  >
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                    Tambah Email
+                                  </button>
+                                </div>
+                              </div>
+                              {unitKerjaEmailPairs.length > 1 && !isDefault && !field.readonlyUnitKerja && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeUnitKerjaEmailPair(pairIndex)}
+                                  className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {!field.readonlyUnitKerja && (
+                        <button
+                          type="button"
+                          onClick={addUnitKerjaEmailPair}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                          Tambah Unit Kerja
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {field.type === "multi-email" && (
+                    <div>
+                      <textarea
+                        rows={3}
+                        value={(values[field.key] as string) || ""}
+                        onChange={(e) => set(field.key, e.target.value)}
+                        placeholder={field.placeholder || "pic1@pspb.go.id, pic2@pspb.go.id"}
+                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
+                      />
+                      <p className="mt-1 text-xs text-gray-400">Pisahkan setiap email dengan koma</p>
+                    </div>
+                  )}
+
+                  {errors[field.key] && (
+                    <p className="mt-0.5 text-sm text-red-500">{errors[field.key]}</p>
                   )}
                 </div>
-              )}
-
-              {field.type === "multi-email" && (
-                <div>
-                  <textarea
-                    rows={3}
-                    value={(values[field.key] as string) || ""}
-                    onChange={(e) => set(field.key, e.target.value)}
-                    placeholder={field.placeholder || "pic1@pspb.go.id, pic2@pspb.go.id"}
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">Pisahkan setiap email dengan koma</p>
-                </div>
-              )}
-
-              {errors[field.key] && (
-                <p className="mt-0.5 text-sm text-red-500">{errors[field.key]}</p>
-              )}
-            </div>
-          ))}
+              );
+            }
+            return renderedFields;
+          })()}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-3 shrink-0">
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
           <button
             onClick={onClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
