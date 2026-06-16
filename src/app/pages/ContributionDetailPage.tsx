@@ -698,11 +698,16 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
     const relatedActivities = c.aktivitas.filter(
       a => a.toState === state || a.fromState === state
     );
-    const docIds = relatedActivities
+    const sorted = [...relatedActivities].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    const docIds = sorted
       .flatMap(a => a.fields?._docIds ? a.fields._docIds.split(",") : [])
       .filter(Boolean);
+    const latestVisitDocIds = sorted
+      .find(a => a.fields?._docIds)?.fields?._docIds?.split(",").filter(Boolean) || [];
     const dokumenTerkait = c.dokumen.filter(d => docIds.includes(d.id));
-    return { dokumenTerkait };
+    return { dokumenTerkait, latestVisitDocIds };
   };
 
   return (
@@ -794,10 +799,10 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                               if (!groupedByType[t]) groupedByType[t] = [];
                               groupedByType[t].push(doc);
                             });
+                            const latestDocIdSet = new Set(info.latestVisitDocIds);
                             return Object.values(groupedByType).flatMap(group => {
-                              group.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
-                              return group.map((doc, idx) => {
-                                const isLatest = idx === 0;
+                              return group.map(doc => {
+                                const isLatest = latestDocIdSet.has(doc.id);
                                 return (
                                   <div
                                     key={doc.id}
