@@ -186,8 +186,8 @@ function ActivityDetailCard({ log, defaultExpanded = false }: { log: ActivityLog
         className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-700">{log.action}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-sm font-medium text-gray-700">{log.action}</p>
+          <p className="text-sm text-gray-400 mt-0.5">
             {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}
           </p>
         </div>
@@ -199,7 +199,7 @@ function ActivityDetailCard({ log, defaultExpanded = false }: { log: ActivityLog
       </button>
       {expanded && hasDetails && (
         <div className="border-t border-gray-100 px-3 py-2">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <colgroup><col className="w-44" /><col /></colgroup>
             <tbody>
               {log.fields && Object.entries(log.fields).filter(([k]) => !k.startsWith("_")).map(([label, value]) => {
@@ -966,7 +966,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                         </div>
                         <div className="px-5 py-3 max-h-96 overflow-y-auto">
                           {c.aktivitas.filter(a => a.fromState === state || a.toState === state).length === 0 && (
-                            <p className="text-xs text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
+                            <p className="text-sm text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
                           )}
                           <div className="space-y-3">
                             {c.aktivitas
