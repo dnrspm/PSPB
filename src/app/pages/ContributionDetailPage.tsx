@@ -493,7 +493,7 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-            <FileText className="h-4 w-4" /> Dokumen
+            <FileText className="h-4 w-4" /> Dokumen Pendukung Lainnya
           </h3>
           <DocumentUpload contribution={c} onDokumenChange={onDokumenChange} />
         </div>
@@ -516,7 +516,11 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
               </a>
             </div>
           </div>
-          {c.dokumen.filter(d => d.type !== "proposal").map(doc => (
+          {(() => {
+            const actionDocIds = new Set(
+              c.aktivitas.flatMap(a => a.fields?._docIds ? a.fields._docIds.split(",") : [])
+            );
+            return c.dokumen.filter(d => d.type !== "proposal" && !actionDocIds.has(d.id)).map(doc => (
             <div key={doc.id} className="flex items-start gap-3 py-2">
               <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -548,7 +552,8 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
                 </button>
               </div>
             </div>
-          ))}
+          ));
+        })()}
         </div>
       </div>
     </div>
