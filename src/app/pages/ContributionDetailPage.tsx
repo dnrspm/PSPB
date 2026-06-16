@@ -204,7 +204,17 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
               <tbody>
                 {log.fields && Object.entries(log.fields).filter(([k]) => !k.startsWith("_")).flatMap(([label, value]) => {
                   const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report|rencana/i.test(label);
-                  const items = String(value).split(",").map(v => v.trim()).filter(Boolean);
+                  const rawItems = String(value).split(/\s*\|\|\s*/);
+                  const items: string[] = [];
+                  for (const r of rawItems) {
+                    const t = r.trim();
+                    if (!t) continue;
+                    if (!t.includes("(") && t.includes(",")) {
+                      items.push(...t.split(",").map(s => s.trim()).filter(Boolean));
+                    } else {
+                      items.push(t);
+                    }
+                  }
                   return items.length > 1 ? items.map((item, vi) => (
                     <tr key={`${label}-${vi}`}>
                       <td className="whitespace-nowrap pr-3 pb-1.5 align-top font-medium text-gray-400">{vi === 0 ? label : ""}</td>
