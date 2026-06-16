@@ -879,7 +879,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
 
                 <div className="min-w-0 flex-1 pt-0.5">
                   <button
-                    className={`group flex items-center gap-1 text-sm leading-tight whitespace-nowrap cursor-pointer transition-colors duration-200 ${
+                    className={`group flex items-center gap-1 text-[14px] leading-tight whitespace-nowrap cursor-pointer transition-colors duration-200 ${
                     isRejected
                       ? "font-semibold text-red-600 hover:text-red-700"
                       : isPreviouslyVisited && isCurrent
@@ -888,11 +888,11 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                           ? "font-semibold text-blue-700 hover:text-blue-800"
                           : isPast || isPastRejected
                             ? "font-medium text-gray-600 hover:text-gray-800"
-                            : "font-normal text-gray-400 hover:text-gray-600"
+                            : "font-medium text-gray-400 hover:text-gray-600"
                   }`}
                     onClick={() => setDetailState(detailState === state ? null : state)}
                   >
-                    <span className="truncate">{WORKFLOW_STATE_LABELS[state]}</span>
+                    <span className="truncate" style={{ fontSize: '14px', fontWeight: isCurrent ? 600 : 400 }}>{WORKFLOW_STATE_LABELS[state]}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 opacity-70 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5" />
                   </button>
                   {info.dokumenTerkait.length > 0 && (
