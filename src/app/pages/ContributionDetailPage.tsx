@@ -695,6 +695,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
     : undefined;
 
   const getStepInfo = (state: WorkflowState) => {
+    const currentIdx = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
+    const stateIdx = HAPPY_FLOW.indexOf(state);
     const allSorted = [...c.aktivitas].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
@@ -704,7 +706,9 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
       .filter(Boolean);
     const dokumenTerkait = c.dokumen.filter(d => allLinkedDocIds.includes(d.id));
     let latestVisitDocIds: string[];
-    if (c.workflowStatus === state) {
+    if (currentIdx >= 0 && stateIdx > currentIdx) {
+      latestVisitDocIds = [];
+    } else if (c.workflowStatus === state) {
       const latestReentryIndex = allSorted.findIndex(a => a.fromState !== state);
       const currentVisitEntries = latestReentryIndex === -1
         ? allSorted
