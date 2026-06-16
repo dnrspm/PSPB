@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -33,6 +33,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("info");
+  const [showTabs, setShowTabs] = useState(false);
   const [, forceRefresh] = useState(0);
   const [activeAction, setActiveAction] = useState<WorkflowAction | null>(null);
 
@@ -129,30 +130,32 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-100 bg-white px-6">
-        <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "text-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
-              )}
-            </button>
-          ))}
+      {showTabs && (
+        <div className="border-b border-gray-100 bg-white px-6">
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? "text-blue-600"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tab Content */}
       <div className="flex-1 min-h-0 overflow-y-auto bg-[#fafafa]">
-        <div className="p-6">
+          <div className="p-6">
             {activeTab === "info" && (
               <div className="flex gap-6">
                 <div className="flex-1 max-w-4xl">
@@ -171,6 +174,21 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
           </div>
         </div>
+
+      {/* Floating toggle button */}
+      <div className="fixed bottom-5 right-5 z-50 group">
+        <button
+          onClick={() => setShowTabs((v) => !v)}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg hover:bg-gray-700 transition-colors"
+        >
+          {showTabs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
+        <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <div className="rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white whitespace-nowrap shadow-md">
+            Demo (show/hide) tab
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
