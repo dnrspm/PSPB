@@ -601,7 +601,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       .map(p => p.unitKerja)
                       .filter(Boolean);
                     return (
-                      <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-50/50 p-3">
+                      <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-100 p-3">
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
                             <div className="mb-3">
