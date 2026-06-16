@@ -695,18 +695,29 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
     : undefined;
 
   const getStepInfo = (state: WorkflowState) => {
-    const relatedActivities = c.aktivitas.filter(
-      a => a.toState === state || a.fromState === state
-    );
-    const sorted = [...relatedActivities].sort(
+    const allSorted = [...c.aktivitas].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-    const docIds = sorted
+    const allLinkedDocIds = allSorted
+      .filter(a => a.fromState === state || a.toState === state)
       .flatMap(a => a.fields?._docIds ? a.fields._docIds.split(",") : [])
       .filter(Boolean);
-    const latestVisitDocIds = sorted
-      .find(a => a.fields?._docIds)?.fields?._docIds?.split(",").filter(Boolean) || [];
-    const dokumenTerkait = c.dokumen.filter(d => docIds.includes(d.id));
+    const dokumenTerkait = c.dokumen.filter(d => allLinkedDocIds.includes(d.id));
+    let latestVisitDocIds: string[];
+    if (c.workflowStatus === state) {
+      const latestReentryIndex = allSorted.findIndex(a => a.fromState !== state);
+      const currentVisitEntries = latestReentryIndex === -1
+        ? allSorted
+        : allSorted.slice(0, latestReentryIndex);
+      latestVisitDocIds = currentVisitEntries
+        .filter(a => a.fromState === state)
+        .flatMap(a => a.fields?._docIds ? a.fields._docIds.split(",") : [])
+        .filter(Boolean);
+    } else {
+      const stateEntries = allSorted.filter(a => a.fromState === state || a.toState === state);
+      latestVisitDocIds = stateEntries
+        .find(a => a.fields?._docIds)?.fields?._docIds?.split(",").filter(Boolean) || [];
+    }
     return { dokumenTerkait, latestVisitDocIds };
   };
 
