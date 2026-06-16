@@ -844,7 +844,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
-            const isPreviouslyVisited = currentIndex >= 0 && i >= currentIndex && i <= maxReachedIdx && (maxReachedIdx > currentIndex || hasReentryMarker);
+            const stateHasAktivitas = c.aktivitas.some(a => a.fromState === state || a.toState === state);
+            const isPreviouslyVisited = currentIndex >= 0 && i >= currentIndex && i <= maxReachedIdx && (maxReachedIdx > currentIndex || hasReentryMarker) && stateHasAktivitas;
             const rejectedIndex = rejectedState ? HAPPY_FLOW.indexOf(rejectedState) : -1;
             const isRejected = rejectedIndex >= 0 && i === rejectedIndex;
             const isPastRejected = rejectedIndex >= 0 && i < rejectedIndex;
