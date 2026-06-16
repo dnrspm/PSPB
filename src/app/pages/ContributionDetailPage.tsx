@@ -165,11 +165,11 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
 /* ────────────── Informasi Tab ────────────── */
 
-function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
+function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: string = "Unit Kerja dan PIC"): Array<{ unitKerja: string; emails: string[] }> {
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const fields = aktivitas[i].fields;
     if (!fields) continue;
-    const raw = fields["Unit Kerja dan PIC"];
+    const raw = fields[fieldKey];
     if (!raw) continue;
     const result: Array<{ unitKerja: string; emails: string[] }> = [];
     const regex = /([^(]+)\(([^)]*)\)/g;
@@ -190,14 +190,20 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
   const isBahanAjar = c.program === "Bahan Ajar Digital";
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
   const unitKerjaPIC = useMemo(() => {
-    const parsed = parseUnitKerjaPIC(c.aktivitas);
-    const grouped: Record<string, string[]> = {};
-    for (const item of parsed) {
-      const key = item.unitKerja.toUpperCase();
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(...item.emails);
-    }
-    return Object.entries(grouped).map(([unitKerja, emails]) => ({ unitKerja, emails }));
+    const parsed1 = parseUnitKerjaPIC(c.aktivitas, "Unit Kerja dan PIC");
+    const parsed2 = parseUnitKerjaPIC(c.aktivitas, "Email Satuan Kerja");
+    const allKeys = new Set<string>();
+    parsed1.forEach(p => allKeys.add(p.unitKerja.toUpperCase()));
+    parsed2.forEach(p => allKeys.add(p.unitKerja.toUpperCase()));
+    return Array.from(allKeys).map(key => {
+      const from1 = parsed1.find(p => p.unitKerja.toUpperCase() === key);
+      const from2 = parsed2.find(p => p.unitKerja.toUpperCase() === key);
+      return {
+        unitKerja: from1?.unitKerja || from2?.unitKerja || key,
+        emailsSekretariat: from1?.emails || [],
+        emailsSatuanKerja: from2?.emails || [],
+      };
+    });
   }, [c.aktivitas]);
 
   return (
@@ -413,19 +419,31 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
             {unitKerjaPIC.map((item, i) => (
               <div key={i}>
                 {i > 0 && <hr className="mb-4 border-gray-100" />}
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
                   <div>
                     <dt className="text-gray-400">Unit Kerja</dt>
                     <dd className="mt-0.5 font-medium text-gray-900 text-sm">{item.unitKerja}</dd>
                   </div>
-                  <div>
-                    <dt className="text-gray-400">Email PIC</dt>
-                    <dd className="mt-0.5 text-gray-900 text-sm">
-                      {item.emails.map((email, j) => (
-                        <span key={j} className="text-sm">{email}{j < item.emails.length - 1 && <br />}</span>
-                      ))}
-                    </dd>
-                  </div>
+                  {item.emailsSekretariat.length > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Sekretariat Unit Utama</dt>
+                      <dd className="mt-0.5 text-gray-900 text-sm">
+                        {item.emailsSekretariat.map((email, j) => (
+                          <span key={j} className="text-sm">{email}{j < item.emailsSekretariat.length - 1 && <br />}</span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                  {item.emailsSatuanKerja.length > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Satuan Kerja</dt>
+                      <dd className="mt-0.5 text-gray-900 text-sm">
+                        {item.emailsSatuanKerja.map((email, j) => (
+                          <span key={j} className="text-sm">{email}{j < item.emailsSatuanKerja.length - 1 && <br />}</span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
               </div>
             ))}

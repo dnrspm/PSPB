@@ -73,7 +73,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Jadwalkan Audiensi",
     toState: "audiensi-terjadwal",
     fields: [
-      { key: "unitKerjaEmail", label: "Email PIC Satuan Kerja", type: "unit-kerja-email", required: true, readonlyUnitKerja: true },
+      { key: "unitKerjaEmail", label: "Email Satuan Kerja", type: "unit-kerja-email", required: true, readonlyUnitKerja: true },
       { key: "tanggal", label: "Tanggal Audiensi", type: "date", required: true, placeholder: "YYYY-MM-DD" },
       { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true, multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penjadwalan..." },
@@ -697,7 +697,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
                             <div className="mb-3">
-                              <p className="mb-1 text-xs font-medium text-gray-500">Satuan Kerja</p>
+                              <p className="mb-1 text-xs font-medium text-gray-500">Unit Kerja</p>
                               {showText ? (
                                 <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
                               ) : (
@@ -716,7 +716,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                               )}
                             </div>
                             <div>
-                              <p className="mb-1 text-xs font-medium text-gray-500">Email PIC</p>
+                              <p className="mb-1 text-xs font-medium text-gray-500">{field.readonlyUnitKerja ? "Email Satuan Kerja" : "Email Sekretariat Unit Utama"}</p>
                               <div className="space-y-1.5">
                                 {pair.emails.map((email, emailIndex) => (
                                   <div key={emailIndex} className="flex items-center gap-1.5">
