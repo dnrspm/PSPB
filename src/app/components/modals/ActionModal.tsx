@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Upload, Calendar } from "lucide-react";
+import { X, Upload, Calendar, FileText } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
@@ -26,6 +26,27 @@ interface FieldConfig {
   placeholder?: string;
   options?: { value: string; label: string }[];
   defaults?: string[];
+  readonlyUnitKerja?: boolean;
+  multiple?: boolean;
+}
+
+function parseUnitKerjaFromActivity(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
+  for (let i = aktivitas.length - 1; i >= 0; i--) {
+    const fields = aktivitas[i].fields;
+    if (!fields) continue;
+    const raw = fields["Unit Kerja dan PIC"];
+    if (!raw) continue;
+    const result: Array<{ unitKerja: string; emails: string[] }> = [];
+    const regex = /([^(]+)\(([^)]*)\)/g;
+    let match;
+    while ((match = regex.exec(raw)) !== null) {
+      const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "").trim();
+      const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
+      if (unitKerja) result.push({ unitKerja, emails });
+    }
+    return result;
+  }
+  return [];
 }
 
 const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
@@ -52,13 +73,9 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Jadwalkan Audiensi",
     toState: "audiensi-terjadwal",
     fields: [
-      { key: "satuanKerja", label: "Satuan Kerja & Biro Hukum", type: "select", required: true, options: [
-        { value: "pusat-dir", label: "Pusat / Direktorat / Eselon II" },
-        { value: "biro-hukum", label: "Biro Hukum" },
-        { value: "keduanya", label: "Pusat / Direktorat / Eselon II & Biro Hukum" },
-      ]},
+      { key: "unitKerjaEmail", label: "Email PIC Satuan Kerja", type: "unit-kerja-email", required: true, readonlyUnitKerja: true },
       { key: "tanggal", label: "Tanggal Audiensi", type: "date", required: true, placeholder: "YYYY-MM-DD" },
-      { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true },
+      { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true, multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penjadwalan..." },
     ],
   },
@@ -220,6 +237,20 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
     if (!config) return [];
     const field = config.fields.find(f => f.type === "unit-kerja-email");
+    if (!field) return [];
+
+    if (action === "jadwalkan-audiensi") {
+      const result: Array<{ unitKerja: string; emails: string[] }> = [];
+      const fromActivity = parseUnitKerjaFromActivity(contribution.aktivitas);
+      if (fromActivity.length > 0) {
+        result.push(...fromActivity.map(p => ({ unitKerja: p.unitKerja, emails: [""] })));
+      } else if (contribution.unitKerja) {
+        result.push({ unitKerja: contribution.unitKerja, emails: [""] });
+      }
+      result.push({ unitKerja: "Biro Hukum", emails: [""] });
+      return result;
+    }
+
     let defaultUnitKerja = PROGRAM_UNIT_KERJA_DEFAULTS[contribution.program];
     if (!defaultUnitKerja && contribution.program === "Kebutuhan Pendidikan Lainnya" && contribution.paketBantuan) {
       defaultUnitKerja = SUB_TYPE_UNIT_KERJA_MAP[contribution.paketBantuan] || "";
@@ -350,15 +381,25 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
       }
       const newDocs = config.fields
         .filter(f => f.type === "file" && values[f.key])
-        .map(f => {
+        .flatMap(f => {
           const docType = FILE_DOC_TYPE[f.key]?.(action) || "lainnya";
-          return {
+          if (f.multiple) {
+            const fnames = (values[f.key] as string).split(", ").filter(Boolean);
+            return fnames.map(name => ({
+              id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              name,
+              type: docType as Document["type"],
+              uploadedAt: now,
+              uploadedBy: currentUser.name,
+            }));
+          }
+          return [{
             id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             name: `${f.label}_${now.toISOString().slice(0, 10)}.pdf`,
             type: docType as Document["type"],
             uploadedAt: now,
             uploadedBy: currentUser.name,
-          };
+          }];
         });
 
       const newDocIds = newDocs.map(d => d.id);
@@ -508,7 +549,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 </select>
               )}
 
-              {field.type === "file" && (
+              {field.type === "file" && !field.multiple && (
                 <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
                   <Upload className="h-3.5 w-3.5 text-gray-400" />
                   <span className="text-sm text-gray-400">
@@ -524,6 +565,56 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   >
                     Browse
                   </button>
+                </div>
+              )}
+
+              {field.type === "file" && field.multiple && (
+                <div className="space-y-2">
+                  {(values[field.key] as string || "").split(", ").filter(Boolean).length > 0 && (
+                    <div className="space-y-1.5">
+                      {(values[field.key] as string || "").split(", ").filter(Boolean).map((fname, i) => (
+                        <div key={i} className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                          <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                          <span className="flex-1 truncate text-sm text-gray-700">{fname}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = (values[field.key] as string || "").split(", ").filter(Boolean);
+                              list.splice(i, 1);
+                              set(field.key, list.join(", "));
+                            }}
+                            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length === 0) return;
+                      const existing = (values[field.key] as string || "").split(", ").filter(Boolean);
+                      for (const file of files) {
+                        existing.push(file.name);
+                      }
+                      set(field.key, existing.join(", "));
+                      e.target.value = "";
+                    }}
+                    className="hidden"
+                    id={`file-input-${field.key}`}
+                  />
+                  <label
+                    htmlFor={`file-input-${field.key}`}
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Pilih file...
+                  </label>
                 </div>
               )}
 
@@ -596,6 +687,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <div className="space-y-3">
                   {unitKerjaEmailPairs.map((pair, pairIndex) => {
                     const isDefault = pairIndex === 0;
+                    const showText = isDefault || field.readonlyUnitKerja;
                     const usedUnitKerja = unitKerjaEmailPairs
                       .filter((_, i) => i !== pairIndex)
                       .map(p => p.unitKerja)
@@ -605,8 +697,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
                             <div className="mb-3">
-                              <p className="mb-1 text-xs font-medium text-gray-500">Unit Kerja</p>
-                              {isDefault ? (
+                              <p className="mb-1 text-xs font-medium text-gray-500">Satuan Kerja</p>
+                              {showText ? (
                                 <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
                               ) : (
                                 <select
@@ -657,7 +749,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                               </button>
                             </div>
                           </div>
-                          {unitKerjaEmailPairs.length > 1 && !isDefault && (
+                          {unitKerjaEmailPairs.length > 1 && !isDefault && !field.readonlyUnitKerja && (
                             <button
                               type="button"
                               onClick={() => removeUnitKerjaEmailPair(pairIndex)}
@@ -670,14 +762,16 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       </div>
                     );
                   })}
-                  <button
-                    type="button"
-                    onClick={addUnitKerjaEmailPair}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Tambah Unit Kerja
-                  </button>
+                  {!field.readonlyUnitKerja && (
+                    <button
+                      type="button"
+                      onClick={addUnitKerjaEmailPair}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Tambah Unit Kerja
+                    </button>
+                  )}
                 </div>
               )}
 

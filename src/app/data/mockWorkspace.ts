@@ -66,7 +66,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a002", timestamp: d(10), actor: "Sri Wahyuni", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a003", timestamp: d(7), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", notes: "Dilanjutkan ke audiensi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk" },
+      { id: "a003", timestamp: d(7), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", notes: "Dilanjutkan ke audiensi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk", fields: { "Unit Kerja dan PIC": "Pusdatin (andi@pusdatin.go.id)" } },
     ],
   },
   {
@@ -103,7 +103,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a004", timestamp: d(20), actor: "Hendra Kusuma", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a005", timestamp: d(12), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk" },
+      { id: "a005", timestamp: d(12), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk", fields: { "Unit Kerja dan PIC": "Ditjen PDM (budi@ditjenpdm.go.id)" } },
       { id: "a006", timestamp: d(5), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Jadwalkan Audiensi", fromState: "audiensi-menunggu-jadwal", toState: "audiensi-menunggu-jadwal" },
     ],
   },
@@ -138,7 +138,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a007", timestamp: d(30), actor: "Aditya Putra", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a008", timestamp: d(15), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk" },
+      { id: "a008", timestamp: d(15), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk", fields: { "Unit Kerja dan PIC": "Ditjen GTK (andi@ditjengtk.go.id)" } },
       { id: "a009", timestamp: d(8), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Audiensi Terlaksana", fromState: "audiensi-terjadwal", toState: "audiensi-terjadwal" },
     ],
   },
@@ -556,7 +556,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a029", timestamp: d(35), actor: "Lisa Chen", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a030", timestamp: d(14), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk" },
+      { id: "a030", timestamp: d(14), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk", fields: { "Unit Kerja dan PIC": "Pusdatin (andi@pusdatin.go.id)" } },
       { id: "a031", timestamp: d(10), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Audiensi Terlaksana", fromState: "audiensi-terjadwal", toState: "audiensi-terjadwal" },
     ],
   },
