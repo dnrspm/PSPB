@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -175,8 +175,8 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   );
 }
 
-function ActivityDetailCard({ log }: { log: ActivityLog }) {
-  const [expanded, setExpanded] = useState(false);
+function ActivityDetailCard({ log, defaultExpanded = false }: { log: ActivityLog; defaultExpanded?: boolean }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const hasDetails = (log.fields && Object.keys(log.fields).some(k => !k.startsWith("_"))) || !!log.notes;
 
   return (
@@ -847,8 +847,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p
-                    className={`text-sm leading-tight whitespace-nowrap cursor-pointer ${
+                  <button
+                    className={`flex items-center gap-1 text-sm leading-tight whitespace-nowrap cursor-pointer ${
                     isRejected
                       ? "font-semibold text-red-600"
                       : isPreviouslyVisited && isCurrent
@@ -862,7 +862,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                     onClick={() => setDetailState(detailState === state ? null : state)}
                   >
                     {WORKFLOW_STATE_LABELS[state]}
-                  </p>
+                    <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
+                  </button>
                   {info.dokumenTerkait.length > 0 && (
                     <button
                       onClick={() => setPopupState(popupOpen ? null : state)}
@@ -968,44 +969,13 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                             <p className="text-xs text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
                           )}
                           <div className="space-y-3">
-                            {c.aktivitas.filter(a => a.fromState === state || a.toState === state).map(log => (
-                              <ActivityDetailCard key={log.id} log={log} />
+                            {c.aktivitas
+                              .filter(a => a.fromState === state || a.toState === state)
+                              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                              .map((log, idx) => (
+                              <ActivityDetailCard key={log.id} log={log} defaultExpanded={idx === 0} />
                             ))}
                           </div>
-                          {info.dokumenTerkait.length > 0 && (
-                            <>
-                              <div className="mt-4 mb-2 border-t border-gray-100 pt-4">
-                                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5 mb-3">
-                                  <FileText className="h-3.5 w-3.5" /> Dokumen
-                                </h4>
-                                <div className="space-y-2">
-                                  {[...info.dokumenTerkait].sort((a, b) => {
-                                    const aValid = new Set(info.latestVisitDocIds).has(a.id);
-                                    const bValid = new Set(info.latestVisitDocIds).has(b.id);
-                                    if (aValid !== bValid) return aValid ? -1 : 1;
-                                    return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
-                                  }).map(doc => {
-                                    const isLatest = new Set(info.latestVisitDocIds).has(doc.id);
-                                    return (
-                                      <div key={doc.id} className={`flex items-start gap-3 p-3 rounded-md border ${isLatest ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"}`}>
-                                        <FileText className={`h-5 w-5 shrink-0 mt-0.5 ${isLatest ? "text-blue-400" : "text-gray-400"}`} />
-                                        <div className="flex-1 min-w-0">
-                                          <span className={`text-sm block ${isLatest ? "text-gray-900" : "text-gray-500"}`}>{doc.name}</span>
-                                          <p className="text-xs text-gray-400 mt-0.5">
-                                            {formatDate(doc.uploadedAt)} • <span className={isLatest ? "text-green-700" : "text-gray-400"}>{isLatest ? "Berlaku" : "Tidak Berlaku"}</span>
-                                          </p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 shrink-0 self-center">
-                                          <a href={doc.url || "#"} target="_blank" rel="noopener noreferrer" className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50">Lihat</a>
-                                          <a href={doc.url || "#"} download className="rounded-md border border-gray-900 bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-800">Unduh</a>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
