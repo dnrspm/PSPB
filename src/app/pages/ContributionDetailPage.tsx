@@ -893,7 +893,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                     onClick={() => setDetailState(detailState === state ? null : state)}
                   >
                     {WORKFLOW_STATE_LABELS[state]}
-                    <ChevronRight className="h-3 w-3 shrink-0 opacity-50 transition-all duration-200 group-hover:opacity-80 group-hover:translate-x-0.5" />
+                    <ChevronRight className="h-4 w-4 shrink-0 opacity-70 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5" />
                   </button>
                   {info.dokumenTerkait.length > 0 && (
                     <button
