@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -689,6 +689,7 @@ const HAPPY_FLOW: WorkflowState[] = [
 function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution }) {
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
+  const [popupState, setPopupState] = useState<WorkflowState | null>(null);
 
   const getStepInfo = (state: WorkflowState) => {
     const relatedActivities = c.aktivitas.filter(
@@ -713,6 +714,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
             const info = getStepInfo(state);
+            const popupOpen = popupState === state;
 
             return (
               <div key={state} className="relative flex items-start gap-3 pb-4 last:pb-0">
@@ -746,21 +748,89 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                     {WORKFLOW_STATE_LABELS[state]}
                   </p>
                   {info.dokumenTerkait.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {info.dokumenTerkait.map(doc => (
-                        <a
-                          key={doc.id}
-                          href={doc.url || "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-xs text-blue-500 hover:text-blue-700 hover:underline truncate max-w-56"
-                        >
-                          {doc.name}
-                        </a>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => setPopupState(popupOpen ? null : state)}
+                      className="mt-1 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      <FileText className="h-3 w-3" />
+                      Dokumen ({info.dokumenTerkait.length})
+                    </button>
                   )}
                 </div>
+
+                {popupOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setPopupState(null)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                      <div className="pointer-events-auto w-[520px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+                              <FileText className="h-4 w-4" /> Dokumen
+                            </h3>
+                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                              {WORKFLOW_STATE_LABELS[state]}
+                            </span>
+                          </div>
+                          <button onClick={() => setPopupState(null)} className="text-gray-400 hover:text-gray-600">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="px-5 py-3 max-h-80 overflow-y-auto space-y-2">
+                          {(() => {
+                            const groupedByType: Record<string, Document[]> = {};
+                            info.dokumenTerkait.forEach(doc => {
+                              const t = doc.type;
+                              if (!groupedByType[t]) groupedByType[t] = [];
+                              groupedByType[t].push(doc);
+                            });
+                            return Object.values(groupedByType).flatMap(group => {
+                              group.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+                              return group.map((doc, idx) => {
+                                const isLatest = idx === 0;
+                                return (
+                                  <div
+                                    key={doc.id}
+                                    className={`flex items-start gap-3 p-3 rounded-md border ${
+                                      isLatest ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"
+                                    }`}
+                                  >
+                                    <FileText className={`h-5 w-5 shrink-0 mt-0.5 ${isLatest ? "text-blue-400" : "text-gray-400"}`} />
+                                    <div className="flex-1 min-w-0">
+                                      <span className={`text-sm block ${isLatest ? "text-gray-900" : "text-gray-500"}`}>
+                                        {doc.name}
+                                      </span>
+                                      <p className="text-xs text-gray-400 mt-0.5">
+                                        {formatDate(doc.uploadedAt)} • {new Date(doc.uploadedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} • <span className={isLatest ? "text-green-700" : "text-gray-400"}>{isLatest ? "Berlaku" : "Tidak Berlaku"}</span>
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0 self-center">
+                                      <a
+                                        href={doc.url || "#"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-md border border-gray-900 bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-800"
+                                      >
+                                        Lihat
+                                      </a>
+                                      <a
+                                        href={doc.url || "#"}
+                                        download
+                                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                                      >
+                                        Unduh
+                                      </a>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}
