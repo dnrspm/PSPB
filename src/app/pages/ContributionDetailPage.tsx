@@ -886,7 +886,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                         ? "font-semibold text-blue-700"
                         : isCurrent
                           ? "font-semibold text-blue-700"
-                          : isPast || isPastRejected || isPreviouslyVisited
+                          : isPast || isPastRejected
                             ? "font-medium text-gray-600"
                             : "text-gray-400"
                   }`}
