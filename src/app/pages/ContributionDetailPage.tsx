@@ -850,18 +850,18 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                                     <div className="flex items-center gap-1.5 shrink-0 self-center">
                                       <a
                                         href={doc.url || "#"}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        download
                                         className="rounded-md border border-gray-900 bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-800"
                                       >
-                                        Lihat
+                                        Unduh
                                       </a>
                                       <a
                                         href={doc.url || "#"}
-                                        download
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
                                       >
-                                        Unduh
+                                        Lihat
                                       </a>
                                     </div>
                                   </div>
