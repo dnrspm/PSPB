@@ -156,8 +156,8 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                                 : {isFile ? (
                                   <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                     {String(value).split(",").map((f, fi) => (
-                                      <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
-                                        {f.trim()}
+                                      <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs max-w-[200px]">
+                                        <span className="truncate">{f.trim()}</span>
                                         <ExternalLink className="h-3 w-3 shrink-0" />
                                       </a>
                                     ))}

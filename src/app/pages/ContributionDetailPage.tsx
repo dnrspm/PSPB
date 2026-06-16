@@ -211,8 +211,8 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
                       : {isFile ? (
                         <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
                           {String(value).split(",").map((f, fi) => (
-                            <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
-                              {f.trim()}
+                            <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs max-w-[200px]">
+                              <span className="truncate">{f.trim()}</span>
                               <ExternalLink className="h-3 w-3 shrink-0" />
                             </a>
                           ))}
@@ -727,7 +727,7 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
             {p.dokumentasi.map((doc) => (
               <div key={doc.id} className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-blue-400" />
-                <span className="flex-1 text-gray-700">{doc.name}</span>
+                <span className="flex-1 text-gray-700 truncate">{doc.name}</span>
                 <button className="rounded border border-gray-200 p-1 text-gray-400 hover:text-blue-600">
                   <Eye className="h-3.5 w-3.5" />
                 </button>
@@ -883,7 +883,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                   <>
                     <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setPopupState(null)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-                      <div className="pointer-events-auto w-[520px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
+                      <div className="pointer-events-auto w-[640px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
@@ -916,7 +916,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                                   >
                                     <FileText className={`h-5 w-5 shrink-0 mt-0.5 ${isLatest ? "text-blue-400" : "text-gray-400"}`} />
                                     <div className="flex-1 min-w-0">
-                                      <span className={`text-sm block ${isLatest ? "text-gray-900" : "text-gray-500"}`}>
+                                      <span className={`text-sm block truncate ${isLatest ? "text-gray-900" : "text-gray-500"}`}>
                                         {doc.name}
                                       </span>
                                       <p className="text-xs text-gray-400 mt-0.5">
@@ -954,7 +954,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                   <>
                     <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setDetailState(null)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-                      <div className="pointer-events-auto w-[520px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
+                      <div className="pointer-events-auto w-[640px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
