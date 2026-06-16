@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Upload, Calendar } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
-import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
+import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 
 interface ActionModalProps {
@@ -441,7 +441,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
                 />
               )}
 
@@ -451,7 +451,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                 />
               )}
 
@@ -471,9 +471,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
                 >
-                  <option value="">Pilih...</option>
+                  <option value="" disabled>Pilih...</option>
                   {field.options.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -484,9 +484,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
                 >
-                  <option value="">Pilih PIC...</option>
+                  <option value="" disabled>Pilih PIC...</option>
                   {INTERNAL_TEAM.map((u) => (
                     <option key={u.id} value={u.name}>
                       {u.name} ({u.role.replace(/-/g, " ")})
@@ -499,9 +499,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
                 >
-                  <option value="">Pilih progress...</option>
+                  <option value="" disabled>Pilih progress...</option>
                   {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
                     <option key={p} value={String(p)}>{p}%</option>
                   ))}
@@ -578,7 +578,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                         onChange={(e) => setTagInputs((p) => ({ ...p, [field.key]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(field.key, def); } }}
                         placeholder={field.placeholder || "Tambah unit kerja..."}
-                        className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                        className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                       />
                       <button
                         type="button"
@@ -596,6 +596,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <div className="space-y-3">
                   {unitKerjaEmailPairs.map((pair, pairIndex) => {
                     const isDefault = pairIndex === 0;
+                    const usedUnitKerja = unitKerjaEmailPairs
+                      .filter((_, i) => i !== pairIndex)
+                      .map(p => p.unitKerja)
+                      .filter(Boolean);
                     return (
                       <div key={pairIndex} className="rounded-lg border border-gray-200 bg-gray-50/50 p-3">
                         <div className="flex items-start gap-2">
@@ -605,13 +609,18 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                               {isDefault ? (
                                 <p className="text-sm font-medium text-gray-700 uppercase">{pair.unitKerja}</p>
                               ) : (
-                                <input
-                                  type="text"
+                                <select
                                   value={pair.unitKerja}
-                                  onChange={(e) => updateUnitKerja(pairIndex, e.target.value.toUpperCase())}
-                                  placeholder="NAMA UNIT KERJA"
-                                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm uppercase outline-none focus:border-blue-400"
-                                />
+                                  onChange={(e) => updateUnitKerja(pairIndex, e.target.value)}
+                                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
+                                >
+                                  <option value="" disabled>Pilih Unit Kerja...</option>
+                                  {UNIT_KERJA_OPTIONS
+                                    .filter(opt => !usedUnitKerja.includes(opt))
+                                    .map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
                               )}
                             </div>
                             <div>
@@ -624,7 +633,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                                       value={email}
                                       onChange={(e) => updateEmail(pairIndex, emailIndex, e.target.value)}
                                       placeholder={`Email PIC ${emailIndex + 1}`}
-                                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                                     />
                                     {pair.emails.length > 1 && (
                                       <button
@@ -679,7 +688,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                     value={(values[field.key] as string) || ""}
                     onChange={(e) => set(field.key, e.target.value)}
                     placeholder={field.placeholder || "pic1@pspb.go.id, pic2@pspb.go.id"}
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-gray-400"
                   />
                   <p className="mt-1 text-xs text-gray-400">Pisahkan setiap email dengan koma</p>
                 </div>

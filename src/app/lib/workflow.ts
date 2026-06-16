@@ -252,6 +252,17 @@ export const PROGRAM_UNIT_KERJA_DEFAULTS: Record<string, string> = {
   "Kebutuhan Pendidikan Lainnya": "",
 };
 
+export const UNIT_KERJA_OPTIONS = [
+  "Ditjen PDM",
+  "Ditjen GTK",
+  "Ditjen Dikmen Diksus",
+  "Pusdatin",
+  "Puslapdik",
+  "BKPDM",
+  "BKHM",
+  "BPKS",
+];
+
 export const SUB_TYPE_UNIT_KERJA_MAP: Record<string, string> = {
   "Beasiswa": "Puslapdik",
   "Penanganan Anak Tidak Sekolah": "Ditjen Dikmen Diksus",
