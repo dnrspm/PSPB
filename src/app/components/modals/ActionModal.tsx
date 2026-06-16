@@ -129,8 +129,8 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Perjanjian Telah Disetujui",
     toState: "pelaksanaan-persiapan",
     fields: [
-      { key: "file", label: "PKS Final", type: "file", required: true },
-      { key: "fileRencana", label: "Rencana Kerja Final", type: "file", required: true },
+      { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
+      { key: "fileRencana", label: "Upload rencana kerja final yang siap ditandatangani", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
