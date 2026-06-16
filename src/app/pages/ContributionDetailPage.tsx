@@ -498,45 +498,58 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
           <DocumentUpload contribution={c} onDokumenChange={onDokumenChange} />
         </div>
 
-        {c.dokumen.length === 0 ? (
-          <p className="text-sm text-gray-400">Belum ada dokumen.</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {c.dokumen.map(doc => (
-              <div key={doc.id} className="flex items-start gap-3 py-2">
-                <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-900 text-sm truncate block">{doc.name}</span>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(doc.uploadedAt)}</p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                  <a
-                    href={doc.url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                  >
-                    Lihat
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = getContributionById(c.id);
-                      if (updated) {
-                        updated.dokumen = updated.dokumen.filter(d => d.id !== doc.id);
-                        updateContribution(updated);
-                        onDokumenChange?.();
-                      }
-                    }}
-                    className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
-            ))}
+        <div className="divide-y divide-gray-100">
+          <div className="flex items-start gap-3 py-2">
+            <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 text-sm truncate block">Company Profile {c.namaMitra}</span>
+              <p className="text-xs text-gray-400 mt-0.5">Company Profile</p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+              <a
+                href={c.companyProfile || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Lihat
+              </a>
+            </div>
           </div>
-        )}
+          {c.dokumen.filter(d => d.type !== "proposal").map(doc => (
+            <div key={doc.id} className="flex items-start gap-3 py-2">
+              <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <span className="text-gray-900 text-sm truncate block">{doc.name}</span>
+                <p className="text-xs text-gray-400 mt-0.5">{formatDate(doc.uploadedAt)}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                <a
+                  href={doc.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  Lihat
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = getContributionById(c.id);
+                    if (updated) {
+                      updated.dokumen = updated.dokumen.filter(d => d.id !== doc.id);
+                      updateContribution(updated);
+                      onDokumenChange?.();
+                    }
+                  }}
+                  className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -673,31 +686,19 @@ const HAPPY_FLOW: WorkflowState[] = [
   "selesai",
 ];
 
-function formatDateTime(date: Date): string {
-  return new Date(date).toLocaleDateString("id-ID", {
-    day: "numeric", month: "short", year: "numeric",
-  });
-}
-
 function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution }) {
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
 
-  const getStepInfo = (state: WorkflowState, isCurrent: boolean) => {
-    const toEntry = c.aktivitas.find(a => a.toState === state);
-    const fromEntry = c.aktivitas.find(a => a.fromState === state);
-    const date = toEntry?.timestamp || fromEntry?.timestamp || (isCurrent ? c.lastUpdate : undefined);
-    let dokumenTerkait: Document[] = [];
-    if (state === "kontribusi-masuk") {
-      dokumenTerkait = c.dokumen.filter(d => d.type === "proposal");
-    } else if (state === "perjanjian-finalisasi-pks" && !isCurrent) {
-      const fromEntry = c.aktivitas.find(a => a.fromState === state);
-      if (fromEntry?.fields?._docIds) {
-        const ids = fromEntry.fields._docIds.split(",");
-        dokumenTerkait = c.dokumen.filter(d => ids.includes(d.id));
-      }
-    }
-    return { date, dokumenTerkait };
+  const getStepInfo = (state: WorkflowState) => {
+    const relatedActivities = c.aktivitas.filter(
+      a => a.toState === state || a.fromState === state
+    );
+    const docIds = relatedActivities
+      .flatMap(a => a.fields?._docIds ? a.fields._docIds.split(",") : [])
+      .filter(Boolean);
+    const dokumenTerkait = c.dokumen.filter(d => docIds.includes(d.id));
+    return { dokumenTerkait };
   };
 
   return (
@@ -711,7 +712,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
-            const info = getStepInfo(state, isCurrent);
+            const info = getStepInfo(state);
 
             return (
               <div key={state} className="relative flex items-start gap-3 pb-4 last:pb-0">
@@ -744,15 +745,12 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                   }`}>
                     {WORKFLOW_STATE_LABELS[state]}
                   </p>
-                  {(isPast || isCurrent) && info.date && (
-                    <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(info.date)}</p>
-                  )}
-                  {(isPast || isCurrent) && info.dokumenTerkait.length > 0 && (
+                  {info.dokumenTerkait.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {info.dokumenTerkait.map(doc => (
                         <a
                           key={doc.id}
-                          href="#"
+                          href={doc.url || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block text-xs text-blue-500 hover:text-blue-700 hover:underline truncate max-w-56"
