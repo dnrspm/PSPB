@@ -796,6 +796,11 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
   const rejectedState: WorkflowState | undefined = c.workflowStatus === "tidak-dilanjutkan"
     ? c.aktivitas.find(a => a.action === "Tidak Dilanjutkan")?.fromState
     : undefined;
+  const hasReentryMarker = c.aktivitas.some(a => {
+    const fromIdx = HAPPY_FLOW.indexOf(a.fromState as WorkflowState);
+    const toIdx = HAPPY_FLOW.indexOf(a.toState as WorkflowState);
+    return fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx;
+  });
 
   const getStepInfo = (state: WorkflowState) => {
     const currentIdx = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
@@ -839,7 +844,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
-            const isPreviouslyVisited = currentIndex >= 0 && maxReachedIdx > currentIndex && i >= currentIndex && i <= maxReachedIdx;
+            const isPreviouslyVisited = currentIndex >= 0 && i >= currentIndex && i <= maxReachedIdx && (maxReachedIdx > currentIndex || hasReentryMarker);
             const rejectedIndex = rejectedState ? HAPPY_FLOW.indexOf(rejectedState) : -1;
             const isRejected = rejectedIndex >= 0 && i === rejectedIndex;
             const isPastRejected = rejectedIndex >= 0 && i < rejectedIndex;
