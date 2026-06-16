@@ -175,7 +175,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   );
 }
 
-function ActivityDetailCard({ log, defaultExpanded = false }: { log: ActivityLog; defaultExpanded?: boolean }) {
+function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = false }: { log: ActivityLog; defaultExpanded?: boolean; isLatestVisit?: boolean }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const hasDetails = (log.fields && Object.keys(log.fields).some(k => !k.startsWith("_"))) || !!log.notes;
 
@@ -209,14 +209,21 @@ function ActivityDetailCard({ log, defaultExpanded = false }: { log: ActivityLog
                     <td className="whitespace-nowrap pr-3 pb-1.5 align-top font-medium text-gray-400">{label}</td>
                     <td className="pb-1.5 align-top text-gray-500">
                       : {isFile ? (
-                        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          {String(value).split(",").map((f, fi) => (
-                            <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline">
-                              {f.trim()}
-                              <ExternalLink className="h-3 w-3 shrink-0" />
-                            </a>
-                          ))}
-                        </span>
+                        <div className={`border rounded-md ${isLatestVisit ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"}`}>
+                          <div className="flex flex-col gap-1 px-2.5 py-2">
+                            {String(value).split(",").map((f, fi) => (
+                              <div key={fi} className="flex items-center justify-between">
+                                <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
+                                  {f.trim()}
+                                  <ExternalLink className="h-3 w-3 shrink-0" />
+                                </a>
+                                <span className={`text-[10px] font-medium ml-2 ${isLatestVisit ? "text-green-600" : "text-gray-500"}`}>
+                                  {isLatestVisit ? "Berlaku" : "Tidak Berlaku"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       ) : value}
                     </td>
                   </tr>
@@ -977,7 +984,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                               .filter(a => a.fromState === state || a.toState === state)
                               .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                               .map((log, idx) => (
-                              <ActivityDetailCard key={log.id} log={log} defaultExpanded={idx === 0} />
+                              <ActivityDetailCard key={log.id} log={log} defaultExpanded={idx === 0} isLatestVisit={idx === 0} />
                             ))}
                           </div>
                         </div>

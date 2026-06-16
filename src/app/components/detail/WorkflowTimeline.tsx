@@ -23,6 +23,20 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
   const hasActivityInCurrentState = contribution.aktivitas.some((a) => a.toState === contribution.workflowStatus);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set(contribution.aktivitas.map(a => a.id)));
 
+  // Compute latest aktivitas per state
+  const stateGroups = new Map<string, { id: string; timestamp: Date }[]>();
+  for (const a of contribution.aktivitas) {
+    if (!a.toState) continue;
+    const group = stateGroups.get(a.toState) || [];
+    group.push({ id: a.id, timestamp: a.timestamp });
+    stateGroups.set(a.toState, group);
+  }
+  const latestEntryIds = new Set<string>();
+  for (const [, entries] of stateGroups) {
+    entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (entries.length > 0) latestEntryIds.add(entries[0].id);
+  }
+
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -67,6 +81,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
           <div className="space-y-4">
             {activities.map((log, i) => {
           const stateColors = log.toState ? WORKFLOW_STATE_COLORS[log.toState] : null;
+          const isLatestVisit = latestEntryIds.has(log.id);
 
           return (
             <div key={log.id} className="relative flex gap-4">
@@ -139,14 +154,21 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                               <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>
                               <td className="pb-1 align-top text-gray-500">
                                 : {isFile ? (
-                                  <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                    {String(value).split(",").map((f, fi) => (
-                                      <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline">
-                                        {f.trim()}
-                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                      </a>
-                                    ))}
-                                  </span>
+                                  <div className={`border rounded-md ${isLatestVisit ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"}`}>
+                                    <div className="flex flex-col gap-1 px-2.5 py-2">
+                                      {String(value).split(",").map((f, fi) => (
+                                        <div key={fi} className="flex items-center justify-between">
+                                          <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
+                                            {f.trim()}
+                                            <ExternalLink className="h-3 w-3 shrink-0" />
+                                          </a>
+                                          <span className={`text-[10px] font-medium ml-2 ${isLatestVisit ? "text-green-600" : "text-gray-500"}`}>
+                                            {isLatestVisit ? "Berlaku" : "Tidak Berlaku"}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 ) : value}
                               </td>
                             </tr>
