@@ -179,7 +179,7 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
   const [expanded, setExpanded] = useState(defaultExpanded);
   const hasDetails = (log.fields && Object.keys(log.fields).some(k => !k.startsWith("_"))) || !!log.notes;
 
-const isSystem = log.actor === "Sistem";
+const isSystem = log.action === "Kontribusi masuk";
 
   return (
     <div className={`rounded-md border border-gray-200 ${isSystem ? "bg-white" : isLatestVisit ? "bg-white" : "bg-gray-100"}`}>
@@ -190,7 +190,7 @@ const isSystem = log.actor === "Sistem";
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-700">{log.action}</p>
           <p className="text-sm text-gray-400 mt-0.5">
-            {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}{!isSystem && <><span className="mx-1">·</span><span className={isLatestVisit ? "text-green-600 font-medium" : "text-gray-500"}>{isLatestVisit ? "Berlaku" : "Tidak Berlaku"}</span></>}
+            {isSystem ? <>Oleh: Sistem · {formatDateTime(log.timestamp)}</> : <>{log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}<span className="mx-1">·</span><span className={isLatestVisit ? "text-green-600 font-medium" : "text-gray-500"}>{isLatestVisit ? "Berlaku" : "Tidak Berlaku"}</span></>}
           </p>
         </div>
         {hasDetails && (

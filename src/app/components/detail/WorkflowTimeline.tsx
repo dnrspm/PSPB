@@ -81,7 +81,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
           <div className="space-y-4">
             {activities.map((log, i) => {
           const stateColors = log.toState ? WORKFLOW_STATE_COLORS[log.toState] : null;
-          const isSystem = log.actor === "Sistem";
+          const isSystem = log.action === "Kontribusi masuk";
           const isLatestVisit = latestEntryIds.has(log.id);
 
           return (
