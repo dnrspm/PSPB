@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
-import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../lib/workflow";
+import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
-import type { Contribution, Document, WorkflowAction, WorkflowState } from "../types/contribution";
+import type { Contribution, Document, WorkflowAction, WorkflowState, ActivityLog } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 
 interface ContributionDetailPageProps {
@@ -19,6 +19,13 @@ type Tab = "info" | "timeline" | "pelaksanaan";
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
     day: "numeric", month: "long", year: "numeric",
+  });
+}
+
+function formatDateTime(date: Date): string {
+  return new Date(date).toLocaleString("id-ID", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
@@ -164,7 +171,64 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
           </div>
         </div>
-      </div>
+    </div>
+  );
+}
+
+function ActivityDetailCard({ log }: { log: ActivityLog }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = (log.fields && Object.keys(log.fields).some(k => !k.startsWith("_"))) || !!log.notes;
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-gray-700">{log.action}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}
+          </p>
+        </div>
+        {hasDetails && (
+          <span className="shrink-0 text-gray-300">
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </span>
+        )}
+      </button>
+      {expanded && hasDetails && (
+        <div className="border-t border-gray-100 px-3 py-2">
+          <table className="w-full text-xs">
+            <colgroup><col className="w-44" /><col /></colgroup>
+            <tbody>
+              {log.fields && Object.entries(log.fields).filter(([k]) => !k.startsWith("_")).map(([label, value]) => {
+                const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report|rencana/i.test(label);
+                return (
+                  <tr key={label}>
+                    <td className="whitespace-nowrap pr-3 pb-1.5 align-top font-medium text-gray-400">{label}</td>
+                    <td className="pb-1.5 align-top text-gray-500">
+                      : {isFile ? (
+                        <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline">
+                          {value}
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      ) : value}
+                    </td>
+                  </tr>
+                );
+              })}
+              {log.notes && (
+                <tr>
+                  <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">Keterangan</td>
+                  <td className="pb-1 align-top text-gray-500">: {log.notes}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -695,6 +759,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
+  const [detailState, setDetailState] = useState<WorkflowState | null>(null);
   const maxReachedIdx = Math.max(
     ...c.aktivitas.flatMap(a => {
       const fromIdx = HAPPY_FLOW.indexOf(a.fromState as WorkflowState);
@@ -782,7 +847,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className={`text-sm leading-tight whitespace-nowrap ${
+                  <p
+                    className={`text-sm leading-tight whitespace-nowrap cursor-pointer ${
                     isRejected
                       ? "font-semibold text-red-600"
                       : isPreviouslyVisited && isCurrent
@@ -792,7 +858,9 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                           : isPast || isPastRejected || isPreviouslyVisited
                             ? "font-medium text-gray-600"
                             : "text-gray-400"
-                  }`}>
+                  }`}
+                    onClick={() => setDetailState(detailState === state ? null : state)}
+                  >
                     {WORKFLOW_STATE_LABELS[state]}
                   </p>
                   {info.dokumenTerkait.length > 0 && (
@@ -871,6 +939,73 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                                   );
                                 });
                             })()}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {detailState === state && (
+                  <>
+                    <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setDetailState(null)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                      <div className="pointer-events-auto w-[520px] max-w-[90vw] rounded-lg border border-gray-200 bg-white shadow-xl">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+                              <Route className="h-4 w-4" /> Detail Aktivitas
+                            </h3>
+                            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${WORKFLOW_STATE_COLORS[state]?.bg} ${WORKFLOW_STATE_COLORS[state]?.text} ${WORKFLOW_STATE_COLORS[state]?.border}`}>
+                              {WORKFLOW_STATE_LABELS[state]}
+                            </span>
+                          </div>
+                          <button onClick={() => setDetailState(null)} className="text-gray-400 hover:text-gray-600">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="px-5 py-3 max-h-96 overflow-y-auto">
+                          {c.aktivitas.filter(a => a.fromState === state || a.toState === state).length === 0 && (
+                            <p className="text-xs text-gray-400 py-4 text-center">Belum ada aktivitas di status ini.</p>
+                          )}
+                          <div className="space-y-3">
+                            {c.aktivitas.filter(a => a.fromState === state || a.toState === state).map(log => (
+                              <ActivityDetailCard key={log.id} log={log} />
+                            ))}
+                          </div>
+                          {info.dokumenTerkait.length > 0 && (
+                            <>
+                              <div className="mt-4 mb-2 border-t border-gray-100 pt-4">
+                                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5 mb-3">
+                                  <FileText className="h-3.5 w-3.5" /> Dokumen
+                                </h4>
+                                <div className="space-y-2">
+                                  {[...info.dokumenTerkait].sort((a, b) => {
+                                    const aValid = new Set(info.latestVisitDocIds).has(a.id);
+                                    const bValid = new Set(info.latestVisitDocIds).has(b.id);
+                                    if (aValid !== bValid) return aValid ? -1 : 1;
+                                    return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+                                  }).map(doc => {
+                                    const isLatest = new Set(info.latestVisitDocIds).has(doc.id);
+                                    return (
+                                      <div key={doc.id} className={`flex items-start gap-3 p-3 rounded-md border ${isLatest ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"}`}>
+                                        <FileText className={`h-5 w-5 shrink-0 mt-0.5 ${isLatest ? "text-blue-400" : "text-gray-400"}`} />
+                                        <div className="flex-1 min-w-0">
+                                          <span className={`text-sm block ${isLatest ? "text-gray-900" : "text-gray-500"}`}>{doc.name}</span>
+                                          <p className="text-xs text-gray-400 mt-0.5">
+                                            {formatDate(doc.uploadedAt)} • <span className={isLatest ? "text-green-700" : "text-gray-400"}>{isLatest ? "Berlaku" : "Tidak Berlaku"}</span>
+                                          </p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0 self-center">
+                                          <a href={doc.url || "#"} target="_blank" rel="noopener noreferrer" className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50">Lihat</a>
+                                          <a href={doc.url || "#"} download className="rounded-md border border-gray-900 bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-800">Unduh</a>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
