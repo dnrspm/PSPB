@@ -180,7 +180,7 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
   const hasDetails = (log.fields && Object.keys(log.fields).some(k => !k.startsWith("_"))) || !!log.notes;
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white">
+    <div className={`rounded-md border border-gray-200 ${isLatestVisit ? "bg-white" : "bg-gray-100"}`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"

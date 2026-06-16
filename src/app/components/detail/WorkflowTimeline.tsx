@@ -91,7 +91,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
               </div>
 
               {/* Card */}
-              <div className="flex-1 rounded-lg border border-gray-200 bg-white p-3">
+              <div className={`flex-1 rounded-lg border border-gray-200 ${isLatestVisit ? "bg-white" : "bg-gray-100"} p-3`}>
                 <button
                   onClick={() => toggleCollapse(log.id)}
                   className="flex w-full items-center justify-between text-left"
