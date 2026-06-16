@@ -158,7 +158,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
                 <div className="flex-1 max-w-4xl">
                   <InfoTab contribution={c} onDokumenChange={handleDokumenChange} />
                 </div>
-                <div className="w-80 shrink-0">
+                <div className="w-96 shrink-0">
                   <WorkflowStepsSidebar contribution={c} />
                 </div>
               </div>
