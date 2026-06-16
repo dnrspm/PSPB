@@ -81,6 +81,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
           <div className="space-y-4">
             {activities.map((log, i) => {
           const stateColors = log.toState ? WORKFLOW_STATE_COLORS[log.toState] : null;
+          const isSystem = log.actor === "Sistem";
           const isLatestVisit = latestEntryIds.has(log.id);
 
           return (
@@ -91,7 +92,7 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
               </div>
 
               {/* Card */}
-              <div className={`flex-1 rounded-lg border border-gray-200 ${isLatestVisit ? "bg-white" : "bg-gray-100"} p-3`}>
+              <div className={`flex-1 rounded-lg border border-gray-200 ${isSystem ? "bg-white" : isLatestVisit ? "bg-white" : "bg-gray-100"} p-3`}>
                 <button
                   onClick={() => toggleCollapse(log.id)}
                   className="flex w-full items-center justify-between text-left"
