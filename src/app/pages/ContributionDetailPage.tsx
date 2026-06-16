@@ -690,6 +690,9 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
+  const rejectedState: WorkflowState | undefined = c.workflowStatus === "tidak-dilanjutkan"
+    ? c.aktivitas.find(a => a.action === "Tidak Dilanjutkan")?.fromState
+    : undefined;
 
   const getStepInfo = (state: WorkflowState) => {
     const relatedActivities = c.aktivitas.filter(
@@ -713,37 +716,44 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
+            const rejectedIndex = rejectedState ? HAPPY_FLOW.indexOf(rejectedState) : -1;
+            const isRejected = rejectedIndex >= 0 && i === rejectedIndex;
+            const isPastRejected = rejectedIndex >= 0 && i < rejectedIndex;
             const info = getStepInfo(state);
             const popupOpen = popupState === state;
 
             return (
               <div key={state} className="relative flex items-start gap-3 pb-4 last:pb-0">
-                <div className="relative z-10 mt-0.5 shrink-0">
-                  {isCurrent ? (
-                    <span className="flex h-[18px] w-[18px] items-center justify-center">
-                      <span className="absolute h-[18px] w-[18px] animate-ping rounded-full bg-blue-400 opacity-40" />
-                      <span className="relative h-[18px] w-[18px] rounded-full border-2 border-blue-600 bg-white" />
-                    </span>
-                  ) : isPast ? (
-                    <div className="h-[18px] w-[18px] rounded-full bg-blue-600 flex items-center justify-center">
-                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  ) : isTerminal && i > currentIndex ? (
-                    <div className="h-[18px] w-[18px] rounded-full bg-gray-200" />
-                  ) : (
-                    <div className="h-[18px] w-[18px] rounded-full border-2 border-gray-200 bg-white" />
-                  )}
+                  <div className="relative z-10 mt-0.5 shrink-0">
+                    {isRejected ? (
+                      <div className="h-[18px] w-[18px] rounded-full bg-red-500" />
+                    ) : isCurrent ? (
+                      <span className="flex h-[18px] w-[18px] items-center justify-center">
+                        <span className="absolute h-[18px] w-[18px] animate-ping rounded-full bg-blue-400 opacity-40" />
+                        <span className="relative h-[18px] w-[18px] rounded-full border-2 border-blue-600 bg-white" />
+                      </span>
+                    ) : isPast || isPastRejected ? (
+                      <div className="h-[18px] w-[18px] rounded-full bg-green-600 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    ) : isTerminal && i > currentIndex && c.workflowStatus === "selesai" ? (
+                      <div className="h-[18px] w-[18px] rounded-full bg-gray-200" />
+                    ) : (
+                      <div className="h-[18px] w-[18px] rounded-full border-2 border-gray-200 bg-white" />
+                    )}
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
                   <p className={`text-sm leading-tight whitespace-nowrap ${
-                    isCurrent
-                      ? "font-semibold text-blue-700"
-                      : isPast
-                        ? "font-medium text-gray-600"
-                        : "text-gray-400"
+                    isRejected
+                      ? "font-semibold text-red-600"
+                      : isCurrent
+                        ? "font-semibold text-blue-700"
+                        : isPast || isPastRejected
+                          ? "font-medium text-gray-600"
+                          : "text-gray-400"
                   }`}>
                     {WORKFLOW_STATE_LABELS[state]}
                   </p>
