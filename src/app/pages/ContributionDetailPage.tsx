@@ -888,7 +888,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                           ? "font-semibold text-blue-700"
                           : isPast || isPastRejected
                             ? "font-medium text-gray-600"
-                            : "text-gray-400"
+                            : "font-normal text-gray-400"
                   }`}
                     onClick={() => setDetailState(detailState === state ? null : state)}
                   >
