@@ -619,24 +619,24 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                     </select>
                   )}
 
-                  {field.type === "file" && !field.multiple && (
-                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
-                      <FileText className="h-3.5 w-3.5 text-gray-400" />
-                      <span className="text-sm text-gray-400">
-                        {values[field.key] ? (
-                          <span className="text-sm text-gray-900">{values[field.key] as string}</span>
-                        ) : (
-                          "Format file PDF ukuran max 200kb"
-                        )}
-                      </span>
-                      <button
-                        onClick={() => set(field.key, `${field.label}_${Date.now()}.pdf`)}
-                        className="ml-auto rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                      >
-                        {values[field.key] ? "Ganti" : "Tambah Dokumen"}
-                      </button>
-                    </div>
-                  )}
+                   {field.type === "file" && !field.multiple && (
+                     <div className={`flex items-center gap-2 rounded-md border border-dashed border-gray-200 ${values[field.key] ? 'bg-gray-50' : 'bg-white'} px-3 py-2.5`}>
+                       <FileText className="h-3.5 w-3.5 text-gray-400" />
+                       <span className="text-sm text-gray-400">
+                         {values[field.key] ? (
+                           <span className="text-sm text-gray-900">{values[field.key] as string}</span>
+                         ) : (
+                           "Format file PDF ukuran max 200kb"
+                         )}
+                       </span>
+                       <button
+                         onClick={() => set(field.key, `${field.label}_${Date.now()}.pdf`)}
+                         className="ml-auto rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                       >
+                         {values[field.key] ? "Ganti" : "Tambah Dokumen"}
+                       </button>
+                     </div>
+                   )}
 
                   {field.type === "file" && field.multiple && (
                     <div className="space-y-2">
@@ -653,15 +653,15 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                                   list.splice(i, 1);
                                   set(field.key, list.join(", "));
                                 }}
-                                className="ml-auto rounded-md border border-gray-200 bg-white px-2 py-1 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-500"
+                                className="ml-auto text-gray-400 hover:text-gray-600"
                               >
-                                X
+                                <X className="h-4 w-4" />
                               </button>
                             </div>
                           ))}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2.5">
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-white px-3 py-2.5">
                         <FileText className="h-3.5 w-3.5 text-gray-400" />
                         <span className="text-sm text-gray-400">Format file PDF ukuran max 200kb</span>
                         <input
