@@ -139,15 +139,14 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                               <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>
                               <td className="pb-1 align-top text-gray-500">
                                 : {isFile ? (
-                                  <a
-                                    href={`#`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
-                                  >
-                                    {value}
-                                    <ExternalLink className="h-3 w-3 shrink-0" />
-                                  </a>
+                                  <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                    {String(value).split(",").map((f, fi) => (
+                                      <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline">
+                                        {f.trim()}
+                                        <ExternalLink className="h-3 w-3 shrink-0" />
+                                      </a>
+                                    ))}
+                                  </span>
                                 ) : value}
                               </td>
                             </tr>
