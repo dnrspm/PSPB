@@ -826,16 +826,14 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                         </div>
                         <div className="px-5 py-3 max-h-80 overflow-y-auto space-y-2">
                           {(() => {
-                            const groupedByType: Record<string, Document[]> = {};
-                            info.dokumenTerkait.forEach(doc => {
-                              const t = doc.type;
-                              if (!groupedByType[t]) groupedByType[t] = [];
-                              groupedByType[t].push(doc);
-                            });
                             const latestDocIdSet = new Set(info.latestVisitDocIds);
-                            return Object.values(groupedByType).flatMap(group => {
-                              return group.map(doc => {
-                                const isLatest = latestDocIdSet.has(doc.id);
+                            return [...info.dokumenTerkait].sort((a, b) => {
+                              const aValid = latestDocIdSet.has(a.id);
+                              const bValid = latestDocIdSet.has(b.id);
+                              if (aValid !== bValid) return aValid ? -1 : 1;
+                              return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+                            }).map(doc => {
+                              const isLatest = latestDocIdSet.has(doc.id);
                                 return (
                                   <div
                                     key={doc.id}
@@ -870,10 +868,9 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                                       </a>
                                     </div>
                                   </div>
-                                );
-                              });
-                            });
-                          })()}
+                                  );
+                                });
+                            })()}
                         </div>
                       </div>
                     </div>
