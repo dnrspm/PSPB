@@ -188,7 +188,7 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-700">{log.action}</p>
           <p className="text-sm text-gray-400 mt-0.5">
-            {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)}
+            {log.actor} · {ROLE_LABELS[log.actorRole]} · {formatDateTime(log.timestamp)} · <span className={isLatestVisit ? "text-green-600 font-medium" : "text-gray-500"}>{isLatestVisit ? "Berlaku" : "Tidak Berlaku"}</span>
           </p>
         </div>
         {hasDetails && (
@@ -209,21 +209,14 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
                     <td className="whitespace-nowrap pr-3 pb-1.5 align-top font-medium text-gray-400">{label}</td>
                     <td className="pb-1.5 align-top text-gray-500">
                       : {isFile ? (
-                        <div className={`border rounded-md ${isLatestVisit ? "bg-white border-gray-200" : "bg-gray-100 border-gray-300"}`}>
-                          <div className="flex flex-col gap-1 px-2.5 py-2">
-                            {String(value).split(",").map((f, fi) => (
-                              <div key={fi} className="flex items-center justify-between">
-                                <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
-                                  {f.trim()}
-                                  <ExternalLink className="h-3 w-3 shrink-0" />
-                                </a>
-                                <span className={`text-[10px] font-medium ml-2 ${isLatestVisit ? "text-green-600" : "text-gray-500"}`}>
-                                  {isLatestVisit ? "Berlaku" : "Tidak Berlaku"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          {String(value).split(",").map((f, fi) => (
+                            <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs">
+                              {f.trim()}
+                              <ExternalLink className="h-3 w-3 shrink-0" />
+                            </a>
+                          ))}
+                        </span>
                       ) : value}
                     </td>
                   </tr>
