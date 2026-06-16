@@ -690,6 +690,14 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
+  const maxReachedIdx = Math.max(
+    ...c.aktivitas.flatMap(a => {
+      const fromIdx = HAPPY_FLOW.indexOf(a.fromState as WorkflowState);
+      const toIdx = HAPPY_FLOW.indexOf(a.toState as WorkflowState);
+      return [fromIdx, toIdx];
+    }).filter(idx => idx >= 0),
+    -1
+  );
   const rejectedState: WorkflowState | undefined = c.workflowStatus === "tidak-dilanjutkan"
     ? c.aktivitas.find(a => a.action === "Tidak Dilanjutkan")?.fromState
     : undefined;
@@ -736,6 +744,7 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex;
             const isFuture = currentIndex >= 0 && i > currentIndex;
+            const isPreviouslyVisited = currentIndex >= 0 && maxReachedIdx > currentIndex && i >= currentIndex && i <= maxReachedIdx;
             const rejectedIndex = rejectedState ? HAPPY_FLOW.indexOf(rejectedState) : -1;
             const isRejected = rejectedIndex >= 0 && i === rejectedIndex;
             const isPastRejected = rejectedIndex >= 0 && i < rejectedIndex;
@@ -758,6 +767,8 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
+                    ) : isPreviouslyVisited ? (
+                      <div className="h-[18px] w-[18px] rounded-full bg-gray-200" />
                     ) : isTerminal && i > currentIndex && c.workflowStatus === "selesai" ? (
                       <div className="h-[18px] w-[18px] rounded-full bg-gray-200" />
                     ) : (
@@ -769,11 +780,13 @@ function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution 
                   <p className={`text-sm leading-tight whitespace-nowrap ${
                     isRejected
                       ? "font-semibold text-red-600"
-                      : isCurrent
+                      : isPreviouslyVisited && isCurrent
                         ? "font-semibold text-blue-700"
-                        : isPast || isPastRejected
-                          ? "font-medium text-gray-600"
-                          : "text-gray-400"
+                        : isCurrent
+                          ? "font-semibold text-blue-700"
+                          : isPast || isPastRejected || isPreviouslyVisited
+                            ? "font-medium text-gray-600"
+                            : "text-gray-400"
                   }`}>
                     {WORKFLOW_STATE_LABELS[state]}
                   </p>
