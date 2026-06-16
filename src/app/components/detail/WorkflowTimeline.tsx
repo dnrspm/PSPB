@@ -147,22 +147,31 @@ export function WorkflowTimeline({ contribution }: WorkflowTimelineProps) {
                         <col />
                       </colgroup>
                       <tbody>
-                        {log.fields && Object.entries(log.fields).filter(([label]) => !label.startsWith("_")).map(([label, value]) => {
+                        {log.fields && Object.entries(log.fields).filter(([label]) => !label.startsWith("_")).flatMap(([label, value]) => {
                           const isFile = /dokumen|file|upload|surat|notulen|draft|pks|bast|foto|report|rencana/i.test(label);
-                          return (
+                          const items = String(value).split(",").map(v => v.trim()).filter(Boolean);
+                          return items.length > 1 ? items.map((item, vi) => (
+                            <tr key={`${label}-${vi}`}>
+                              <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{vi === 0 ? label : ""}</td>
+                              <td className="pb-1 align-top text-gray-500">
+                                : {isFile ? (
+                                  <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs max-w-[200px]">
+                                    <span className="truncate">{item}</span>
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                  </a>
+                                ) : item}
+                              </td>
+                            </tr>
+                          )) : (
                             <tr key={label}>
                               <td className="whitespace-nowrap pr-3 pb-1 align-top font-medium text-gray-400">{label}</td>
                               <td className="pb-1 align-top text-gray-500">
                                 : {isFile ? (
-                                  <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                    {String(value).split(",").map((f, fi) => (
-                                      <a key={fi} href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs max-w-[200px]">
-                                        <span className="truncate">{f.trim()}</span>
-                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                      </a>
-                                    ))}
-                                  </span>
-                                ) : value}
+                                  <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-xs max-w-[200px]">
+                                    <span className="truncate">{items[0] || value}</span>
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                  </a>
+                                ) : items[0] || value}
                               </td>
                             </tr>
                           );
