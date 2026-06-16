@@ -8,6 +8,7 @@ import { ActionModal } from "../components/modals/ActionModal";
 import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
 import type { Contribution, Document, WorkflowAction, WorkflowState } from "../types/contribution";
+import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
@@ -184,11 +185,24 @@ function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: strin
   return [];
 }
 
+function getLabelByValue(options: { value: string; label: string }[], value: string): string {
+  return options.find(o => o.value === value)?.label || value;
+}
+
+function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string, string> | null {
+  for (let i = aktivitas.length - 1; i >= 0; i--) {
+    const f = aktivitas[i].fields;
+    if (f && f["Siswa"] && f["Guru"]) return f;
+  }
+  return null;
+}
+
 function InfoTab({ contribution: c }: { contribution: Contribution }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
+  const targetPenerima = useMemo(() => findTargetPenerima(c.aktivitas), [c.aktivitas]);
   const unitKerjaPIC = useMemo(() => {
     const parsed1 = parseUnitKerjaPIC(c.aktivitas, "Unit Kerja dan PIC");
     const parsed2 = parseUnitKerjaPIC(c.aktivitas, "Email Satuan Kerja");
@@ -258,15 +272,7 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
               <dt className="text-gray-400">Paket Dukungan</dt>
               <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
-            <div>
-                <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-900">{c.targetPenerima}</dd>
-            </div>
-            <div>
-                <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-900">{c.wilayah}</dd>
-            </div>
-          </dl>
+            </dl>
 
           {(c.sekolahDetail && c.sekolahDetail.length > 0) && (
             <div className="overflow-x-auto">
@@ -320,14 +326,6 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
               <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
             <div>
-                <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-900">{c.targetPenerima}</dd>
-            </div>
-            <div>
-                <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-900">{c.wilayah}</dd>
-            </div>
-            <div>
               <dt className="text-gray-400">Topik</dt>
               <dd className="text-gray-900">{c.topik || "-"}</dd>
             </div>
@@ -349,14 +347,6 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
             <div>
               <dt className="text-gray-400">Paket Dukungan</dt>
               <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
-            </div>
-            <div>
-                <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-900">{c.targetPenerima}</dd>
-            </div>
-            <div>
-                <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-900">{c.wilayah}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Untuk Siapa</dt>
@@ -393,20 +383,50 @@ function InfoTab({ contribution: c }: { contribution: Contribution }) {
               <dt className="text-gray-400">Pilihan Kontribusi/Topik</dt>
               <dd className="text-gray-900">{c.jenisDukungan || "-"}</dd>
             </div>
-            <div>
-                <dt className="text-gray-400">Target Penerima</dt>
-                <dd className="text-gray-900">{c.targetPenerima}</dd>
-            </div>
-            <div>
-                <dt className="text-gray-400">Wilayah</dt>
-                <dd className="text-gray-900">{c.wilayah}</dd>
-            </div>
             {c.infoTambahan && (
               <div className="sm:col-span-2">
                 <dt className="text-gray-400">Informasi Tambahan</dt>
                 <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
+          </dl>
+        </div>
+      )}
+
+      {/* Target Penerima */}
+      {targetPenerima && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Target Penerima</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Siswa</dt>
+              <dd className="text-gray-900">{targetPenerima["Siswa"]}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Guru</dt>
+              <dd className="text-gray-900">{targetPenerima["Guru"]}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-gray-400">Satuan Pendidikan</dt>
+              <dd className="text-gray-900">{targetPenerima["Satuan Pendidikan"]}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-gray-400">Wilayah</dt>
+              <dd className="text-gray-900">
+                {(() => {
+                  const provLabel = getLabelByValue(PROVINSI_OPTIONS, targetPenerima["Provinsi"] || "");
+                  const kabLabel = getLabelByValue(
+                    KABUPATEN_BY_PROVINSI[targetPenerima["Provinsi"] || ""] || [],
+                    targetPenerima["Kota/Kabupaten"] || ""
+                  );
+                  const parts: string[] = [];
+                  if (kabLabel) parts.push(`Kab. ${kabLabel}`);
+                  if (targetPenerima["Kecamatan"]) parts.push(`Kec. ${targetPenerima["Kecamatan"]}`);
+                  if (targetPenerima["Kelurahan"]) parts.push(`Kel. ${targetPenerima["Kelurahan"]}`);
+                  return parts.length > 0 ? `${provLabel}, ${parts.join(", ")}` : provLabel;
+                })()}
+              </dd>
+            </div>
           </dl>
         </div>
       )}

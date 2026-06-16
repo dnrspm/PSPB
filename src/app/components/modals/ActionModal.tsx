@@ -3,6 +3,7 @@ import { X, Upload, Calendar, Download, FileText } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
+import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 
 interface ActionModalProps {
   action: WorkflowAction;
@@ -21,13 +22,14 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template" | "section-header";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
   defaults?: string[];
   readonlyUnitKerja?: boolean;
   multiple?: boolean;
+  inline?: boolean;
 }
 
 function parseUnitKerjaFromActivity(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
@@ -132,6 +134,14 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
       { key: "fileRencana", label: "Upload rencana kerja final yang siap ditandatangani", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
+      { key: "targetPenerimaHeader", label: "Target Penerima", type: "section-header" },
+      { key: "siswa", label: "Siswa", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
+      { key: "guru", label: "Guru", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan", type: "text", required: true, placeholder: "Nama sekolah" },
+      { key: "provinsi", label: "Provinsi", type: "select", required: true, options: PROVINSI_OPTIONS, inline: true },
+      { key: "kabupaten", label: "Kota/Kabupaten", type: "select", required: true, inline: true },
+      { key: "kelurahan", label: "Kelurahan", type: "text", placeholder: "Nama kelurahan", inline: true },
+      { key: "kecamatan", label: "Kecamatan", type: "text", placeholder: "Nama kecamatan", inline: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
   },
@@ -521,9 +531,65 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 continue;
               }
 
+              if (field.inline && nextField?.inline) {
+                const pairKey = field.key + "-" + nextField.key;
+                const renderInline = (f: FieldConfig) => {
+                  const selectOptions = f.key === "kabupaten"
+                    ? (KABUPATEN_BY_PROVINSI[values.provinsi as string] || [])
+                    : f.options || [];
+                  const isSelectDisabled = f.key === "kabupaten" && !values.provinsi;
+                  return (
+                    <div key={f.key} className="min-w-0">
+                      <label className="mb-1 block text-sm font-medium text-gray-600">
+                        {f.label}
+                        {f.required && <span className="ml-0.5 text-red-400">*</span>}
+                      </label>
+                      {f.type === "text" && (
+                        <input
+                          type="text"
+                          value={(values[f.key] as string) || ""}
+                          onChange={(e) => set(f.key, e.target.value)}
+                          placeholder={f.placeholder}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                        />
+                      )}
+                      {f.type === "select" && (
+                        <select
+                          value={(values[f.key] as string) || ""}
+                          onChange={(e) => {
+                            set(f.key, e.target.value);
+                            if (f.key === "provinsi") set("kabupaten", "");
+                          }}
+                          disabled={isSelectDisabled}
+                          className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[f.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                        >
+                          <option value="" disabled>
+                            {isSelectDisabled ? "Pilih provinsi terlebih dahulu" : "Pilih..."}
+                          </option>
+                          {selectOptions.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      )}
+                      {errors[f.key] && (
+                        <p className="mt-0.5 text-sm text-red-500">{errors[f.key]}</p>
+                      )}
+                    </div>
+                  );
+                };
+                renderedFields.push(
+                  <div key={pairKey} className="grid grid-cols-2 gap-x-4">
+                    {renderInline(field)}
+                    {renderInline(nextField)}
+                  </div>
+                );
+                i++;
+                continue;
+              }
+
               renderedFields.push(
                 <div key={field.key}>
-                  {field.type !== "download-template" && (
+                  {field.type !== "download-template" && field.type !== "section-header" && (
                     <label className="mb-1 block text-sm font-medium text-gray-600">
                       {field.label}
                       {field.required && <span className="ml-0.5 text-red-400">*</span>}
@@ -544,6 +610,12 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       <Download className="h-3.5 w-3.5 shrink-0" />
                       {field.label.replace("Download", "Unduh")}
                     </button>
+                  )}
+
+                  {field.type === "section-header" && (
+                    <div className="-mx-4 px-4 py-2 bg-gray-50 border-y border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700">{field.label}</h4>
+                    </div>
                   )}
 
                   {field.type === "textarea" && (
