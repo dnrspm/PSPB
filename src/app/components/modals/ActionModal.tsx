@@ -471,7 +471,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
+                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
                 >
                   <option value="" disabled>Pilih...</option>
                   {field.options.map((o) => (
@@ -484,7 +484,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
+                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
                 >
                   <option value="" disabled>Pilih PIC...</option>
                   {INTERNAL_TEAM.map((u) => (
@@ -499,7 +499,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 <select
                   value={(values[field.key] as string) || ""}
                   onChange={(e) => set(field.key, e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
+                  className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${values[field.key] ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
                 >
                   <option value="" disabled>Pilih progress...</option>
                   {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
@@ -612,7 +612,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                                 <select
                                   value={pair.unitKerja}
                                   onChange={(e) => updateUnitKerja(pairIndex, e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 text-gray-400 [&_option]:text-gray-900"
+                                  className={`w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 ${pair.unitKerja ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
                                 >
                                   <option value="" disabled>Pilih Unit Kerja...</option>
                                   {UNIT_KERJA_OPTIONS
