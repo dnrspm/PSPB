@@ -106,6 +106,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     { key: "lastUpdate", label: "Last Update" },
+    { key: null, label: "" },
   ];
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -129,7 +130,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
               {headers.map((h) => (
                 <th
                   key={h.label}
-                  className={`bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232] ${h.key ? "cursor-pointer hover:text-gray-600 select-none" : ""}`}
+                  className={`bg-[#F1F1F1] px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wide text-[#323232] ${h.key ? "cursor-pointer hover:text-gray-600 select-none" : ""} ${!h.label ? "w-8" : ""}`}
                   onClick={() => h.key && handleSort(h.key)}
                 >
                   <div className="flex items-center gap-1">
