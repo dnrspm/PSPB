@@ -299,7 +299,7 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                             checked={isChecked}
                             onChange={(e) => setResult(key, e.target.checked)}
                             disabled={readOnly}
-                            className="h-4 w-4 rounded border-gray-300 accent-blue-700 disabled:accent-blue-700 disabled:opacity-90"
+                            className="appearance-none h-4 w-4 rounded border-2 border-gray-300 bg-white bg-center bg-no-repeat disabled:cursor-default checked:border-blue-600 checked:bg-blue-600 checked:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27white%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cpath%20d%3D%27M9%2016.17L4.83%2012l-1.42%201.41L9%2019%2021%207l-1.41-1.41L9%2016.17z%27%2F%3E%3C%2Fsvg%3E')] bg-[length:14px]"
                           />
                           <span className={`text-sm ${readOnly ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>{el.label}</span>
                         </label>
@@ -320,14 +320,14 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                   return (
                     <div key={el.label} className="flex flex-col gap-1.5">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name={aspectKey}
-                          checked={isSelected}
-                          onChange={() => setRadio(aspectKey, el.label)}
-                          disabled={readOnly}
-                          className="h-4 w-4 border-gray-300 accent-blue-700 disabled:accent-blue-700 disabled:opacity-90"
-                        />
+                          <input
+                            type="radio"
+                            name={aspectKey}
+                            checked={isSelected}
+                            onChange={() => setRadio(aspectKey, el.label)}
+                            disabled={readOnly}
+                            className="appearance-none h-4 w-4 rounded-full border-2 border-gray-300 bg-white disabled:cursor-default checked:border-blue-600 checked:bg-[radial-gradient(circle,_#2563eb_45%,_#ffffff_46%)]"
+                          />
                         <span className={`text-sm ${readOnly ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>{el.label}</span>
                       </label>
                       {isSelected && (el.hasNotes || el.notesRequired) && (
