@@ -628,7 +628,7 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
       )}
 
       {/* Verifikasi dan Validasi */}
-      {picBiroKerjasama.length > 0 && c.workflowStatus === "verifikasi-dan-validasi" && (
+      {picBiroKerjasama.length > 0 && (
         <VerifikasiBlock
           picEmails={picBiroKerjasama}
           contribution={c}
