@@ -299,15 +299,11 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                             checked={isChecked}
                             onChange={(e) => setResult(key, e.target.checked)}
                             disabled={readOnly}
-                            className={`appearance-none h-4 w-4 rounded border-2 bg-center bg-no-repeat ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${
-                              readOnly
-                                ? isChecked
-                                  ? 'border-blue-600 bg-blue-600'
-                                  : 'border-gray-200 bg-gray-100'
-                                : isChecked
-                                  ? 'border-blue-600 bg-blue-600'
-                                  : 'border-gray-300 bg-white'
-                            } ${isChecked ? "bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27white%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cpath%20d%3D%27M9%2016.17L4.83%2012l-1.42%201.41L9%2019%2021%207l-1.41-1.41L9%2016.17z%27%2F%3E%3C%2Fsvg%3E')] bg-[length:14px]" : ''}"`
+                            className={readOnly
+                              ? `appearance-none h-4 w-4 rounded border-2 bg-center bg-no-repeat ${isChecked ? 'border-blue-600 bg-blue-600 bg-[length:14px] bg-[url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik05IDE2LjE3TDQuODMgMTJsLTEuNDIgMS40MUw5IDE5IDIxIDdsLTEuNDEtMS40MUw5IDE2LjE3eiIvPjwvc3ZnPg==)]' : 'border-gray-200 bg-gray-100 cursor-default'}`
+                              : `h-4 w-4 rounded border-gray-300 accent-blue-600 ${isChecked ? 'accent-blue-600' : ''}`
+                            }
+                          />`
                           <span className={`text-sm ${readOnly ? (isChecked ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                         </label>
                         {isChecked && (el.hasNotes || el.notesRequired) && (
@@ -333,17 +329,10 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                             checked={isSelected}
                             onChange={() => setRadio(aspectKey, el.label)}
                             disabled={readOnly}
-                            className={`appearance-none h-4 w-4 rounded-full border-2 ${
-                              readOnly ? 'cursor-default' : 'cursor-pointer'
-                            } ${
-                              readOnly
-                                ? isSelected
-                                  ? 'border-blue-600 bg-blue-600'
-                                  : 'border-gray-200 bg-gray-100'
-                                : isSelected
-                                  ? 'border-blue-600 bg-blue-600'
-                                  : 'border-gray-300 bg-white'
-                            } ${isSelected ? "bg-[radial-gradient(circle,_#2563eb_45%,_#ffffff_46%)]" : ''}`}
+                            className={readOnly
+                              ? `appearance-none h-4 w-4 rounded-full border-2 ${isSelected ? 'border-blue-600 bg-blue-600 bg-[radial-gradient(circle,_#2563eb_45%,_#ffffff_46%)]' : 'border-gray-200 bg-gray-100 cursor-default'}`
+                              : `h-4 w-4 rounded-full border-gray-300 accent-blue-600 ${isSelected ? 'accent-blue-600' : ''}`
+                            }
                           />
                         <span className={`text-sm ${readOnly ? (isSelected ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                       </label>
