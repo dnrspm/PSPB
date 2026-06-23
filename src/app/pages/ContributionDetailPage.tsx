@@ -652,16 +652,6 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
         </div>
       )}
 
-      {/* Verifikasi dan Validasi */}
-      {picBiroKerjasama.length > 0 && (
-        <VerifikasiBlock
-          picEmails={picBiroKerjasama}
-          contribution={c}
-          currentUser={currentUser}
-          onRefresh={onDokumenChange || (() => {})}
-        />
-      )}
-
       {/* Unit Kerja dan PIC */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
@@ -710,6 +700,16 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             ))}
           </div>
         </div>
+
+      {/* Verifikasi dan Validasi */}
+      {picBiroKerjasama.length > 0 && (
+        <VerifikasiBlock
+          picEmails={picBiroKerjasama}
+          contribution={c}
+          currentUser={currentUser}
+          onRefresh={onDokumenChange || (() => {})}
+        />
+      )}
 
       {/* Dokumen */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
