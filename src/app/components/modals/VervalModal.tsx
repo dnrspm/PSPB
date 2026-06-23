@@ -153,23 +153,7 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
     setNotes(prev => ({ ...prev, [key]: value }));
   };
 
-  const validate = (): boolean => {
-    for (const aspect of VERVAL_ASPECTS) {
-      for (const el of aspect.elements) {
-        const key = `${aspect.no}-${el.label}`;
-        if (results[key] === undefined) {
-          return false;
-        }
-        if (el.notesRequired && results[key] && !notes[key]?.trim()) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
   const handleSubmit = () => {
-    if (!validate()) return;
     setLoading(true);
 
     setTimeout(() => {
@@ -179,8 +163,8 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
       for (const aspect of VERVAL_ASPECTS) {
         for (const el of aspect.elements) {
           const key = `${aspect.no}-${el.label}`;
-          fields[`${aspect.no}. ${el.label}`] = results[key] ? "TRUE" : "FALSE";
-          if (el.hasNotes || el.notesRequired) {
+          if (results[key]) {
+            fields[`${aspect.no}. ${el.label}`] = "TRUE";
             const noteKey = `${aspect.no}-${el.label}-note`;
             if (notes[noteKey]?.trim()) {
               fields[`${aspect.no}. ${el.label} (Catatan)`] = notes[noteKey];
@@ -235,49 +219,25 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                   const key = `${aspect.no}-${el.label}`;
                   const noteKey = `${aspect.no}-${el.label}-note`;
                   const isChecked = results[key] === true;
-                  const isFalse = results[key] === false;
                   return (
                     <div key={el.label} className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-3">
-                        <span className="flex-1 text-sm text-gray-600">{el.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => setResult(key, true)}
-                          className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors ${
-                            isChecked
-                              ? "bg-green-50 border-green-300 text-green-700"
-                              : "bg-white border-gray-200 text-gray-400 hover:border-green-300"
-                          }`}
-                        >
-                          TRUE
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setResult(key, false)}
-                          className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors ${
-                            isFalse
-                              ? "bg-red-50 border-red-300 text-red-700"
-                              : "bg-white border-gray-200 text-gray-400 hover:border-red-300"
-                          }`}
-                        >
-                          FALSE
-                        </button>
-                      </div>
-                      {(el.hasNotes || (el.notesRequired && isChecked)) && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => setResult(key, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                        />
+                        <span className="text-sm text-gray-600">{el.label}</span>
+                      </label>
+                      {isChecked && (el.hasNotes || el.notesRequired) && (
                         <input
                           type="text"
                           value={notes[noteKey] || ""}
                           onChange={(e) => setNote(noteKey, e.target.value)}
-                          placeholder={
-                            el.notesRequired
-                              ? "Isian wajib..."
-                              : "Isian penjelasan..."
-                          }
-                          className="ml-2 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                          placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
+                          className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                         />
-                      )}
-                      {el.notesRequired && isChecked && !notes[noteKey]?.trim() && (
-                        <p className="ml-2 text-xs text-red-400">Catatan wajib diisi</p>
                       )}
                     </div>
                   );
@@ -285,9 +245,6 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
               </div>
             </div>
           ))}
-          {!validate() && (
-            <p className="text-sm text-red-500 text-center">Semua elemen penilaian harus diisi TRUE / FALSE</p>
-          )}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
