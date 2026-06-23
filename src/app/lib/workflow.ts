@@ -2,6 +2,7 @@ import type { WorkflowState, WorkflowAction, UserRole } from "../types/contribut
 
 export const WORKFLOW_STATE_LABELS: Record<WorkflowState, string> = {
   "kontribusi-masuk": "Kontribusi Masuk",
+  "verifikasi-dan-validasi": "Verifikasi dan Validasi",
   "audiensi-menunggu-jadwal": "Audiensi - Menunggu Jadwal",
   "audiensi-terjadwal": "Audiensi - Terjadwal",
   "audiensi-konfirmasi-lanjut-pks": "Audiensi - Konfirmasi Lanjut PKS",
@@ -20,6 +21,7 @@ export const WORKFLOW_STATE_LABELS: Record<WorkflowState, string> = {
 
 export const WORKFLOW_STATE_COLORS: Record<WorkflowState, { bg: string; text: string; border: string }> = {
   "kontribusi-masuk": { bg: "bg-[#FFE9EA]", text: "text-[#C82236]", border: "border-[#FFE9EA]" },
+  "verifikasi-dan-validasi": { bg: "bg-[#FFE9EA]", text: "text-[#C82236]", border: "border-[#FFE9EA]" },
   "audiensi-menunggu-jadwal": { bg: "bg-[#FFDFA3]", text: "text-[#92400E]", border: "border-[#FFDFA3]" },
   "audiensi-terjadwal": { bg: "bg-[#FFDFA3]", text: "text-[#92400E]", border: "border-[#FFDFA3]" },
   "audiensi-konfirmasi-lanjut-pks": { bg: "bg-[#FFDFA3]", text: "text-[#92400E]", border: "border-[#FFDFA3]" },
@@ -37,7 +39,8 @@ export const WORKFLOW_STATE_COLORS: Record<WorkflowState, { bg: string; text: st
 };
 
 const VALID_TRANSITIONS: Partial<Record<WorkflowState, WorkflowState[]>> = {
-  "kontribusi-masuk": ["audiensi-menunggu-jadwal", "tidak-dilanjutkan"],
+  "kontribusi-masuk": ["verifikasi-dan-validasi", "tidak-dilanjutkan"],
+  "verifikasi-dan-validasi": ["audiensi-menunggu-jadwal", "tidak-dilanjutkan"],
   "audiensi-menunggu-jadwal": ["audiensi-terjadwal", "tidak-dilanjutkan"],
   "audiensi-terjadwal": ["audiensi-konfirmasi-lanjut-pks", "tidak-dilanjutkan"],
   "audiensi-konfirmasi-lanjut-pks": ["perjanjian-draft-pks", "audiensi-menunggu-jadwal", "tidak-dilanjutkan"],
@@ -60,6 +63,7 @@ export function isValidTransition(from: WorkflowState, to: WorkflowState): boole
 
 export const ACTIONS_BY_STATE: Record<WorkflowState, WorkflowAction[]> = {
   "kontribusi-masuk": ["lanjutkan-kontribusi", "tidak-dilanjutkan"],
+  "verifikasi-dan-validasi": ["lanjutkan-audiensi", "tidak-dilanjutkan"],
   "audiensi-menunggu-jadwal": ["jadwalkan-audiensi", "tidak-dilanjutkan"],
   "audiensi-terjadwal": ["audiensi-terlaksana", "tidak-dilanjutkan"],
   "audiensi-konfirmasi-lanjut-pks": ["setuju-hasil-audiensi", "audiensi-ulang", "tidak-dilanjutkan"],
@@ -78,6 +82,7 @@ export const ACTIONS_BY_STATE: Record<WorkflowState, WorkflowAction[]> = {
 
 export const ACTION_LABELS: Record<WorkflowAction, string> = {
   "lanjutkan-kontribusi": "Lanjutkan Kontribusi",
+  "lanjutkan-audiensi": "Lanjutkan Audiensi",
   "tidak-dilanjutkan": "Tidak Dilanjutkan",
   "jadwalkan-audiensi": "Jadwalkan Audiensi",
   "audiensi-terlaksana": "Audiensi Terlaksana",
@@ -100,6 +105,7 @@ export const ACTION_LABELS: Record<WorkflowAction, string> = {
 const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
   "biro-perencanaan": [
     "lanjutkan-kontribusi",
+    "lanjutkan-audiensi",
     "tidak-dilanjutkan",
     "jadwalkan-audiensi",
     "audiensi-terlaksana",
@@ -145,6 +151,7 @@ export function getAvailableActions(state: WorkflowState, role: UserRole): Workf
 
 export const STATE_OWNERS: Partial<Record<WorkflowState, UserRole>> = {
   "kontribusi-masuk": "biro-perencanaan",
+  "verifikasi-dan-validasi": "biro-perencanaan",
   "audiensi-menunggu-jadwal": "biro-perencanaan",
   "audiensi-terjadwal": "biro-perencanaan",
   "audiensi-konfirmasi-lanjut-pks": "biro-perencanaan",
@@ -208,7 +215,7 @@ export const INTERNAL_TEAM: { id: string; name: string; role: UserRole }[] = [
 export const WORKFLOW_PHASES: { label: string; states: WorkflowState[]; color: string }[] = [
   {
     label: "Masuk",
-    states: ["kontribusi-masuk"],
+    states: ["kontribusi-masuk", "verifikasi-dan-validasi"],
     color: "#C82236",
   },
   {

@@ -5,6 +5,7 @@ import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
+import { VervalModal } from "../components/modals/VervalModal";
 import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
 import type { Contribution, Document, WorkflowAction, WorkflowState, ActivityLog } from "../types/contribution";
@@ -159,7 +160,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "info" && (
               <div className="flex gap-6">
                 <div className="flex-1 max-w-4xl">
-                  <InfoTab contribution={c} onDokumenChange={handleDokumenChange} />
+                  <InfoTab contribution={c} onDokumenChange={handleDokumenChange} currentUser={currentUser} />
                 </div>
                 <div className="w-84 shrink-0">
                   <WorkflowStepsSidebar contribution={c} />
@@ -189,6 +190,71 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ────────────── Verifikasi dan Validasi Block ────────────── */
+
+function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
+  picEmails: string[];
+  contribution: Contribution;
+  currentUser: SessionUser;
+  onRefresh: () => void;
+}) {
+  const [vervalOpen, setVervalOpen] = useState(false);
+  const vervalDone = contribution.aktivitas.some(a => a.action === "Verifikasi dan Validasi");
+
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <FileText className="h-4 w-4" /> Verifikasi dan Validasi
+        </h3>
+      </div>
+
+      <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-3 text-sm mb-4">
+        <div>
+          <dt className="text-gray-400">PIC Biro Kerjasama</dt>
+          <dd className="mt-0.5 text-gray-900 text-sm">
+            {picEmails.map((email, j) => (
+              <span key={j} className="text-sm">{email}{j < picEmails.length - 1 && <br />}</span>
+            ))}
+          </dd>
+        </div>
+      </dl>
+
+      <div className={`rounded-lg border p-4 ${vervalDone ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className={`text-sm font-medium ${vervalDone ? 'text-green-700' : 'text-yellow-700'}`}>
+              {vervalDone ? 'Form verifikasi dan validasi sudah diisi' : 'Form verifikasi dan validasi belum diisi'}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {vervalDone
+                ? 'Data verifikasi dan validasi mitra telah lengkap'
+                : 'Silakan isi form verifikasi dan validasi untuk melanjutkan proses'}
+            </p>
+          </div>
+          {!vervalDone && (
+            <button
+              onClick={() => setVervalOpen(true)}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Isi Form Verval
+            </button>
+          )}
+        </div>
+      </div>
+
+      {vervalOpen && (
+        <VervalModal
+          contribution={contribution}
+          currentUser={currentUser}
+          onClose={() => setVervalOpen(false)}
+          onSuccess={onRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -277,7 +343,7 @@ const isSystem = log.action === "Kontribusi masuk";
 
 /* ────────────── Informasi Tab ────────────── */
 
-function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: string = "Unit Kerja dan PIC"): Array<{ unitKerja: string; emails: string[] }> {
+function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: string = "Unit Kerja dan PIC", defaultUnitKerja?: string): Array<{ unitKerja: string; emails: string[] }> {
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const fields = aktivitas[i].fields;
     if (!fields) continue;
@@ -290,6 +356,9 @@ function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: strin
       const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "");
       const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
       if (unitKerja) result.push({ unitKerja, emails });
+    }
+    if (result.length === 0 && defaultUnitKerja) {
+      result.push({ unitKerja: defaultUnitKerja, emails: [raw] });
     }
     return result;
   }
@@ -308,7 +377,7 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
   return null;
 }
 
-function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribution; onDokumenChange?: () => void }) {
+function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contribution: Contribution; onDokumenChange?: () => void; currentUser: SessionUser }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -329,6 +398,10 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
         emailsSatuanKerja: from2?.emails || [],
       };
     });
+  }, [c.aktivitas]);
+  const picBiroKerjasama = useMemo(() => {
+    const parsed = parseUnitKerjaPIC(c.aktivitas, "Email PIC Biro Kerjasama", c.unitKerja || "Biro Perencanaan dan Kerjasama");
+    return parsed.length > 0 ? parsed[0].emails : [];
   }, [c.aktivitas]);
 
   return (
@@ -552,6 +625,16 @@ function InfoTab({ contribution: c, onDokumenChange }: { contribution: Contribut
             </div>
           </dl>
         </div>
+      )}
+
+      {/* Verifikasi dan Validasi */}
+      {picBiroKerjasama.length > 0 && c.workflowStatus === "verifikasi-dan-validasi" && (
+        <VerifikasiBlock
+          picEmails={picBiroKerjasama}
+          contribution={c}
+          currentUser={currentUser}
+          onRefresh={onDokumenChange || (() => {})}
+        />
       )}
 
       {/* Unit Kerja dan PIC */}
@@ -786,6 +869,7 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
 
 const HAPPY_FLOW: WorkflowState[] = [
   "kontribusi-masuk",
+  "verifikasi-dan-validasi",
   "audiensi-menunggu-jadwal",
   "audiensi-terjadwal",
   "audiensi-konfirmasi-lanjut-pks",

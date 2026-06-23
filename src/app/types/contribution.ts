@@ -1,5 +1,6 @@
 export type WorkflowState =
   | "kontribusi-masuk"
+  | "verifikasi-dan-validasi"
   | "audiensi-menunggu-jadwal"
   | "audiensi-terjadwal"
   | "audiensi-konfirmasi-lanjut-pks"
@@ -113,6 +114,7 @@ export interface WorkspaceUser {
 
 export type WorkflowAction =
   | "lanjutkan-kontribusi"
+  | "lanjutkan-audiensi"
   | "tidak-dilanjutkan"
   | "jadwalkan-audiensi"
   | "audiensi-terlaksana"

@@ -54,13 +54,21 @@ function parseUnitKerjaFromActivity(aktivitas: Contribution["aktivitas"]): Array
 const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
   "lanjutkan-kontribusi": {
     title: "Lanjutkan Kontribusi",
-    toState: "audiensi-menunggu-jadwal",
+    toState: "verifikasi-dan-validasi",
     fields: [
-      { key: "unitKerjaEmail", label: "Unit Kerja dan PIC", type: "unit-kerja-email", required: true },
+      { key: "emailPIC", label: "Email PIC Biro Kerjasama", type: "text", required: true, placeholder: "pic@birokerjasama.go.id" },
       { key: "jenisKerjasama", label: "Jenis Kerjasama", type: "select", required: true, options: [
         { value: "dalam-negeri", label: "Dalam Negeri" },
         { value: "luar-negeri", label: "Luar Negeri" },
       ]},
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan untuk kontribusi ini..." },
+    ],
+  },
+  "lanjutkan-audiensi": {
+    title: "Lanjutkan Audiensi",
+    toState: "audiensi-menunggu-jadwal",
+    fields: [
+      { key: "unitKerjaEmail", label: "Unit Kerja dan PIC", type: "unit-kerja-email", required: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan untuk kontribusi ini..." },
     ],
   },

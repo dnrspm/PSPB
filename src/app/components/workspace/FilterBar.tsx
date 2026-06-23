@@ -15,7 +15,7 @@ interface FilterBarProps {
 }
 
 const ALL_STATES: WorkflowState[] = [
-  "kontribusi-masuk", "audiensi-menunggu-jadwal", "audiensi-terjadwal",
+  "kontribusi-masuk", "verifikasi-dan-validasi", "audiensi-menunggu-jadwal", "audiensi-terjadwal",
   "audiensi-konfirmasi-lanjut-pks", "perjanjian-draft-pks",
   "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks",
   "pelaksanaan-persiapan", "pelaksanaan-dalam-proses",
