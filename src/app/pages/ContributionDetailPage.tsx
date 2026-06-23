@@ -226,10 +226,10 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
         </div>
       </dl>
 
-      <div className={`rounded-lg border p-4 ${vervalDone ? 'bg-blue-50 border-blue-200' : 'bg-blue-50 border-blue-200'}`}>
+      <div className={`rounded-lg border p-4 ${vervalDone ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center justify-between">
           <div>
-            <p className={`text-sm font-medium ${vervalDone ? 'text-blue-700' : 'text-blue-600'}`}>
+            <p className={`text-sm font-medium ${vervalDone ? 'text-green-700' : 'text-yellow-700'}`}>
               {vervalDone ? 'Form verifikasi dan validasi sudah diisi' : 'Form verifikasi dan validasi belum diisi'}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">

@@ -299,9 +299,9 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                             checked={isChecked}
                             onChange={(e) => setResult(key, e.target.checked)}
                             disabled={readOnly}
-                            className="h-4 w-4 rounded border-gray-300 accent-blue-600 disabled:opacity-80 disabled:accent-blue-700"
+                            className="h-4 w-4 rounded border-gray-300 accent-blue-700 disabled:accent-blue-700 disabled:opacity-90"
                           />
-                          <span className={`text-sm ${readOnly ? (isChecked ? 'text-blue-700 font-medium' : 'text-gray-500') : 'text-gray-600'}`}>{el.label}</span>
+                          <span className={`text-sm ${readOnly ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>{el.label}</span>
                         </label>
                         {isChecked && (el.hasNotes || el.notesRequired) && (
                           <input
@@ -326,9 +326,9 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                           checked={isSelected}
                           onChange={() => setRadio(aspectKey, el.label)}
                           disabled={readOnly}
-                          className="h-4 w-4 border-gray-300 accent-blue-600 disabled:opacity-80 disabled:accent-blue-700"
+                          className="h-4 w-4 border-gray-300 accent-blue-700 disabled:accent-blue-700 disabled:opacity-90"
                         />
-                        <span className={`text-sm ${readOnly ? (isSelected ? 'text-blue-700 font-medium' : 'text-gray-500') : 'text-gray-600'}`}>{el.label}</span>
+                        <span className={`text-sm ${readOnly ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>{el.label}</span>
                       </label>
                       {isSelected && (el.hasNotes || el.notesRequired) && (
                         <input
