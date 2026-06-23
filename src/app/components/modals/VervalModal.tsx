@@ -309,7 +309,7 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                               onChange={(e) => setResult(key, e.target.checked)}
                               className="h-4 w-4 rounded border-gray-300 accent-blue-600"
                             />
-                          )}`
+                          )}
                           <span className={`text-sm ${readOnly ? (isChecked ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                         </label>
                         {isChecked && (el.hasNotes || el.notesRequired) && (
@@ -343,7 +343,7 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                               onChange={() => setRadio(aspectKey, el.label)}
                               className="h-4 w-4 rounded-full border-gray-300 accent-blue-600"
                             />
-                          )}`
+                          )}
                         <span className={`text-sm ${readOnly ? (isSelected ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                       </label>
                       {isSelected && (el.hasNotes || el.notesRequired) && (
