@@ -1,8 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
+import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
+
+type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
 
 const PIC_EMAILS: Record<string, string> = {
   "Andi Pratama": "andi.pratama@kemdikbud.go.id",
@@ -15,10 +18,6 @@ function getPicEmail(c: Contribution): string {
   if (!c.pic) return "-";
   return PIC_EMAILS[c.pic] || c.pic;
 }
-import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
-import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
-
-type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
 type SortDir = "asc" | "desc";
 
 interface WorkspaceTableProps {
@@ -37,30 +36,6 @@ function formatDate(date: Date): string {
   const formattedDate = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
   const formattedTime = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   return `${formattedDate}, ${formattedTime}`;
-}
-
-function ClampedText({ text }: { text: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [overflow, setOverflow] = useState(false);
-
-  useEffect(() => {
-    if (ref.current) {
-      setOverflow(ref.current.scrollHeight > ref.current.clientHeight);
-    }
-  }, [text]);
-
-  return (
-    <Tooltip open={overflow ? undefined : false}>
-      <TooltipTrigger asChild>
-        <span ref={ref} className="block line-clamp-2 text-sm text-gray-500 cursor-default">{text}</span>
-      </TooltipTrigger>
-      {overflow && (
-        <TooltipContent side="top" className="max-w-xs break-words bg-black text-white" arrowClassName="bg-black fill-black">
-          {text}
-        </TooltipContent>
-      )}
-    </Tooltip>
-  );
 }
 
 const PAGE_SIZE = 10;
@@ -114,7 +89,6 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
   const headers: { key: SortKey | null; label: string }[] = [
     { key: "instansi", label: "Nama Instansi" },
     { key: "program", label: "Paket Dukungan" },
-    { key: "paketBantuan", label: "Pilihan Kontribusi / Topik" },
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     { key: "lastUpdate", label: "Last Update" },
@@ -166,9 +140,9 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-gray-800 leading-snug">{c.instansi}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{c.program}</td>
-                  <td className="px-4 py-3 max-w-36">
-                    <ClampedText text={c.paketBantuan} />
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-gray-800">{c.program}</div>
+                    <div className="text-xs text-gray-400 leading-snug mt-0.5">{c.paketBantuan}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{getUnitKerja(c)}</td>
                   <td className="px-4 py-3">
