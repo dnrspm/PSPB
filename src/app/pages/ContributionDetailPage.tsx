@@ -203,7 +203,10 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
   onRefresh: () => void;
 }) {
   const [vervalOpen, setVervalOpen] = useState(false);
+  const [showVervalView, setShowVervalView] = useState(false);
   const vervalDone = contribution.aktivitas.some(a => a.action === "Verifikasi dan Validasi");
+  const vervalLog = contribution.aktivitas.filter(a => a.action === "Verifikasi dan Validasi").pop();
+  const vervalFields = vervalLog?.fields || {};
 
   return (
     <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
@@ -236,17 +239,50 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
                 : 'Silakan isi form verifikasi dan validasi untuk melanjutkan proses'}
             </p>
           </div>
-          {!vervalDone && (
-            <button
-              onClick={() => setVervalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Isi Form Verval
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {vervalDone && (
+              <button
+                onClick={() => setShowVervalView(!showVervalView)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                {showVervalView ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {showVervalView ? 'Sembunyikan Isian' : 'Lihat Isian Verval'}
+              </button>
+            )}
+            {!vervalDone && (
+              <button
+                onClick={() => setVervalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Isi Form Verval
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {showVervalView && vervalLog && (
+        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="space-y-4">
+            {Object.entries(vervalFields).map(([key, value]) => (
+              <div key={key} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-green-500 flex items-center justify-center">
+                  <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-700">{key}</span>
+                  {key.endsWith('(Catatan)') ? (
+                    <p className="text-gray-500 mt-0.5 italic">{value}</p>
+                  ) : (
+                    <p className="text-gray-500 mt-0.5">{value === "TRUE" ? "Terpenuhi" : value}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {vervalOpen && (
         <VervalModal
