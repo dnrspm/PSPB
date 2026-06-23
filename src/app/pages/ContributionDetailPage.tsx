@@ -233,8 +233,8 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
               {vervalDone ? 'Form verifikasi dan validasi sudah diisi' : 'Form verifikasi dan validasi belum diisi'}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
-              {vervalDone
-                ? 'Data verifikasi dan validasi mitra telah lengkap'
+              {vervalDone && vervalLog
+                ? `Diisi ${vervalLog.actor} pada ${(vervalLog.timestamp as Date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} pukul ${(vervalLog.timestamp as Date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
                 : 'Isi form verval sesuai hasil diskusi dengan calon mitra'}
             </p>
           </div>
@@ -242,7 +242,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             {vervalDone && (
               <button
                 onClick={() => setViewVervalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-200"
               >
                 <FileText className="h-3.5 w-3.5" />
                 Lihat Isian Verval
