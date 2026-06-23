@@ -19,6 +19,7 @@ interface VervalElement {
 interface VervalAspect {
   no: number;
   aspek: string;
+  multiple?: boolean;
   elements: VervalElement[];
 }
 
@@ -46,6 +47,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 3,
+    multiple: true,
     aspek: "Jenis Kontribusi",
     elements: [
       { label: "Barang" },
@@ -55,6 +57,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 4,
+    multiple: true,
     aspek: "Target Sasaran",
     elements: [
       { label: "Guru dan Tenaga Kependidikan" },
@@ -75,6 +78,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 6,
+    multiple: true,
     aspek: "Pilihan Kontribusi",
     elements: [
       { label: "Infrastruktur Digital" },
@@ -87,6 +91,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 7,
+    multiple: true,
     aspek: "Bentuk Barter Value yang diharapkan",
     elements: [
       { label: "Pemanfaatan logo Kemendikdasmen" },
@@ -112,6 +117,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 10,
+    multiple: true,
     aspek: "Pemahaman dan Masukan",
     elements: [
       { label: "Mitra memahami program PSPB" },
@@ -120,6 +126,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 11,
+    multiple: true,
     aspek: "Reputasi dan Kredibilitas Mitra",
     elements: [
       { label: "Tahun berdiri Kelembagaan", notesRequired: true },
@@ -130,6 +137,7 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
   {
     no: 12,
+    multiple: true,
     aspek: "Validasi Dokumen Pendukung",
     elements: [
       { label: "Ada profil Mitra" },
@@ -142,11 +150,16 @@ const VERVAL_ASPECTS: VervalAspect[] = [
 
 export function VervalModal({ contribution, currentUser, onClose, onSuccess }: VervalModalProps) {
   const [results, setResults] = useState<Record<string, boolean>>({});
+  const [radioSelected, setRadioSelected] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const setResult = (key: string, value: boolean) => {
     setResults(prev => ({ ...prev, [key]: value }));
+  };
+
+  const setRadio = (aspectKey: string, label: string) => {
+    setRadioSelected(prev => ({ ...prev, [aspectKey]: label }));
   };
 
   const setNote = (key: string, value: string) => {
@@ -161,13 +174,27 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
       const fields: Record<string, string> = {};
 
       for (const aspect of VERVAL_ASPECTS) {
-        for (const el of aspect.elements) {
-          const key = `${aspect.no}-${el.label}`;
-          if (results[key]) {
-            fields[`${aspect.no}. ${el.label}`] = "TRUE";
-            const noteKey = `${aspect.no}-${el.label}-note`;
-            if (notes[noteKey]?.trim()) {
-              fields[`${aspect.no}. ${el.label} (Catatan)`] = notes[noteKey];
+        if (aspect.multiple) {
+          for (const el of aspect.elements) {
+            const key = `${aspect.no}-${el.label}`;
+            if (results[key]) {
+              fields[`${aspect.no}. ${el.label}`] = "TRUE";
+              const noteKey = `${aspect.no}-${el.label}-note`;
+              if (notes[noteKey]?.trim()) {
+                fields[`${aspect.no}. ${el.label} (Catatan)`] = notes[noteKey];
+              }
+            }
+          }
+        } else {
+          const selectedLabel = radioSelected[String(aspect.no)];
+          if (selectedLabel) {
+            const el = aspect.elements.find(e => e.label === selectedLabel);
+            fields[`${aspect.no}. ${selectedLabel}`] = "TRUE";
+            if (el && (el.hasNotes || el.notesRequired)) {
+              const noteKey = `${aspect.no}-${selectedLabel}-note`;
+              if (notes[noteKey]?.trim()) {
+                fields[`${aspect.no}. ${selectedLabel} (Catatan)`] = notes[noteKey];
+              }
             }
           }
         }
@@ -218,19 +245,46 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                 {aspect.elements.map((el) => {
                   const key = `${aspect.no}-${el.label}`;
                   const noteKey = `${aspect.no}-${el.label}-note`;
-                  const isChecked = results[key] === true;
+                  const aspectKey = String(aspect.no);
+                  if (aspect.multiple) {
+                    const isChecked = results[key] === true;
+                    return (
+                      <div key={el.label} className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => setResult(key, e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                          />
+                          <span className="text-sm text-gray-600">{el.label}</span>
+                        </label>
+                        {isChecked && (el.hasNotes || el.notesRequired) && (
+                          <input
+                            type="text"
+                            value={notes[noteKey] || ""}
+                            onChange={(e) => setNote(noteKey, e.target.value)}
+                            placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
+                            className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
+                  const isSelected = radioSelected[aspectKey] === el.label;
                   return (
                     <div key={el.label} className="flex flex-col gap-1.5">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => setResult(key, e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                          type="radio"
+                          name={aspectKey}
+                          checked={isSelected}
+                          onChange={() => setRadio(aspectKey, el.label)}
+                          className="h-4 w-4 border-gray-300 accent-blue-600"
                         />
                         <span className="text-sm text-gray-600">{el.label}</span>
                       </label>
-                      {isChecked && (el.hasNotes || el.notesRequired) && (
+                      {isSelected && (el.hasNotes || el.notesRequired) && (
                         <input
                           type="text"
                           value={notes[noteKey] || ""}
