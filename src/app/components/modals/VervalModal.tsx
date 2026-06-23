@@ -8,6 +8,8 @@ interface VervalModalProps {
   currentUser: { name: string; role: UserRole };
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
+  initialFields?: Record<string, string>;
 }
 
 interface VervalElement {
@@ -148,10 +150,51 @@ const VERVAL_ASPECTS: VervalAspect[] = [
   },
 ];
 
-export function VervalModal({ contribution, currentUser, onClose, onSuccess }: VervalModalProps) {
-  const [results, setResults] = useState<Record<string, boolean>>({});
-  const [radioSelected, setRadioSelected] = useState<Record<string, string>>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
+function parseInitialState(fields: Record<string, string> = {}): {
+  results: Record<string, boolean>;
+  radioSelected: Record<string, string>;
+  notes: Record<string, string>;
+} {
+  const results: Record<string, boolean> = {};
+  const radioSelected: Record<string, string> = {};
+  const notes: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (key.endsWith(' (Catatan)')) {
+      const labelKey = key.replace(' (Catatan)', '');
+      for (const aspect of VERVAL_ASPECTS) {
+        for (const el of aspect.elements) {
+          const fullLabel = `${aspect.no}. ${el.label}`;
+          if (fullLabel === labelKey) {
+            notes[`${aspect.no}-${el.label}-note`] = value;
+          }
+        }
+      }
+    } else if (value === "TRUE") {
+      const match = key.match(/^(\d+)\.\s(.+)$/);
+      if (match) {
+        const no = parseInt(match[1]);
+        const label = match[2];
+        const aspect = VERVAL_ASPECTS.find(a => a.no === no);
+        if (aspect) {
+          if (aspect.multiple) {
+            results[`${no}-${label}`] = true;
+          } else {
+            radioSelected[String(no)] = label;
+          }
+        }
+      }
+    }
+  }
+
+  return { results, radioSelected, notes };
+}
+
+export function VervalModal({ contribution, currentUser, onClose, onSuccess, readOnly, initialFields }: VervalModalProps) {
+  const initialState = readOnly && initialFields ? parseInitialState(initialFields) : null;
+  const [results, setResults] = useState<Record<string, boolean>>(initialState?.results || {});
+  const [radioSelected, setRadioSelected] = useState<Record<string, string>>(initialState?.radioSelected || {});
+  const [notes, setNotes] = useState<Record<string, string>>(initialState?.notes || {});
   const [loading, setLoading] = useState(false);
 
   const setResult = (key: string, value: boolean) => {
@@ -255,9 +298,10 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => setResult(key, e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                            disabled={readOnly}
+                            className="h-4 w-4 rounded border-gray-300 accent-blue-600 disabled:opacity-60"
                           />
-                          <span className="text-sm text-gray-600">{el.label}</span>
+                          <span className={`text-sm ${readOnly ? 'text-gray-900' : 'text-gray-600'}`}>{el.label}</span>
                         </label>
                         {isChecked && (el.hasNotes || el.notesRequired) && (
                           <input
@@ -265,7 +309,8 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                             value={notes[noteKey] || ""}
                             onChange={(e) => setNote(noteKey, e.target.value)}
                             placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
-                            className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                            readOnly={readOnly}
+                            className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 read-only:bg-gray-100 read-only:text-gray-700"
                           />
                         )}
                       </div>
@@ -280,9 +325,10 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                           name={aspectKey}
                           checked={isSelected}
                           onChange={() => setRadio(aspectKey, el.label)}
-                          className="h-4 w-4 border-gray-300 accent-blue-600"
+                          disabled={readOnly}
+                          className="h-4 w-4 border-gray-300 accent-blue-600 disabled:opacity-60"
                         />
-                        <span className="text-sm text-gray-600">{el.label}</span>
+                        <span className={`text-sm ${readOnly ? 'text-gray-900' : 'text-gray-600'}`}>{el.label}</span>
                       </label>
                       {isSelected && (el.hasNotes || el.notesRequired) && (
                         <input
@@ -290,7 +336,8 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
                           value={notes[noteKey] || ""}
                           onChange={(e) => setNote(noteKey, e.target.value)}
                           placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
-                          className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                          readOnly={readOnly}
+                          className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 read-only:bg-gray-100 read-only:text-gray-700"
                         />
                       )}
                     </div>
@@ -306,15 +353,17 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess }: V
             onClick={onClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
-            Batal
+            {readOnly ? "Tutup" : "Batal"}
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Menyimpan..." : "Simpan"}
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? "Menyimpan..." : "Simpan"}
+            </button>
+          )}
         </div>
       </div>
     </div>
