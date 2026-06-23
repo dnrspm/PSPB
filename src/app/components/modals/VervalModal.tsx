@@ -294,16 +294,22 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                     return (
                       <div key={el.label} className="flex flex-col gap-1.5">
                         <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => setResult(key, e.target.checked)}
-                            disabled={readOnly}
-                            className={readOnly
-                              ? `appearance-none h-4 w-4 rounded border-2 bg-center bg-no-repeat ${isChecked ? 'border-blue-600 bg-blue-600 bg-[length:14px] bg-[url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik05IDE2LjE3TDQuODMgMTJsLTEuNDIgMS40MUw5IDE5IDIxIDdsLTEuNDEtMS40MUw5IDE2LjE3eiIvPjwvc3ZnPg==)]' : 'border-gray-200 bg-gray-100 cursor-default'}`
-                              : `h-4 w-4 rounded border-gray-300 accent-blue-600 ${isChecked ? 'accent-blue-600' : ''}`
-                            }
-                          />`
+                          {readOnly ? (
+                            <span className={`inline-block h-4 w-4 rounded border-2 flex-shrink-0 ${isChecked ? 'border-blue-600 bg-blue-600' : 'border-gray-200 bg-gray-100'}`}>
+                              {isChecked && (
+                                <svg viewBox="0 0 24 24" fill="white" className="h-full w-full">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                                </svg>
+                              )}
+                            </span>
+                          ) : (
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => setResult(key, e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                            />
+                          )}`
                           <span className={`text-sm ${readOnly ? (isChecked ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                         </label>
                         {isChecked && (el.hasNotes || el.notesRequired) && (
@@ -323,17 +329,21 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                   return (
                     <div key={el.label} className="flex flex-col gap-1.5">
                       <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={aspectKey}
-                            checked={isSelected}
-                            onChange={() => setRadio(aspectKey, el.label)}
-                            disabled={readOnly}
-                            className={readOnly
-                              ? `appearance-none h-4 w-4 rounded-full border-2 ${isSelected ? 'border-blue-600 bg-blue-600 bg-[radial-gradient(circle,_#2563eb_45%,_#ffffff_46%)]' : 'border-gray-200 bg-gray-100 cursor-default'}`
-                              : `h-4 w-4 rounded-full border-gray-300 accent-blue-600 ${isSelected ? 'accent-blue-600' : ''}`
-                            }
-                          />
+                          {readOnly ? (
+                            <span className={`inline-block h-4 w-4 rounded-full border-2 flex-shrink-0 ${isSelected ? 'border-blue-600' : 'border-gray-200 bg-gray-100'}`}>
+                              {isSelected && (
+                                <span className="block h-full w-full rounded-full bg-blue-600 scale-[0.6]" />
+                              )}
+                            </span>
+                          ) : (
+                            <input
+                              type="radio"
+                              name={aspectKey}
+                              checked={isSelected}
+                              onChange={() => setRadio(aspectKey, el.label)}
+                              className="h-4 w-4 rounded-full border-gray-300 accent-blue-600"
+                            />
+                          )}`
                         <span className={`text-sm ${readOnly ? (isSelected ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                       </label>
                       {isSelected && (el.hasNotes || el.notesRequired) && (
