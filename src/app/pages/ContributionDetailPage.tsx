@@ -672,7 +672,7 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
               <div>
                 <dt className="text-gray-400">Koordinasi Awal</dt>
-                <dd className="mt-0.5 font-medium text-gray-900 text-sm">{c.narahubung} ({c.unitKerja || "-"})</dd>
+                <dd className="mt-0.5 text-gray-900 text-sm">{c.narahubung} ({c.unitKerja || "-"})</dd>
               </div>
             </dl>
           </div>
