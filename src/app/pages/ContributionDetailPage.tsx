@@ -235,7 +235,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             <p className="text-xs text-gray-500 mt-0.5">
               {vervalDone
                 ? 'Data verifikasi dan validasi mitra telah lengkap'
-                : 'Silakan isi form verifikasi dan validasi berdasarkan hasil diskusi bersama calon mitra'}
+                : 'Isi form verval sesuai hasil diskusi dengan calon mitra'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             {!vervalDone && (
               <button
                 onClick={() => setVervalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-medium text-yellow-800 hover:bg-yellow-100"
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
               >
                 <FileText className="h-3.5 w-3.5" />
                 Isi Form Verval
