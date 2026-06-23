@@ -3,6 +3,18 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } fro
 import { useNavigate } from "react-router";
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
+
+const PIC_EMAILS: Record<string, string> = {
+  "Andi Pratama": "andi.pratama@kemdikbud.go.id",
+  "Budi Santoso": "budi.santoso@kemdikbud.go.id",
+  "Citra Dewi": "citra.dewi@kemdikbud.go.id",
+  "Eka Putri": "eka.putri@kemdikbud.go.id",
+};
+
+function getPicEmail(c: Contribution): string {
+  if (!c.pic) return "-";
+  return PIC_EMAILS[c.pic] || c.pic;
+}
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 
@@ -166,7 +178,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                     {formatDate(c.lastUpdate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {c.pic || "-"}
+                    {getPicEmail(c)}
                   </td>
                   <td className="px-4 py-3 text-gray-400">
                     <ChevronRight className="h-4 w-4" />
