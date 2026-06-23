@@ -52,7 +52,9 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     setPage(1);
   };
 
-  const sorted = [...contributions].sort((a, b) => {
+  const sorted = [...contributions]
+    .filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
+    .sort((a, b) => {
     const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     if (aMasuk !== bMasuk) return bMasuk - aMasuk;
