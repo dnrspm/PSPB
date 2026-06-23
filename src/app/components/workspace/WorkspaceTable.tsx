@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router";
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
-import { RowActions } from "./RowActions";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 
@@ -54,6 +54,7 @@ function ClampedText({ text }: { text: string }) {
 const PAGE_SIZE = 10;
 
 export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
+  const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
@@ -105,7 +106,6 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     { key: "lastUpdate", label: "Last Update" },
-    { key: null, label: "Action" },
   ];
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -146,7 +146,8 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
               return (
                 <tr
                   key={c.id}
-                  className={`transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-50" : "hover:bg-blue-50/30"}`}
+                  onClick={() => navigate(`/workspace/${c.id}`)}
+                  className={`cursor-pointer transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-100" : "hover:bg-gray-100"}`}
                 >
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-gray-800 leading-snug">{c.instansi}</div>
@@ -162,8 +163,8 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                     {formatDate(c.lastUpdate)}
                   </td>
-                  <td className="px-4 py-3">
-                    <RowActions contribution={c} />
+                  <td className="px-4 py-3 text-gray-400">
+                    <ChevronRight className="h-4 w-4" />
                   </td>
                 </tr>
               );
