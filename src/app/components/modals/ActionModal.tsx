@@ -451,6 +451,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
       if (config.toState) updated.workflowStatus = config.toState;
 
+      if (action === "lanjutkan-kontribusi" && values.emailPIC) {
+        updated.pic = values.emailPIC as string;
+      }
+
       if (config.toState === "pelaksanaan-dalam-proses" || action === "update-progress") {
         if (!updated.pelaksanaan) {
           updated.pelaksanaan = { progress: 0, dokumentasi: [] };
