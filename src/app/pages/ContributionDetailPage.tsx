@@ -251,7 +251,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             {!vervalDone && (
               <button
                 onClick={() => setVervalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50"
               >
                 <FileText className="h-3.5 w-3.5" />
                 Isi Form Verval
