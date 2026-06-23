@@ -663,13 +663,21 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
       )}
 
       {/* Unit Kerja dan PIC */}
-      {unitKerjaPIC.length > 0 && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
+              <div>
+                <dt className="text-gray-400">Koordinasi Awal</dt>
+                <dd className="mt-0.5 font-medium text-gray-900 text-sm">{c.narahubung} ({c.instansi})</dd>
+              </div>
+            </dl>
           </div>
-          <div className="space-y-4">
-            {unitKerjaPIC.map((item, i) => (
+          {unitKerjaPIC.length > 0 && <hr className="border-gray-100" />}
+          {unitKerjaPIC.map((item, i) => (
               <div key={i}>
                 {i > 0 && <hr className="mb-4 border-gray-100" />}
                 <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
@@ -702,7 +710,6 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             ))}
           </div>
         </div>
-      )}
 
       {/* Dokumen */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
