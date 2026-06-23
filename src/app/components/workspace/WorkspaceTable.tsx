@@ -6,7 +6,7 @@ import { StatusBadge } from "./StatusBadge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 
-type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate";
+type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
 type SortDir = "asc" | "desc";
 
 interface WorkspaceTableProps {
@@ -106,6 +106,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     { key: "lastUpdate", label: "Last Update" },
+    { key: "pic", label: "PIC" },
     { key: null, label: "" },
   ];
 
@@ -163,6 +164,9 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                     {formatDate(c.lastUpdate)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {c.pic || "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-400">
                     <ChevronRight className="h-4 w-4" />
