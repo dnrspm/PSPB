@@ -150,8 +150,8 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     toState: "pelaksanaan-dalam-proses",
     fields: [
 
-      { key: "siswa", label: "Siswa", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
-      { key: "guru", label: "Guru", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
+      { key: "siswa", label: "Siswa Terdampak", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
+      { key: "guru", label: "Guru Terdampak", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan", type: "text", required: true, placeholder: "Nama sekolah" },
       { key: "provinsi", label: "Provinsi", type: "select", required: true, options: PROVINSI_OPTIONS, inline: true },
       { key: "kabupaten", label: "Kota/Kabupaten", type: "select", required: true, inline: true },
