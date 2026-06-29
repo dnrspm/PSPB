@@ -761,14 +761,14 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
       {/* Unit Kerja dan PIC */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC {picEditMode && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 normal-case">Mode Edit</span>}</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPicEditMode(prev => !prev)}
                 className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium ${picEditMode ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
               >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit PIC
+                {picEditMode ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                {picEditMode ? "Simpan" : "Edit PIC"}
               </button>
               <button
                 onClick={() => setTambahPICOpen(true)}
