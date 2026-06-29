@@ -149,10 +149,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Lanjut Pelaksanaan",
     toState: "pelaksanaan-dalam-proses",
     fields: [
-      { key: "jumlahMurid", label: "Jumlah Murid Terdampak", type: "text", required: true, placeholder: "Contoh: 500" },
-      { key: "jumlahGuru", label: "Jumlah Guru Terdampak", type: "text", required: true, placeholder: "Contoh: 50" },
-      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "text", required: true, placeholder: "Contoh: 10 sekolah" },
-      { key: "kabupatenKota", label: "Kabupaten/Kota", type: "text", required: true, placeholder: "Contoh: Bandung, Cimahi" },
+
       { key: "targetPenerimaHeader", label: "Target Penerima", type: "section-header" },
       { key: "siswa", label: "Siswa", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
       { key: "guru", label: "Guru", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
