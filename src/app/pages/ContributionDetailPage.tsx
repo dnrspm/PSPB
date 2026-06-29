@@ -777,6 +777,7 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
 
 function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { contribution: Contribution; currentUser: SessionUser; onClose: () => void; onSuccess: () => void }) {
   const [unitKerja, setUnitKerja] = useState("");
+  const [emailType, setEmailType] = useState<"sekretariat" | "satuan-kerja" | "">("");
   const [emails, setEmails] = useState([""]);
   const [loading, setLoading] = useState(false);
 
@@ -785,12 +786,12 @@ function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { 
   const removeEmail = (i: number) => setEmails(prev => prev.filter((_, j) => j !== i));
 
   const handleSubmit = () => {
-    if (!unitKerja.trim() || !emails.some(e => e.trim())) return;
+    if (!unitKerja.trim() || !emailType || !emails.some(e => e.trim())) return;
     setLoading(true);
 
     setTimeout(() => {
       const now = new Date();
-      const fieldLabel = "Unit Kerja dan PIC";
+      const fieldKey = emailType === "sekretariat" ? "Unit Kerja dan PIC" : "Email Satuan Kerja";
       const formatted = `${unitKerja.trim()} (${emails.filter(e => e.trim()).join(", ")})`;
 
       const updated: Contribution = {
@@ -804,7 +805,7 @@ function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { 
             actor: currentUser.name,
             actorRole: currentUser.role,
             action: "Tambah PIC",
-            fields: { [fieldLabel]: formatted },
+            fields: { [fieldKey]: formatted },
             fromState: c.workflowStatus,
           },
         ],
@@ -839,29 +840,56 @@ function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { 
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-600">Email PIC <span className="ml-0.5 text-red-400">*</span></label>
-            <div className="space-y-1.5">
-              {emails.map((email, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => updateEmail(i, e.target.value)}
-                    placeholder={`Email PIC ${i + 1}`}
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
-                  />
-                  {emails.length > 1 && (
-                    <button onClick={() => removeEmail(i)} className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+            <label className="mb-1 block text-sm font-medium text-gray-600">Tipe Email <span className="ml-0.5 text-red-400">*</span></label>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="emailType"
+                  checked={emailType === "sekretariat"}
+                  onChange={() => setEmailType("sekretariat")}
+                  className="h-4 w-4 rounded-full border-gray-300 accent-blue-600"
+                />
+                <span className="text-sm text-gray-600">Sekretariat Unit Utama</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="emailType"
+                  checked={emailType === "satuan-kerja"}
+                  onChange={() => setEmailType("satuan-kerja")}
+                  className="h-4 w-4 rounded-full border-gray-300 accent-blue-600"
+                />
+                <span className="text-sm text-gray-600">Satuan Kerja</span>
+              </label>
             </div>
-            <button onClick={addEmail} className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
-              <Plus className="h-3.5 w-3.5" /> Tambah Email
-            </button>
           </div>
+          {emailType && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-600">Email PIC <span className="ml-0.5 text-red-400">*</span></label>
+              <div className="space-y-1.5">
+                {emails.map((email, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => updateEmail(i, e.target.value)}
+                      placeholder={`Email PIC ${i + 1}`}
+                      className="w-full rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                    />
+                    {emails.length > 1 && (
+                      <button onClick={() => removeEmail(i)} className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button onClick={addEmail} className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
+                <Plus className="h-3.5 w-3.5" /> Tambah Email
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
           <button onClick={onClose} className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50">Batal</button>
