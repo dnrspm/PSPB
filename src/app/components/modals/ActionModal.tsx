@@ -152,6 +152,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
 
       { key: "siswa", label: "Siswa", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
       { key: "guru", label: "Guru", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "text", required: true, placeholder: "Nama sekolah" },
       { key: "provinsi", label: "Provinsi", type: "select", required: true, options: PROVINSI_OPTIONS, inline: true },
       { key: "kabupaten", label: "Kota/Kabupaten", type: "select", required: true, inline: true },
       { key: "kelurahan", label: "Kelurahan", type: "text", placeholder: "Nama kelurahan", inline: true },
