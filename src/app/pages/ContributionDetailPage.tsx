@@ -352,25 +352,28 @@ const isSystem = log.action === "Kontribusi masuk";
 /* ────────────── Informasi Tab ────────────── */
 
 function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: string = "Unit Kerja dan PIC", defaultUnitKerja?: string): Array<{ unitKerja: string; emails: string[] }> {
+  const seen = new Set<string>();
+  const result: Array<{ unitKerja: string; emails: string[] }> = [];
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const fields = aktivitas[i].fields;
     if (!fields) continue;
     const raw = fields[fieldKey];
     if (!raw) continue;
-    const result: Array<{ unitKerja: string; emails: string[] }> = [];
     const regex = /([^(]+)\(([^)]*)\)/g;
     let match;
     while ((match = regex.exec(raw)) !== null) {
-      const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "");
+      const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "").trim();
       const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
-      if (unitKerja) result.push({ unitKerja, emails });
+      if (unitKerja && !seen.has(unitKerja.toUpperCase())) {
+        seen.add(unitKerja.toUpperCase());
+        result.push({ unitKerja, emails });
+      }
     }
-    if (result.length === 0 && defaultUnitKerja) {
-      result.push({ unitKerja: defaultUnitKerja, emails: [raw] });
-    }
-    return result;
   }
-  return [];
+  if (result.length === 0 && defaultUnitKerja) {
+    result.push({ unitKerja: defaultUnitKerja, emails: [] });
+  }
+  return result;
 }
 
 function getLabelByValue(options: { value: string; label: string }[], value: string): string {
