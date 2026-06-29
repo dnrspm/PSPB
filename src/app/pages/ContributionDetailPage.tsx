@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight, Plus } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { ActionModal } from "../components/modals/ActionModal";
 import { VervalModal } from "../components/modals/VervalModal";
-import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS } from "../lib/workflow";
+import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, ROLE_LABELS, UNIT_KERJA_OPTIONS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
 import type { Contribution, Document, WorkflowAction, WorkflowState, ActivityLog } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
@@ -386,6 +386,7 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
 }
 
 function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contribution: Contribution; onDokumenChange?: () => void; currentUser: SessionUser }) {
+  const [tambahPICOpen, setTambahPICOpen] = useState(false);
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -639,6 +640,13 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+          <button
+            onClick={() => setTambahPICOpen(true)}
+            className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Tambah PIC
+          </button>
         </div>
         <div className="space-y-4">
           <div>
@@ -683,6 +691,8 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             ))}
           </div>
         </div>
+
+      {tambahPICOpen && <TambahPICModal contribution={c} currentUser={currentUser} onClose={() => setTambahPICOpen(false)} onSuccess={onDokumenChange || (() => {})} />}
 
       {/* Verifikasi dan Validasi */}
       {picBiroKerjasama.length > 0 && (
@@ -759,6 +769,105 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             </div>
           ));
         })()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { contribution: Contribution; currentUser: SessionUser; onClose: () => void; onSuccess: () => void }) {
+  const [unitKerja, setUnitKerja] = useState("");
+  const [emails, setEmails] = useState([""]);
+  const [loading, setLoading] = useState(false);
+
+  const addEmail = () => setEmails(prev => [...prev, ""]);
+  const updateEmail = (i: number, v: string) => setEmails(prev => prev.map((e, j) => j === i ? v : e));
+  const removeEmail = (i: number) => setEmails(prev => prev.filter((_, j) => j !== i));
+
+  const handleSubmit = () => {
+    if (!unitKerja.trim() || !emails.some(e => e.trim())) return;
+    setLoading(true);
+
+    setTimeout(() => {
+      const now = new Date();
+      const fieldLabel = "Unit Kerja dan PIC";
+      const formatted = `${unitKerja.trim()} (${emails.filter(e => e.trim()).join(", ")})`;
+
+      const updated: Contribution = {
+        ...c,
+        lastUpdate: now,
+        aktivitas: [
+          ...c.aktivitas,
+          {
+            id: `a${Date.now()}`,
+            timestamp: now,
+            actor: currentUser.name,
+            actorRole: currentUser.role,
+            action: "Tambah PIC",
+            fields: { [fieldLabel]: formatted },
+            fromState: c.workflowStatus,
+          },
+        ],
+      };
+
+      updateContribution(updated);
+      setLoading(false);
+      onSuccess();
+      onClose();
+    }, 300);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="flex w-full max-w-md flex-col rounded-xl bg-white shadow-xl">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-5 shrink-0">
+          <h2 className="text-sm font-semibold text-gray-800">Tambah PIC</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="overflow-y-auto px-4 py-3 space-y-4 flex-1 min-h-0">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-600">Unit Kerja <span className="ml-0.5 text-red-400">*</span></label>
+            <select
+              value={unitKerja}
+              onChange={(e) => setUnitKerja(e.target.value)}
+              className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${unitKerja ? 'text-gray-900' : 'text-gray-400'} [&_option]:text-gray-900`}
+            >
+              <option value="" disabled>Pilih Unit Kerja...</option>
+              {UNIT_KERJA_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-600">Email PIC <span className="ml-0.5 text-red-400">*</span></label>
+            <div className="space-y-1.5">
+              {emails.map((email, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => updateEmail(i, e.target.value)}
+                    placeholder={`Email PIC ${i + 1}`}
+                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                  />
+                  {emails.length > 1 && (
+                    <button onClick={() => removeEmail(i)} className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button onClick={addEmail} className="mt-1.5 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
+              <Plus className="h-3.5 w-3.5" /> Tambah Email
+            </button>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
+          <button onClick={onClose} className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50">Batal</button>
+          <button onClick={handleSubmit} disabled={loading} className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            {loading ? "Menyimpan..." : "Simpan"}
+          </button>
         </div>
       </div>
     </div>
