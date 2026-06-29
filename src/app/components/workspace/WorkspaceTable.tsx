@@ -143,8 +143,7 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                     <div className="text-sm font-medium text-gray-800 leading-snug">{c.instansi}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-800">{c.program}</div>
-                    <div className="text-xs text-gray-400 leading-snug mt-0.5">{c.paketBantuan}</div>
+                    <div className="text-sm text-gray-600">{c.program}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{getUnitKerja(c)}</td>
                   <td className="px-4 py-3">

@@ -191,7 +191,7 @@ function parseInitialState(fields: Record<string, string> = {}): {
 }
 
 export function VervalModal({ contribution, currentUser, onClose, onSuccess, readOnly, initialFields }: VervalModalProps) {
-  const initialState = readOnly && initialFields ? parseInitialState(initialFields) : null;
+  const initialState = initialFields ? parseInitialState(initialFields) : null;
   const [results, setResults] = useState<Record<string, boolean>>(initialState?.results || {});
   const [radioSelected, setRadioSelected] = useState<Record<string, string>>(initialState?.radioSelected || {});
   const [notes, setNotes] = useState<Record<string, string>>(initialState?.notes || {});
@@ -312,12 +312,12 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                           )}
                           <span className={`text-sm ${readOnly ? (isChecked ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                         </label>
-                        {isChecked && (el.hasNotes || el.notesRequired) && (
+                        {isChecked && (
                           <input
                             type="text"
                             value={notes[noteKey] || ""}
                             onChange={(e) => setNote(noteKey, e.target.value)}
-                            placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
+                            placeholder={el.notesRequired ? "Isian wajib..." : "Keterangan (opsional)"}
                             readOnly={readOnly}
                             className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-800 read-only:border-gray-300"
                           />
@@ -346,12 +346,12 @@ export function VervalModal({ contribution, currentUser, onClose, onSuccess, rea
                           )}
                         <span className={`text-sm ${readOnly ? (isSelected ? 'text-gray-800 font-medium' : 'text-gray-400') : 'text-gray-600'}`}>{el.label}</span>
                       </label>
-                      {isSelected && (el.hasNotes || el.notesRequired) && (
+                      {isSelected && (
                         <input
                           type="text"
                           value={notes[noteKey] || ""}
                           onChange={(e) => setNote(noteKey, e.target.value)}
-                          placeholder={el.notesRequired ? "Isian wajib..." : "Isian penjelasan..."}
+                          placeholder={el.notesRequired ? "Isian wajib..." : "Keterangan (opsional)"}
                           readOnly={readOnly}
                           className="ml-6 w-full max-w-md rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-800 read-only:border-gray-300"
                         />

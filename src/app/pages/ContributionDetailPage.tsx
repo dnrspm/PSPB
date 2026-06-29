@@ -234,29 +234,22 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
               {vervalDone && vervalLog
-                ? `Diisi ${vervalLog.actor} pada ${(vervalLog.timestamp as Date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} pukul ${(vervalLog.timestamp as Date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+                ? `Diperbaharui ${vervalLog.actor} pada ${(vervalLog.timestamp as Date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} pukul ${(vervalLog.timestamp as Date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
                 : 'Isi form verval sesuai hasil diskusi dengan calon mitra'}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {vervalDone && (
-              <button
-                onClick={() => setViewVervalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-200"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Lihat Isian Verval
-              </button>
-            )}
-            {!vervalDone && (
-              <button
-                onClick={() => setVervalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-200"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Isi Form Verval
-              </button>
-            )}
+            <button
+              onClick={() => setVervalOpen(true)}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-opacity-80 ${
+                vervalDone
+                  ? 'border-green-300 bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200'
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              {vervalDone ? 'Edit Verval' : 'Isi Form Verval'}
+            </button>
           </div>
         </div>
       </div>
@@ -267,17 +260,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
           currentUser={currentUser}
           onClose={() => setVervalOpen(false)}
           onSuccess={onRefresh}
-        />
-      )}
-
-      {viewVervalOpen && vervalLog && (
-        <VervalModal
-          contribution={contribution}
-          currentUser={currentUser}
-          onClose={() => setViewVervalOpen(false)}
-          onSuccess={onRefresh}
-          readOnly
-          initialFields={vervalLog.fields}
+          initialFields={vervalLog?.fields}
         />
       )}
     </div>
