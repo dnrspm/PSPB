@@ -361,7 +361,9 @@ function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: strin
     if (!raw) continue;
     const regex = /([^(]+)\(([^)]*)\)/g;
     let match;
+    let parsed = false;
     while ((match = regex.exec(raw)) !== null) {
+      parsed = true;
       const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "").trim();
       const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
       if (unitKerja && !seen.has(unitKerja.toUpperCase())) {
@@ -369,9 +371,10 @@ function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: strin
         result.push({ unitKerja, emails });
       }
     }
-  }
-  if (result.length === 0 && defaultUnitKerja) {
-    result.push({ unitKerja: defaultUnitKerja, emails: [] });
+    if (!parsed && defaultUnitKerja && !seen.has(defaultUnitKerja.toUpperCase())) {
+      seen.add(defaultUnitKerja.toUpperCase());
+      result.push({ unitKerja: defaultUnitKerja, emails: [raw] });
+    }
   }
   return result;
 }
