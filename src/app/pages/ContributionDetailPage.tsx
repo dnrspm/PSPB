@@ -394,7 +394,7 @@ function getLabelByValue(options: { value: string; label: string }[], value: str
 function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string, string> | null {
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const f = aktivitas[i].fields;
-    if (f && f["Siswa"] && f["Guru"]) return f;
+    if (f && (f["Siswa Terdampak"] || f["Siswa"]) && (f["Guru Terdampak"] || f["Guru"])) return f;
   }
   return null;
 }
@@ -727,11 +727,11 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <dt className="text-gray-400">Siswa</dt>
-              <dd className="text-gray-900">{targetPenerima["Siswa"]}</dd>
+              <dd className="text-gray-900">{targetPenerima["Siswa Terdampak"] || targetPenerima["Siswa"]}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Guru</dt>
-              <dd className="text-gray-900">{targetPenerima["Guru"]}</dd>
+              <dd className="text-gray-900">{targetPenerima["Guru Terdampak"] || targetPenerima["Guru"]}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Satuan Pendidikan</dt>
