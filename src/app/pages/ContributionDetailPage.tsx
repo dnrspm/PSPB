@@ -771,7 +771,7 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
               </button>
               <button
                 onClick={() => setTambahPICOpen(true)}
-                className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                className="inline-flex items-center gap-1 rounded-md border border-gray-900 bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Tambah PIC
@@ -1174,7 +1174,7 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
         type="button"
         onClick={() => document.getElementById("dokumen-upload-input")?.click()}
         disabled={uploading}
-        className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-gray-900 bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
       >
         <Upload className="h-3.5 w-3.5" />
         {uploading ? "Mengunggah..." : "Upload Dokumen"}
