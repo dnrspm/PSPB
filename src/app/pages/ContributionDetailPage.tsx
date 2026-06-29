@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -406,13 +406,21 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
   const isBahanAjar = c.program === "Bahan Ajar Digital";
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
   const targetPenerima = useMemo(() => findTargetPenerima(c.aktivitas), [c.aktivitas]);
+  const removedUnitKerjaSet = useMemo(() => {
+    const removed = new Set<string>();
+    for (const a of c.aktivitas) {
+      const f = a.fields;
+      if (f && typeof f._removedUnitKerja === "string") removed.add(f._removedUnitKerja.toUpperCase());
+    }
+    return removed;
+  }, [c.aktivitas]);
   const unitKerjaPIC = useMemo(() => {
     const parsed1 = parseUnitKerjaPIC(c.aktivitas, "Unit Kerja dan PIC");
     const parsed2 = parseUnitKerjaPIC(c.aktivitas, "Email Satuan Kerja");
     const allKeys = new Set<string>();
     parsed1.forEach(p => allKeys.add(p.unitKerja.toUpperCase()));
     parsed2.forEach(p => allKeys.add(p.unitKerja.toUpperCase()));
-    return Array.from(allKeys).map(key => {
+    return Array.from(allKeys).filter(key => !removedUnitKerjaSet.has(key)).map(key => {
       const from1 = parsed1.find(p => p.unitKerja.toUpperCase() === key);
       const from2 = parsed2.find(p => p.unitKerja.toUpperCase() === key);
       return {
@@ -421,11 +429,34 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
         emailsSatuanKerja: from2?.emails || [],
       };
     });
-  }, [c.aktivitas]);
+  }, [c.aktivitas, removedUnitKerjaSet]);
   const picBiroKerjasama = useMemo(() => {
     const parsed = parseUnitKerjaPIC(c.aktivitas, "Email PIC Biro Kerjasama", c.unitKerja || "Biro Perencanaan dan Kerjasama");
     return parsed.length > 0 ? parsed[0].emails : [];
   }, [c.aktivitas]);
+
+  const handleRemovePIC = useCallback((unitKerja: string) => {
+    if (!window.confirm(`Hapus PIC untuk unit kerja "${unitKerja}"?`)) return;
+    const now = new Date();
+    const updated: Contribution = {
+      ...c,
+      lastUpdate: now,
+      aktivitas: [
+        ...c.aktivitas,
+        {
+          id: `a${Date.now()}`,
+          timestamp: now,
+          actor: currentUser.name,
+          actorRole: currentUser.role,
+          action: "Hapus PIC",
+          fields: { _removedUnitKerja: unitKerja },
+          fromState: c.workflowStatus,
+        },
+      ],
+    };
+    updateContribution(updated);
+    onDokumenChange?.();
+  }, [c, currentUser, onDokumenChange]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -678,7 +709,15 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
                 <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
                   <div>
                     <dt className="text-gray-400">Unit Kerja</dt>
-                    <dd className="mt-0.5 font-medium text-gray-900 text-sm">{item.unitKerja}</dd>
+                    <dd className="mt-0.5 font-medium text-gray-900 text-sm flex items-center gap-2">{item.unitKerja}
+                      <button
+                        onClick={() => handleRemovePIC(item.unitKerja)}
+                        className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                        title="Hapus PIC"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </dd>
                   </div>
                   {item.emailsSekretariat.length > 0 && (
                     <div>
