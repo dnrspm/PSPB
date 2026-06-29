@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, ChevronDown, ChevronUp, ChevronRight, Plus, Trash2, Pencil } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
@@ -401,6 +401,8 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
 
 function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contribution: Contribution; onDokumenChange?: () => void; currentUser: SessionUser }) {
   const [tambahPICOpen, setTambahPICOpen] = useState(false);
+  const [picEditMode, setPicEditMode] = useState(false);
+  const [editingPICEmail, setEditingPICEmail] = useState<{ unitKerja: string; type: "sekretariat" | "satuan-kerja"; email: string } | null>(null);
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -414,6 +416,25 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
     }
     return removed;
   }, [c.aktivitas]);
+  const removedPICEmails = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of c.aktivitas) {
+      const f = a.fields;
+      if (f && typeof f._removePICEmail === "string") set.add(f._removePICEmail);
+    }
+    return set;
+  }, [c.aktivitas]);
+  const editedPICEmails = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of c.aktivitas) {
+      const f = a.fields;
+      if (f && typeof f._editPICEmail === "string") {
+        const parts = f._editPICEmail.split("||");
+        if (parts.length === 4) map.set(`${parts[0]}||${parts[1]}||${parts[2]}`, parts[3]);
+      }
+    }
+    return map;
+  }, [c.aktivitas]);
   const unitKerjaPIC = useMemo(() => {
     const parsed1 = parseUnitKerjaPIC(c.aktivitas, "Unit Kerja dan PIC");
     const parsed2 = parseUnitKerjaPIC(c.aktivitas, "Email Satuan Kerja");
@@ -423,13 +444,22 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
     return Array.from(allKeys).filter(key => !removedUnitKerjaSet.has(key)).map(key => {
       const from1 = parsed1.find(p => p.unitKerja.toUpperCase() === key);
       const from2 = parsed2.find(p => p.unitKerja.toUpperCase() === key);
+      const uk = from1?.unitKerja || from2?.unitKerja || key;
+      const filterEmails = (emails: string[], type: string): string[] =>
+        emails.filter(e => {
+          const key = `${uk}||${type}||${e}`;
+          return !removedPICEmails.has(key) && !removedPICEmails.has(`${uk.toUpperCase()}||${type}||${e}`);
+        }).map(e => {
+          const mapped = editedPICEmails.get(`${uk}||${type}||${e}`) || editedPICEmails.get(`${uk.toUpperCase()}||${type}||${e}`);
+          return mapped || e;
+        });
       return {
-        unitKerja: from1?.unitKerja || from2?.unitKerja || key,
-        emailsSekretariat: from1?.emails || [],
-        emailsSatuanKerja: from2?.emails || [],
+        unitKerja: uk,
+        emailsSekretariat: filterEmails(from1?.emails || [], "sekretariat"),
+        emailsSatuanKerja: filterEmails(from2?.emails || [], "satuan-kerja"),
       };
     });
-  }, [c.aktivitas, removedUnitKerjaSet]);
+  }, [c.aktivitas, removedUnitKerjaSet, removedPICEmails, editedPICEmails]);
   const picBiroKerjasama = useMemo(() => {
     const parsed = parseUnitKerjaPIC(c.aktivitas, "Email PIC Biro Kerjasama", c.unitKerja || "Biro Perencanaan dan Kerjasama");
     return parsed.length > 0 ? parsed[0].emails : [];
@@ -456,6 +486,53 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
     };
     updateContribution(updated);
     onDokumenChange?.();
+  }, [c, currentUser, onDokumenChange]);
+
+  const handleRemoveEmail = useCallback((unitKerja: string, type: "sekretariat" | "satuan-kerja", email: string) => {
+    if (!window.confirm(`Hapus email "${email}" dari ${unitKerja}?`)) return;
+    const now = new Date();
+    const updated: Contribution = {
+      ...c,
+      lastUpdate: now,
+      aktivitas: [
+        ...c.aktivitas,
+        {
+          id: `a${Date.now()}`,
+          timestamp: now,
+          actor: currentUser.name,
+          actorRole: currentUser.role,
+          action: "Hapus Email PIC",
+          fields: { _removePICEmail: `${unitKerja}||${type}||${email}` },
+          fromState: c.workflowStatus,
+        },
+      ],
+    };
+    updateContribution(updated);
+    onDokumenChange?.();
+  }, [c, currentUser, onDokumenChange]);
+
+  const handleEditPICEmailSubmit = useCallback((unitKerja: string, type: "sekretariat" | "satuan-kerja", oldEmail: string, newEmail: string) => {
+    if (oldEmail === newEmail) return;
+    const now = new Date();
+    const updated: Contribution = {
+      ...c,
+      lastUpdate: now,
+      aktivitas: [
+        ...c.aktivitas,
+        {
+          id: `a${Date.now()}`,
+          timestamp: now,
+          actor: currentUser.name,
+          actorRole: currentUser.role,
+          action: "Edit Email PIC",
+          fields: { _editPICEmail: `${unitKerja}||${type}||${oldEmail}||${newEmail}` },
+          fromState: c.workflowStatus,
+        },
+      ],
+    };
+    updateContribution(updated);
+    onDokumenChange?.();
+    setEditingPICEmail(null);
   }, [c, currentUser, onDokumenChange]);
 
   return (
@@ -683,16 +760,25 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
 
       {/* Unit Kerja dan PIC */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
-          <button
-            onClick={() => setTambahPICOpen(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Tambah PIC
-          </button>
-        </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Users className="h-4 w-4" /> Unit Kerja dan PIC</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPicEditMode(prev => !prev)}
+                className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium ${picEditMode ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit PIC
+              </button>
+              <button
+                onClick={() => setTambahPICOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Tambah PIC
+              </button>
+            </div>
+          </div>
         <div className="space-y-4">
           <div>
             <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2 text-sm">
@@ -710,21 +796,43 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
                   <div>
                     <dt className="text-gray-400">Unit Kerja</dt>
                     <dd className="mt-0.5 font-medium text-gray-900 text-sm flex items-center gap-2">{item.unitKerja}
-                      <button
-                        onClick={() => handleRemovePIC(item.unitKerja)}
-                        className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                        title="Hapus PIC"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {picEditMode && (
+                        <button
+                          onClick={() => handleRemovePIC(item.unitKerja)}
+                          className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                          title="Hapus Semua PIC Unit Kerja"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </dd>
                   </div>
                   {item.emailsSekretariat.length > 0 && (
                     <div>
                       <dt className="text-gray-400">Sekretariat Unit Utama</dt>
-                      <dd className="mt-0.5 text-gray-900 text-sm">
+                      <dd className="mt-0.5 text-gray-900 text-sm space-y-1">
                         {item.emailsSekretariat.map((email, j) => (
-                          <span key={j} className="text-sm">{email}{j < item.emailsSekretariat.length - 1 && <br />}</span>
+                          <div key={j} className="flex items-center gap-1.5">
+                            <span className="text-sm">{email}</span>
+                            {picEditMode && (
+                              <>
+                                <button
+                                  onClick={() => setEditingPICEmail({ unitKerja: item.unitKerja, type: "sekretariat", email })}
+                                  className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-blue-50 hover:text-blue-500"
+                                  title="Edit Email"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveEmail(item.unitKerja, "sekretariat", email)}
+                                  className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                                  title="Hapus Email"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         ))}
                       </dd>
                     </div>
@@ -732,9 +840,29 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
                   {item.emailsSatuanKerja.length > 0 && (
                     <div>
                       <dt className="text-gray-400">Satuan Kerja</dt>
-                      <dd className="mt-0.5 text-gray-900 text-sm">
+                      <dd className="mt-0.5 text-gray-900 text-sm space-y-1">
                         {item.emailsSatuanKerja.map((email, j) => (
-                          <span key={j} className="text-sm">{email}{j < item.emailsSatuanKerja.length - 1 && <br />}</span>
+                          <div key={j} className="flex items-center gap-1.5">
+                            <span className="text-sm">{email}</span>
+                            {picEditMode && (
+                              <>
+                                <button
+                                  onClick={() => setEditingPICEmail({ unitKerja: item.unitKerja, type: "satuan-kerja", email })}
+                                  className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-blue-50 hover:text-blue-500"
+                                  title="Edit Email"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveEmail(item.unitKerja, "satuan-kerja", email)}
+                                  className="shrink-0 rounded-md p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                                  title="Hapus Email"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         ))}
                       </dd>
                     </div>
@@ -746,6 +874,15 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
         </div>
 
       {tambahPICOpen && <TambahPICModal contribution={c} currentUser={currentUser} onClose={() => setTambahPICOpen(false)} onSuccess={onDokumenChange || (() => {})} />}
+      {editingPICEmail && (
+        <EditPICEmailModal
+          unitKerja={editingPICEmail.unitKerja}
+          type={editingPICEmail.type}
+          currentEmail={editingPICEmail.email}
+          onSubmit={(newEmail) => handleEditPICEmailSubmit(editingPICEmail.unitKerja, editingPICEmail.type, editingPICEmail.email, newEmail)}
+          onClose={() => setEditingPICEmail(null)}
+        />
+      )}
 
       {/* Verifikasi dan Validasi */}
       {picBiroKerjasama.length > 0 && (
@@ -946,6 +1083,50 @@ function TambahPICModal({ contribution: c, currentUser, onClose, onSuccess }: { 
           <button onClick={onClose} className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50">Batal</button>
           <button onClick={handleSubmit} disabled={loading} className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
             {loading ? "Menyimpan..." : "Simpan"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditPICEmailModal({ unitKerja, type, currentEmail, onSubmit, onClose }: { unitKerja: string; type: "sekretariat" | "satuan-kerja"; currentEmail: string; onSubmit: (newEmail: string) => void; onClose: () => void }) {
+  const [email, setEmail] = useState(currentEmail);
+  const typeLabel = type === "sekretariat" ? "Sekretariat Unit Utama" : "Satuan Kerja";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="flex w-full max-w-md flex-col rounded-xl bg-white shadow-xl">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-5 shrink-0">
+          <h2 className="text-sm font-semibold text-gray-800">Edit Email PIC</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="px-4 py-3 space-y-4">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className="rounded-md bg-gray-100 px-2 py-1">{unitKerja}</span>
+            <span className="text-gray-300">/</span>
+            <span className="rounded-md bg-gray-100 px-2 py-1">{typeLabel}</span>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-600">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+              placeholder="pic@example.com"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
+          <button onClick={onClose} className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50">Batal</button>
+          <button
+            onClick={() => onSubmit(email)}
+            disabled={!email.trim() || email === currentEmail}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Simpan
           </button>
         </div>
       </div>
