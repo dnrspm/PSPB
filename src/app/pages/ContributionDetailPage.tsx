@@ -352,7 +352,6 @@ const isSystem = log.action === "Kontribusi masuk";
 /* ────────────── Informasi Tab ────────────── */
 
 function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: string = "Unit Kerja dan PIC", defaultUnitKerja?: string): Array<{ unitKerja: string; emails: string[] }> {
-  const seen = new Set<string>();
   const result: Array<{ unitKerja: string; emails: string[] }> = [];
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const fields = aktivitas[i].fields;
@@ -365,15 +364,24 @@ function parseUnitKerjaPIC(aktivitas: Contribution["aktivitas"], fieldKey: strin
     while ((match = regex.exec(raw)) !== null) {
       parsed = true;
       const unitKerja = match[1].replace(/^[\s,|]+|[\s,|]+$/g, "").trim();
+      if (!unitKerja) continue;
       const emails = match[2].split(",").map(e => e.trim()).filter(Boolean);
-      if (unitKerja && !seen.has(unitKerja.toUpperCase())) {
-        seen.add(unitKerja.toUpperCase());
+      const existing = result.find(r => r.unitKerja.toUpperCase() === unitKerja.toUpperCase());
+      if (existing) {
+        for (const e of emails) {
+          if (!existing.emails.includes(e)) existing.emails.push(e);
+        }
+      } else {
         result.push({ unitKerja, emails });
       }
     }
-    if (!parsed && defaultUnitKerja && !seen.has(defaultUnitKerja.toUpperCase())) {
-      seen.add(defaultUnitKerja.toUpperCase());
-      result.push({ unitKerja: defaultUnitKerja, emails: [raw] });
+    if (!parsed && defaultUnitKerja) {
+      const existing = result.find(r => r.unitKerja.toUpperCase() === defaultUnitKerja.toUpperCase());
+      if (existing) {
+        if (!existing.emails.includes(raw)) existing.emails.push(raw);
+      } else {
+        result.push({ unitKerja: defaultUnitKerja, emails: [raw] });
+      }
     }
   }
   return result;
