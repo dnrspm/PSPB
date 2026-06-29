@@ -765,14 +765,13 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPicEditMode(prev => !prev)}
-                className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium ${picEditMode ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50"
               >
-                {picEditMode ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
-                {picEditMode ? "Simpan" : "Edit PIC"}
+                {picEditMode ? "Simpan" : <><Pencil className="h-3.5 w-3.5" /> Edit PIC</>}
               </button>
               <button
                 onClick={() => setTambahPICOpen(true)}
-                className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Tambah PIC
@@ -1175,7 +1174,7 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
         type="button"
         onClick={() => document.getElementById("dokumen-upload-input")?.click()}
         disabled={uploading}
-        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
       >
         <Upload className="h-3.5 w-3.5" />
         {uploading ? "Mengunggah..." : "Upload Dokumen"}
