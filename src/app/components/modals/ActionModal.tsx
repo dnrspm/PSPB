@@ -83,6 +83,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Jadwalkan Audiensi",
     toState: "audiensi-terjadwal",
     fields: [
+      { key: "template", label: "Unduh Template Rencana Kerjasama", type: "download-template" },
       { key: "unitKerjaEmail", label: "Email Satuan Kerja", type: "unit-kerja-email", required: true, readonlyUnitKerja: true },
       { key: "tanggal", label: "Tanggal Audiensi", type: "date", required: true, placeholder: "YYYY-MM-DD" },
       { key: "file", label: "Surat Undangan & Dokumen", type: "file", required: true, multiple: true },
@@ -115,13 +116,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     ],
   },
   "ajukan-perjanjian": {
-    title: "Ajukan Perjanjian ke Biro Hukum",
+    title: "Ajukan Perjanjian",
     toState: "perjanjian-pembahasan-pks",
     fields: [
       { key: "templatePKS", label: "Download Template PKS", type: "download-template" },
-      { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Draft PKS", type: "file", required: true },
-      { key: "fileSuratKuasa", label: "Upload Surat Kuasa", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pengajuan PKS..." },
     ],
@@ -139,8 +138,10 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Perjanjian Telah Disetujui",
     toState: "pelaksanaan-persiapan",
     fields: [
+      { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
       { key: "fileRencana", label: "Upload rencana kerja final yang siap ditandatangani", type: "file", required: true },
+      { key: "fileSuratKuasa", label: "Upload Surat Kuasa", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
@@ -596,7 +597,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
               }
 
               renderedFields.push(
-                <div key={field.key}>
+                <div
+                  key={field.key}
+                  className={field.type === "download-template" ? "-mx-4 px-4 py-3 bg-gray-50 border-b border-gray-200 -mt-3" : undefined}
+                >
                   {field.type !== "download-template" && field.type !== "section-header" && (
                     <label className="mb-1 block text-sm font-medium text-gray-600">
                       {field.label}
@@ -610,12 +614,16 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       onClick={() => {
                         const link = document.createElement("a");
                         link.href = "#";
-                        link.download = "Template_Rencana_Kerjasama.docx";
+                        link.download = field.key === "templatePKS"
+                          ? "Template_PKS.docx"
+                          : field.key === "templateSuratKuasa"
+                          ? "Template_Surat_Kuasa.docx"
+                          : "Template_Rencana_Kerjasama.docx";
                         link.click();
                       }}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 truncate"
+                      className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 truncate"
                     >
-                      <Download className="h-3.5 w-3.5 shrink-0" />
+                      <Download className="h-4 w-4 shrink-0" />
                       {field.label.replace("Download", "Unduh")}
                     </button>
                   )}

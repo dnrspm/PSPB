@@ -88,7 +88,7 @@ export const ACTION_LABELS: Record<WorkflowAction, string> = {
   "audiensi-terlaksana": "Audiensi Terlaksana",
   "setuju-hasil-audiensi": "Setuju Hasil Audiensi",
   "audiensi-ulang": "Audiensi Ulang",
-  "ajukan-perjanjian": "Ajukan Perjanjian ke Biro Hukum",
+  "ajukan-perjanjian": "Ajukan Perjanjian",
   "lanjutkan-pembahasan": "Lanjutkan Pembahasan",
   "perjanjian-disetujui": "Perjanjian Telah Disetujui",
   "lanjut-pelaksanaan": "Lanjut Pelaksanaan",
