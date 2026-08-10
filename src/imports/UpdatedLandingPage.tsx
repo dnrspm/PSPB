@@ -16,7 +16,8 @@ import loopSvgPaths from "./svg-qgcasdpjdv";
 import highlightSvgPaths from "./svg-pfbodqyl9b";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowRight, Wifi, Zap, Monitor, GraduationCap, BookOpen, Building2, ChevronDown, MoreVertical, Trash2, X, Download, Info, School, ArrowDown, Clock, MapPin, Handshake, Lightbulb, Users, Boxes, CheckCircle, Code2, Brain, FileVideo, Image } from "lucide-react";
+import { getMitraSession, getMitraProfile, clearMitraSession } from "../app/lib/mitra";
+import { ArrowRight, Wifi, Zap, Monitor, GraduationCap, BookOpen, Building2, ChevronDown, MoreVertical, Trash2, X, Download, Info, School, ArrowDown, Clock, MapPin, Handshake, Lightbulb, Users, Boxes, CheckCircle, Code2, Brain, FileVideo, Image, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../app/components/ui/dropdown-menu";
 import ExplorePageFilterOnRenovasiSekolah from "./ExplorePageFilterOnRenovasiSekolah";
 import { Block3Container } from "../app/components/Block3Container";
@@ -213,7 +214,74 @@ function Right() {
   return (
     <div className="content-stretch flex gap-3 items-center relative shrink-0" data-name="Right">
       <Component />
+      <HeaderKontribusiCta />
     </div>
+  );
+}
+
+function HeaderKontribusiCta() {
+  const navigate = useNavigate();
+  const session = getMitraSession();
+  const profile = session ? getMitraProfile(session.email) : null;
+
+  if (!session) {
+    return (
+      <Button
+        size="sm"
+        onClick={() => {
+          // Tombol header: Daftar/Masuk sebagai Mitra (munculkan halaman login dahulu)
+          navigate("/mitra/login");
+        }}
+      >
+        Daftar/Masuk
+      </Button>
+    );
+  }
+
+  const displayName = profile?.nama || session.nama || "Mitra";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-[var(--surface-subdued)]">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary-50)] text-sm font-semibold text-[var(--primary)]">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <span className="hidden text-sm font-medium text-foreground sm:block">
+            {displayName}
+          </span>
+          <ChevronDown className="h-4 w-4 text-[var(--text-subdued)]" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="z-[10002] w-48 rounded-lg border-[var(--border-light)] bg-white p-1 py-1 text-[var(--text-default)] shadow-lg">
+        <DropdownMenuItem
+          onClick={() => navigate("/mitra/dashboard")}
+          className="cursor-pointer rounded-md px-3 py-2 text-sm text-[var(--text-default)] hover:bg-[var(--surface-subdued)] data-[highlighted]:bg-[var(--surface-subdued)] data-[highlighted]:text-[var(--text-default)] focus:bg-[var(--surface-subdued)]"
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Dashboard
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate("/mitra/profil")}
+          className="cursor-pointer rounded-md px-3 py-2 text-sm text-[var(--text-default)] hover:bg-[var(--surface-subdued)] data-[highlighted]:bg-[var(--surface-subdued)] data-[highlighted]:text-[var(--text-default)] focus:bg-[var(--surface-subdued)]"
+        >
+          <UserRound className="h-4 w-4" />
+          Profil
+        </DropdownMenuItem>
+        <div className="my-1 border-t border-[var(--border-light)]" />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => {
+            clearMitraSession();
+            navigate("/");
+          }}
+          className="cursor-pointer rounded-md px-3 py-2 text-sm text-[var(--red-70)] hover:bg-[var(--red-0)] data-[highlighted]:bg-[var(--red-0)] focus:bg-[var(--red-0)]"
+        >
+          <LogOut className="h-4 w-4" />
+          Keluar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -1563,7 +1631,7 @@ function Block3() {
         <div className="max-w-[1140px] mx-auto w-full">
           <Frame onCardClick={setSelectedCard} />
           <ContributionCTACard onClick={() => {
-            // Navigate to contribution form page
+            // Navigate to contribution form page (langsung pilih program)
             navigate("/kontribusi");
           }} />
         </div>
@@ -1680,11 +1748,11 @@ function Block3() {
                   onClick={() => {
                     const programIndex = selectedCard;
                     setSelectedCard(null);
-                    navigate("/kontribusi", { 
-                      state: { 
+                    navigate("/kontribusi", {
+                      state: {
                         preSelectedProgram: programIndex,
-                        directToStep2: true 
-                      } 
+                        directToStep2: true,
+                      },
                     });
                   }}
                   className="w-full bg-[var(--action-neutral-default)] text-white hover:bg-[var(--action-neutral-hovered)]"

@@ -6,6 +6,12 @@ import LoginPageWrapper from "./pages/LoginPageWrapper";
 import WorkspaceLayout from "./pages/WorkspaceLayout";
 import WorkspacePageWrapper from "./pages/WorkspacePageWrapper";
 import ContributionDetailWrapper from "./pages/ContributionDetailWrapper";
+import MitraLayout from "./components/layout/MitraLayout";
+import MitraLoginPage from "./pages/mitra/MitraLoginPage";
+import MitraRegisterPage from "./pages/mitra/MitraRegisterPage";
+import MitraDashboardPage from "./pages/mitra/MitraDashboardPage";
+import MitraProfilePage from "./pages/mitra/MitraProfilePage";
+import MitraKontribusiDetailPage from "./pages/mitra/MitraKontribusiDetailPage";
 
 // Error Fallback Component
 function ErrorFallback() {
@@ -48,6 +54,22 @@ export const router = createBrowserRouter([
   {
     path: "/internal",
     element: <Navigate to="/workspace" replace />,
+  },
+  {
+    path: "/mitra",
+    children: [
+      { index: true, element: <Navigate to="/mitra/login" replace /> },
+      { path: "login", element: <MitraLoginPage /> },
+      { path: "registrasi", element: <MitraRegisterPage /> },
+      {
+        element: <MitraLayout />,
+        children: [
+          { path: "dashboard", element: <MitraDashboardPage /> },
+          { path: "profil", element: <MitraProfilePage /> },
+          { path: "kontribusi/:id", element: <MitraKontribusiDetailPage /> },
+        ],
+      },
+    ],
   },
   {
     path: "/workspace",

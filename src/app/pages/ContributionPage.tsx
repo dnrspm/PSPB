@@ -4,6 +4,7 @@ import { ContributionFormWizard } from "../components/ContributionFormWizard";
 import { ProgramIllustration } from "../components/ProgramIllustration";
 import { SchoolMapModal } from "../components/SchoolMapModal";
 import { ProgramSelectionModal } from "../components/ProgramSelectionModal";
+import { getMitraProfile, getMitraSession } from "../lib/mitra";
 import imgInfrastrukturDigital from "../../assets/infrastrukturdigital.jpg";
 import imgSumberBelajar from "../../assets/sumberbelajarmurid.jpg";
 import imgRevitalisasiSekolah from "../../assets/revitalisasisekolah.jpg";
@@ -68,6 +69,27 @@ export default function ContributionPage() {
     email: "",
     contributions: {}
   });
+
+  // Prefill data kontributor dari profil mitra yang sedang login
+  useEffect(() => {
+    const session = getMitraSession();
+    if (!session) return;
+    const profile = getMitraProfile(session.email);
+    if (!profile) return;
+    setFormData((prev: any) => {
+      if (prev.fullName || prev.organization) return prev;
+      return {
+        ...prev,
+        fullName: profile.nama,
+        organization: profile.namaPerusahaan,
+        position: profile.jabatan,
+        phone: profile.nomorTelepon,
+        email: profile.email,
+        badanHukum: profile.badanHukum,
+        statusMitra: profile.statusMitra,
+      };
+    });
+  }, []);
 
   // Handle pre-selected program from landing page
   useEffect(() => {
@@ -228,6 +250,7 @@ export default function ContributionPage() {
         expandedSchools={expandedSchools}
         setExpandedSchools={setExpandedSchools}
         ProgramIllustration={ProgramIllustration}
+        skipDataDiri={!!getMitraSession()}
       />
 
       {/* School Map Modal */}

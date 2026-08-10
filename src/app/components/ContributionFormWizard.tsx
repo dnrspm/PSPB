@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { ChevronDown, MoreVertical, Trash2, ArrowLeft, GraduationCap, School, ClipboardCheck, ArrowRight, Plus, File } from "lucide-react";
 import { FormInput } from "./FormInput";
 import { FileUpload } from "./FileUpload";
@@ -16,6 +17,9 @@ import svgPathsElectricity from "../../imports/svg-if2lkdlrqq";
 import imgTerimaKasih from "../../assets/terimakasih.jpg";
 import svgPathsRevitalisasi from "../../imports/svg-t12jg4i11j";
 import { SimpleDropdownMenu, SimpleDropdownMenuItem } from "./SimpleDropdownMenu";
+import { getMitraSession, getMitraProfile } from "../lib/mitra";
+import { addContribution } from "../data/mockWorkspace";
+import type { Contribution } from "../types/contribution";
 
 // Updated: 2026-03-08 - Added multi-school support for Revitalisasi Sekolah
 
@@ -53,6 +57,7 @@ interface ContributionFormWizardProps {
   expandedSchools: Record<string, boolean>;
   setExpandedSchools: (schools: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void;
   ProgramIllustration: React.ComponentType<ProgramIllustrationProps>;
+  skipDataDiri?: boolean;
 }
 
 export function ContributionFormWizard({
@@ -71,12 +76,14 @@ export function ContributionFormWizard({
   setExpandedPrograms,
   expandedSchools,
   setExpandedSchools,
-  ProgramIllustration
+  ProgramIllustration,
+  skipDataDiri = false
 }: ContributionFormWizardProps) {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
   const [showThankYou, setShowThankYou] = useState(false);
   const [expandedPrasyarat, setExpandedPrasyarat] = useState<Record<string, boolean>>({guru: true, murid: true, 'sso-belajar-id': true, 'integrasi-rumah-pendidikan': true, 'default': true});
+  const navigate = useNavigate();
 
   // Debug: Log formData changes
   useEffect(() => {
@@ -96,8 +103,11 @@ export function ContributionFormWizard({
 
   if (!show) return null;
 
+  // Jumlah langkah: Data Diri dihapus total jika mitra sudah login (terisi dari profil)
+  const totalSteps = skipDataDiri ? 3 : 4;
+
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < totalSteps) {
       // When moving from Step 1 to Step 2 (Detail Kontribusi), expand all selected programs and schools
       if (currentStep === 1) {
         setExpandedPrograms(selectedProgram.map((_, idx) => idx));
@@ -126,13 +136,126 @@ export function ContributionFormWizard({
 
   const handleSubmit = () => {
     console.log('Form submitted:', formData);
+    const session = getMitraSession();
+    if (session) {
+      const profile = getMitraProfile(session.email);
+      const now = new Date();
+      const baseId = `mtr-${now.getTime()}`;
+      const namaMitra = profile?.namaPerusahaan || formData.organization || "";
+
+      selectedProgram.forEach((programIndex, idx) => {
+        const program = cardDetails[programIndex];
+        const contribution = formData.contributions[idx] || {};
+        const isInfrastrukturDigital = program?.title === "Infrastruktur Digital";
+        const isRevitalisasiSekolah = program?.title === "Revitalisasi Sekolah";
+        const isMultiSchool = isInfrastrukturDigital || isRevitalisasiSekolah;
+        const schoolItems: any[] = isMultiSchool ? (contribution.schools || []) : [];
+        const singleSchool = !isMultiSchool ? contribution.school : null;
+
+        const sekolah = isMultiSchool
+          ? schoolItems.map((s: any) => s.school.name)
+          : singleSchool ? [singleSchool.name] : [];
+
+        const sekolahDetail = isMultiSchool
+          ? schoolItems.map((s: any) => ({
+              name: s.school.name,
+              npsn: s.school.npsn,
+              lokasi: s.school.location || "",
+              linkLokasi: s.school.mapsLink || "",
+              kontribusi: "",
+              estimasiDana: "",
+              catatan: s.notes || "",
+            }))
+          : singleSchool
+          ? [{
+              name: singleSchool.name,
+              npsn: singleSchool.npsn,
+              lokasi: singleSchool.location || "",
+              linkLokasi: singleSchool.mapsLink || "",
+              kontribusi: "",
+              estimasiDana: "",
+              catatan: "",
+            }]
+          : [];
+
+        const jumlahPenerima = isMultiSchool
+          ? schoolItems.reduce((sum: number, s: any) => sum + (s.school.students || 0), 0)
+          : singleSchool ? (singleSchool.students || 0) : 0;
+
+        let paketBantuan = contribution.type || "";
+        if (!paketBantuan && isInfrastrukturDigital) {
+          const keys = new Set<string>();
+          schoolItems.forEach((s: any) => (s.packages || []).forEach((k: string) => keys.add(k)));
+          paketBantuan = [...keys].map((k) => infrastructurePackages[k]?.title || k).join(", ");
+        }
+        if (!paketBantuan && isRevitalisasiSekolah) {
+          const buildingNames = new Set<string>();
+          schoolItems.forEach((s: any) =>
+            (s.selectedBuildings || []).forEach((bid: string) => {
+              const b = revitalizationBuildings.find((rb) => rb.id === bid);
+              if (b) buildingNames.add(b.buildingName);
+            })
+          );
+          paketBantuan = [...buildingNames].join(", ");
+        }
+        if (!paketBantuan && (contribution.selectedTopics || []).length > 0) {
+          const pc = getProgramContent(program?.title);
+          paketBantuan = contribution.selectedTopics
+            .map((v: string) => pc?.options?.find((o: any) => o.value === v)?.label || v)
+            .join(", ");
+        }
+        if (!paketBantuan && (contribution.jenjangGuru || []).length > 0) {
+          paketBantuan = contribution.jenjangGuru.join(", ");
+        }
+
+        const newContribution: Contribution = {
+          id: `${baseId}-${idx}`,
+          namaMitra,
+          instansi: namaMitra,
+          narahubung: profile?.nama || formData.fullName || "",
+          kontak: formData.phone || "",
+          email: formData.email || session.email,
+          program: program?.title || "",
+          paketBantuan: paketBantuan || "-",
+          workflowStatus: "kontribusi-masuk",
+          pic: null,
+          lastUpdate: now,
+          submissionDate: now,
+          targetPenerima: "",
+          wilayah: "",
+          sekolah,
+          sekolahDetail: sekolahDetail.length > 0 ? sekolahDetail : undefined,
+          jumlahPenerima,
+          nilaiKontribusi: contribution.amount || (isMultiSchool ? "Menunggu Perhitungan" : "-"),
+          badanHukum: formData.badanHukum || profile?.badanHukum,
+          statusMitra: formData.statusMitra === "baru" ? "Baru" : formData.statusMitra === "lama" ? "Lama" : profile?.statusMitra,
+          jabatan: formData.position || profile?.jabatan,
+          topik: contribution.topikMateri,
+          infoTambahan: contribution.notes,
+          topikMateri: contribution.topikMateri,
+          dokumen: formData.companyProfile
+            ? [{ id: `${baseId}-d-${idx}`, name: formData.companyProfile.name, type: "proposal" as const, uploadedAt: now, uploadedBy: profile?.nama || "" }]
+            : [],
+          aktivitas: [{
+            id: `${baseId}-a-${idx}`,
+            timestamp: now,
+            actor: profile?.nama || "",
+            actorRole: "biro-perencanaan" as const,
+            action: "Kontribusi masuk",
+            toState: "kontribusi-masuk" as const,
+          }],
+        };
+        addContribution(newContribution);
+      });
+    }
     setShowThankYou(true);
   };
 
-  const handleBackToHome = () => {
+  const handleGoToKontribusi = () => {
     setShowThankYou(false);
     setCurrentStep(1);
     onClose();
+    navigate("/mitra/dashboard");
   };
 
   const handlePackageChange = (idx: number, packageType: string, checked: boolean) => {
@@ -226,122 +349,53 @@ export function ContributionFormWizard({
       <div className="w-full bg-default">
         <div className="max-w-3xl mx-auto pt-10 px-spacing-4 pb-[120px]">
           <div className="flex items-center justify-between relative">
-              {/* Step 1 */}
-              <div className="flex flex-col items-center z-10 flex-[0_1_auto] min-w-[80px]">
-                <div 
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                    currentStep >= 1 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-surface-neutral-default text-subdued border border-border-light'
-                  }`}
-                  style={{ 
-                    fontSize: 'var(--body-size)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                  }}
-                >
-                  1
-                </div>
-                <span 
-                  className={`text-center mt-spacing-2 text-helper ${
-                    currentStep >= 1 ? 'text-default' : 'text-subdued'
-                  }`}
-                >
-                  Pilih Program
-                </span>
-              </div>
+              {(
+                skipDataDiri
+                  ? [
+                      { label: "Pilih Program" },
+                      { label: "Detail Kontribusi" },
+                      { label: "Review" },
+                    ]
+                  : [
+                      { label: "Pilih Program" },
+                      { label: "Detail Kontribusi" },
+                      { label: "Data Diri" },
+                      { label: "Review" },
+                    ]
+              ).map((step, idx) => (
+                <React.Fragment key={step.label}>
+                  <div className="flex flex-col items-center z-10 flex-[0_1_auto] min-w-[80px]">
+                    <div
+                      className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
+                        currentStep >= idx + 1
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-surface-neutral-default text-subdued border border-border-light'
+                      }`}
+                      style={{
+                        fontSize: 'var(--body-size)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                      }}
+                    >
+                      {idx + 1}
+                    </div>
+                    <span
+                      className={`text-center mt-spacing-2 text-helper ${
+                        currentStep >= idx + 1 ? 'text-default' : 'text-subdued'
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
 
-              {/* Line 1-2 */}
-              <div 
-                className={`flex-1 h-0.5 mx-spacing-2 transition-all duration-200 ${
-                  currentStep >= 2 ? 'bg-primary' : 'bg-[var(--border-light)]'
-                }`}
-              />
-
-              {/* Step 2 */}
-              <div className="flex flex-col items-center z-10 flex-[0_1_auto] min-w-[80px]">
-                <div 
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                    currentStep >= 2 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-surface-neutral-default text-subdued border border-border-light'
-                  }`}
-                  style={{ 
-                    fontSize: 'var(--body-size)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                  }}
-                >
-                  2
-                </div>
-                <span 
-                  className={`text-center mt-spacing-2 text-helper ${
-                    currentStep >= 2 ? 'text-default' : 'text-subdued'
-                  }`}
-                >
-                  Detail Kontribusi
-                </span>
-              </div>
-
-              {/* Line 2-3 */}
-              <div 
-                className={`flex-1 h-0.5 mx-spacing-2 transition-all duration-200 ${
-                  currentStep >= 3 ? 'bg-primary' : 'bg-[var(--border-light)]'
-                }`}
-              />
-
-              {/* Step 3 */}
-              <div className="flex flex-col items-center z-10 flex-[0_1_auto] min-w-[80px]">
-                <div 
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                    currentStep >= 3 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-surface-neutral-default text-subdued border border-border-light'
-                  }`}
-                  style={{ 
-                    fontSize: 'var(--body-size)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                  }}
-                >
-                  3
-                </div>
-                <span 
-                  className={`text-center mt-spacing-2 text-helper ${
-                    currentStep >= 3 ? 'text-default' : 'text-subdued'
-                  }`}
-                >
-                  Data Diri
-                </span>
-              </div>
-
-              {/* Line 3-4 */}
-              <div 
-                className={`flex-1 h-0.5 mx-spacing-2 transition-all duration-200 ${
-                  currentStep >= 4 ? 'bg-primary' : 'bg-[var(--border-light)]'
-                }`}
-              />
-
-              {/* Step 4 */}
-              <div className="flex flex-col items-center z-10 flex-[0_1_auto] min-w-[80px]">
-                <div 
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                    currentStep >= 4 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-surface-neutral-default text-subdued border border-border-light'
-                  }`}
-                  style={{ 
-                    fontSize: 'var(--body-size)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                  }}
-                >
-                  4
-                </div>
-                <span 
-                  className={`text-center mt-spacing-2 text-helper ${
-                    currentStep >= 4 ? 'text-default' : 'text-subdued'
-                  }`}
-                >
-                  Review
-                </span>
-              </div>
+                  {idx < (skipDataDiri ? 3 : 4) - 1 && (
+                    <div
+                      className={`flex-1 h-0.5 mx-spacing-2 transition-all duration-200 ${
+                        currentStep >= idx + 2 ? 'bg-primary' : 'bg-[var(--border-light)]'
+                      }`}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
           </div>
         </div>
       </div>
@@ -458,7 +512,7 @@ export function ContributionFormWizard({
           )}
 
           {/* Step 3: Data Diri */}
-          {currentStep === 3 && (
+          {currentStep === 3 && !skipDataDiri && (
             <div className="flex flex-col w-full">
               <div className="flex flex-col items-start justify-center w-full bg-accent gap-spacing-2 p-spacing-6">
                 <h4 className="text-heading-medium text-accent-foreground">
@@ -1565,7 +1619,7 @@ return (
           )}
 
           {/* Step 4: Review */}
-          {currentStep === 4 && (
+          {currentStep === (skipDataDiri ? 3 : 4) && (
             <div className="flex flex-col w-full">
               <div className="flex flex-col items-start justify-center w-full bg-accent gap-spacing-2 p-spacing-6">
                 <h4 className="text-heading-medium text-accent-foreground">
@@ -1873,7 +1927,7 @@ return (
             
             <div className="flex-1" />
             
-            {currentStep < 4 ? (
+            {currentStep < totalSteps ? (
               <button
                 onClick={handleNext}
                 disabled={currentStep === 1 && selectedProgram.length === 0}
@@ -1924,13 +1978,14 @@ return (
               Terima kasih sudah mengisi formulir kontribusi
             </h3>
             <p className="text-[var(--text-secondary)] mb-8 max-w-md mx-auto">
-              Setelah ini, Anda akan mendapat email dari <span style={{ fontWeight: 600, textDecoration: 'underline', fontSize: 'inherit' }}>ruangmitra@dikdasmen.belajar.id</span> untuk melanjutkan proses kolaborasi.
+              Silakan periksa halaman kontribusi Anda secara berkala untuk mengetahui
+              kelanjutan dan status proses kontribusi Anda.
             </p>
             <button
-              onClick={handleBackToHome}
+              onClick={handleGoToKontribusi}
               className="bg-primary text-primary-foreground py-3 px-6 rounded-button font-semibold hover:opacity-90 transition-opacity"
             >
-              Kembali ke Beranda
+              Ke Halaman Kontribusi
             </button>
           </div>
         </div>

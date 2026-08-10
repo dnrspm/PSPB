@@ -650,6 +650,10 @@ export function updateContribution(updated: Contribution): void {
   store = store.map((c) => (c.id === updated.id ? updated : c));
 }
 
+export function addContribution(contribution: Contribution): void {
+  store = [contribution, ...store];
+}
+
 export function resetContributions(): void {
   store = [...mockContributions];
 }
