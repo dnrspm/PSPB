@@ -16,13 +16,14 @@ import loopSvgPaths from "./svg-qgcasdpjdv";
 import highlightSvgPaths from "./svg-pfbodqyl9b";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { getMitraSession, getMitraProfile, clearMitraSession } from "../app/lib/mitra";
+import { getMitraSession, getMitraProfile, clearMitraSession, isMitraLoggedIn } from "../app/lib/mitra";
 import { ArrowRight, Wifi, Zap, Monitor, GraduationCap, BookOpen, Building2, ChevronDown, MoreVertical, Trash2, X, Download, Info, School, ArrowDown, Clock, MapPin, Handshake, Lightbulb, Users, Boxes, CheckCircle, Code2, Brain, FileVideo, Image, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../app/components/ui/dropdown-menu";
 import ExplorePageFilterOnRenovasiSekolah from "./ExplorePageFilterOnRenovasiSekolah";
 import { Block3Container } from "../app/components/Block3Container";
 import Block3Wrapper from "../app/components/Block3Wrapper";
 import { Button } from "../app/components/Button";
+import LogoKemitraanPendidikan from "../app/components/LogoKemitraanPendidikan";
 import { ImageWithFallback } from "../app/components/figma/ImageWithFallback";
 import imgBannerCarousel from "figma:asset/b34745e91e2d31da38f7d52e770c80dc8af203d4.png";
 import imgIllustration7731 from "figma:asset/6344c4577ce56442e7dadb16b512afd5004803c3.png";
@@ -37,137 +38,11 @@ import imgSkollaPrimaryLogo from "figma:asset/27aacbaa998221712e45170957a7eddfd0
 import imgYamahaLogoSvg from "figma:asset/a09d59dcabd8d44cc6b4785cd89b24c0cddc1f56.png";
 import imgYayasanGuruBelajar from "figma:asset/46ad80fb7a31781ed3ac23288a7ecbb9bba33641.png";
 
-function Group2() {
-  return (
-    <div className="absolute inset-[28.7%_75.54%_11.41%_12.28%]" data-name="Group">
-      <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 46.2777 15.3115">
-        <g id="Group">
-          <path d={svgPaths.p93082c0} fill="var(--fill-0, #04287E)" id="Vector" />
-          <path d={svgPaths.p2c302c00} fill="var(--fill-0, #04287E)" id="Vector_2" />
-          <path d={svgPaths.p17d5d530} fill="var(--fill-0, #04287E)" id="Vector_3" />
-          <path d={svgPaths.p30c67980} fill="var(--fill-0, #04287E)" id="Vector_4" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Group3() {
-  return (
-    <div className="absolute inset-[15.1%_88.12%_28.35%_8.87%]" data-name="Group">
-      <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 11.4515 14.4539">
-        <g id="Group">
-          <g id="Group_2">
-            <g id="Vector" />
-            <g id="Vector_2" />
-            <path d={svgPaths.p5e0a900} fill="var(--fill-0, #00588E)" id="Vector_3" />
-            <path d={svgPaths.p19bf7600} fill="var(--fill-0, #04287E)" id="Vector_4" />
-          </g>
-          <path d={svgPaths.p304d8f00} fill="var(--fill-0, #7074F6)" id="Vector_5" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Group1() {
-  return (
-    <div className="absolute contents inset-[15.1%_75.54%_11.41%_8.87%]" data-name="Group">
-      <Group2 />
-      <Group3 />
-    </div>
-  );
-}
-
-function Group4() {
-  return (
-    <div className="absolute inset-[11.92%_61%_28.02%_26.3%]" data-name="Group">
-      <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 48.2506 15.3546">
-        <g id="Group">
-          <path d={svgPaths.p17d6a980} fill="var(--fill-0, #04287E)" id="Vector" />
-          <path d={svgPaths.pbe9e900} fill="var(--fill-0, #04287E)" id="Vector_2" />
-          <path d={svgPaths.p30eaac00} fill="var(--fill-0, #04287E)" id="Vector_3" />
-          <path d={svgPaths.pd76a000} fill="var(--fill-0, #04287E)" id="Vector_4" />
-          <path d={svgPaths.p3f9b2a00} fill="var(--fill-0, #04287E)" id="Vector_5" />
-          <path d={svgPaths.p24ff8700} fill="var(--fill-0, #04287E)" id="Vector_6" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Group5() {
-  return (
-    <div className="absolute inset-[0_92.92%_0.11%_0]" data-name="Group">
-      <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 26.8916 25.5339">
-        <g id="Group">
-          <path d={svgPaths.p198e7380} fill="var(--fill-0, #4843EB)" id="Vector" />
-          <path d={svgPaths.p5446980} fill="var(--fill-0, #7074F6)" id="Vector_2" />
-          <path d={svgPaths.p24bbfc80} fill="var(--fill-0, #4843EB)" id="Vector_3" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Group() {
-  return (
-    <div className="absolute contents inset-[0_61%_0.11%_0]" data-name="Group">
-      <Group1 />
-      <Group4 />
-      <Group5 />
-    </div>
-  );
-}
-
-function Group6() {
-  return (
-    <div className="absolute inset-[12.25%_0.34%_26.34%_44.49%]" data-name="Group">
-      <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 209.643 15.6975">
-        <g id="Group">
-          <path d={svgPaths.p3839b600} fill="var(--fill-0, #04287E)" id="Vector" />
-          <path d={svgPaths.p249f6e80} fill="var(--fill-0, #04287E)" id="Vector_2" />
-          <path d={svgPaths.p8dd9700} fill="var(--fill-0, #04287E)" id="Vector_3" />
-          <path d={svgPaths.p3b2c3c80} fill="var(--fill-0, #04287E)" id="Vector_4" />
-          <path d={svgPaths.p3a85bcc0} fill="var(--fill-0, #04287E)" id="Vector_5" />
-          <path d={svgPaths.p365c0af0} fill="var(--fill-0, #04287E)" id="Vector_6" />
-          <path d={svgPaths.p30420d80} fill="var(--fill-0, #04287E)" id="Vector_7" />
-          <path d={svgPaths.p3dc56a00} fill="var(--fill-0, #04287E)" id="Vector_8" />
-          <path d={svgPaths.p19f3aa00} fill="var(--fill-0, #04287E)" id="Vector_9" />
-          <path d={svgPaths.pc47e900} fill="var(--fill-0, #04287E)" id="Vector_10" />
-          <path d={svgPaths.p327cd500} fill="var(--fill-0, #04287E)" id="Vector_11" />
-          <path d={svgPaths.p3d4dfa00} fill="var(--fill-0, #04287E)" id="Vector_12" />
-          <path d={svgPaths.p296b1000} fill="var(--fill-0, #04287E)" id="Vector_13" />
-          <path d={svgPaths.p325f5400} fill="var(--fill-0, #04287E)" id="Vector_14" />
-          <path d={svgPaths.p2ee29900} fill="var(--fill-0, #04287E)" id="Vector_15" />
-          <path d={svgPaths.p11d94c00} fill="var(--fill-0, #04287E)" id="Vector_16" />
-          <path d={svgPaths.p13576280} fill="var(--fill-0, #04287E)" id="Vector_17" />
-          <path d={svgPaths.p15a86000} fill="var(--fill-0, #04287E)" id="Vector_18" />
-          <path d={svgPaths.p1831fc40} fill="var(--fill-0, #04287E)" id="Vector_19" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Component20250425LogoKemitraanPendidikan() {
-  return (
-    <div className="h-[20px] md:h-[25.562px] overflow-clip relative shrink-0 w-[280px] md:w-[380px]" data-name="20250425_Logo Kemitraan Pendidikan-02 1">
-      <Group />
-      <Group6 />
-      <div className="absolute inset-[15.1%_58.24%_27.68%_41.65%]" data-name="Vector">
-        <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 0.428894 14.6253">
-          <path d={svgPaths.p1634f100} fill="var(--fill-0, #04287E)" id="Vector" />
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 function Logo() {
   return (
     <div className="content-stretch flex gap-4 items-center pb-px relative shrink-0" data-name="Logo">
-      <Component20250425LogoKemitraanPendidikan />
+      <LogoKemitraanPendidikan />
     </div>
   );
 }
@@ -1631,6 +1506,11 @@ function Block3() {
         <div className="max-w-[1140px] mx-auto w-full">
           <Frame onCardClick={setSelectedCard} />
           <ContributionCTACard onClick={() => {
+            // Wajib login sebagai mitra sebelum mengisi formulir kontribusi
+            if (!isMitraLoggedIn()) {
+              navigate("/mitra/login", { state: { from: "/kontribusi" } });
+              return;
+            }
             // Navigate to contribution form page (langsung pilih program)
             navigate("/kontribusi");
           }} />
@@ -1748,12 +1628,18 @@ function Block3() {
                   onClick={() => {
                     const programIndex = selectedCard;
                     setSelectedCard(null);
-                    navigate("/kontribusi", {
-                      state: {
-                        preSelectedProgram: programIndex,
-                        directToStep2: true,
-                      },
-                    });
+                    const contributionState = {
+                      preSelectedProgram: programIndex,
+                      directToStep2: true,
+                    };
+                    // Wajib login sebagai mitra sebelum mengisi formulir kontribusi
+                    if (!isMitraLoggedIn()) {
+                      navigate("/mitra/login", {
+                        state: { from: "/kontribusi", fromState: contributionState },
+                      });
+                      return;
+                    }
+                    navigate("/kontribusi", { state: contributionState });
                   }}
                   className="w-full bg-[var(--action-neutral-default)] text-white hover:bg-[var(--action-neutral-hovered)]"
                 >
@@ -3513,7 +3399,7 @@ function Footer() {
             {/* Col 1: Logo + tagline */}
             <div className="md:col-span-2 flex flex-col gap-5">
               <div style={{ '--fill-0': '#ffffff' } as React.CSSProperties}>
-                <Component20250425LogoKemitraanPendidikan />
+                <LogoKemitraanPendidikan />
               </div>
               <p className="text-blue-200 leading-relaxed" style={{ fontFamily: 'Inter', fontSize: '14px' }}>
                 Platform kolaborasi nasional untuk menghimpun partisipasi semesta dalam mewujudkan pendidikan bermutu di seluruh Indonesia.

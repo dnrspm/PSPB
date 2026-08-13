@@ -113,7 +113,14 @@ function ActivityDetailCard({ log, defaultExpanded = false, isLatestVisit = fals
   );
 }
 
-export function WorkflowStepsSidebar({ contribution: c }: { contribution: Contribution }) {
+export function WorkflowStepsSidebar({
+  contribution: c,
+  readOnly = false,
+}: {
+  contribution: Contribution;
+  /** true = tampilkan indikator alur saja, tanpa interaksi (dipakai di portal mitra) */
+  readOnly?: boolean;
+}) {
   const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
@@ -211,6 +218,23 @@ export function WorkflowStepsSidebar({ contribution: c }: { contribution: Contri
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
+                  {readOnly ? (
+                    <span
+                      className={`flex items-center text-[14px] leading-tight whitespace-nowrap ${
+                        isRejected
+                          ? "font-semibold text-red-600"
+                          : isCurrent
+                            ? "font-semibold text-blue-700"
+                            : isPast || isPastRejected
+                              ? "font-medium text-gray-600"
+                              : "font-medium text-gray-400"
+                      }`}
+                    >
+                      <span className="truncate" style={{ fontSize: '14px', fontWeight: isCurrent ? 600 : 400 }}>
+                        {WORKFLOW_STATE_LABELS[state]}
+                      </span>
+                    </span>
+                  ) : (
                   <button
                     className={`group flex items-center gap-1 text-[14px] leading-tight whitespace-nowrap cursor-pointer transition-colors duration-200 ${
                     isRejected
@@ -228,7 +252,8 @@ export function WorkflowStepsSidebar({ contribution: c }: { contribution: Contri
                     <span className="truncate" style={{ fontSize: '14px', fontWeight: isCurrent ? 600 : 400 }}>{WORKFLOW_STATE_LABELS[state]}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 opacity-70 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5" />
                   </button>
-                  {info.dokumenTerkait.length > 0 && (
+                  )}
+                  {!readOnly && info.dokumenTerkait.length > 0 && (
                     <button
                       onClick={() => setPopupState(popupOpen ? null : state)}
                       className="mt-1 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"

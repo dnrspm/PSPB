@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   ArrowLeft,
   Building2,
@@ -42,6 +42,8 @@ function formatBytes(bytes: number) {
 
 export default function MitraRegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const contributionState = (location.state as { fromState?: unknown } | null)?.fromState;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -169,7 +171,7 @@ export default function MitraRegisterPage() {
           </p>
           <div className="mt-6 space-y-2">
             <button
-              onClick={() => navigate("/kontribusi")}
+              onClick={() => navigate("/kontribusi", { state: contributionState })}
               className="w-full rounded-md bg-[var(--primary)] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--primary-hover)]"
             >
               Lanjutkan Kontribusi

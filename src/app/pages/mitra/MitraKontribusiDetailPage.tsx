@@ -1,21 +1,20 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Building2, ExternalLink, FileText, Package, School } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Package, Upload } from "lucide-react";
 import { getMitraContributionById, getMitraSession } from "../../lib/mitra";
+import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { StatusBadge } from "../../components/workspace/StatusBadge";
-import { WorkflowTimeline } from "../../components/detail/WorkflowTimeline";
 import { WorkflowStepsSidebar, formatDate } from "../../components/detail/WorkflowStepsSidebar";
-import type { Contribution } from "../../types/contribution";
-
-type Tab = "info" | "timeline";
+import type { Contribution, Document } from "../../types/contribution";
 
 export default function MitraKontribusiDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const session = getMitraSession();
+  // Dipakai untuk merender ulang setelah dokumen diunggah/dihapus
+  const [dokumenVersion, setDokumenVersion] = useState(0);
   const contribution =
     session && id ? getMitraContributionById(session.email, id) : null;
-  const [activeTab, setActiveTab] = useState<Tab>("info");
 
   if (!session) {
     return (
@@ -53,80 +52,38 @@ export default function MitraKontribusiDetailPage() {
   }
 
   const c = contribution;
-  const topikTitle =
-    c.topik || c.topikMateri || c.jenisDukungan || c.paketBantuan || c.program;
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "info", label: "Informasi" },
-    { key: "timeline", label: "Riwayat Alur Kerja" },
-  ];
 
   return (
     <div>
-      {/* Header Summary */}
-      <div className="border-b border-gray-100 bg-white px-6 py-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-semibold text-black">{topikTitle}</h1>
-              {c.paketBantuan && c.paketBantuan !== topikTitle && (
-                <span className="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-500">
-                  {c.paketBantuan}
+      {/* Konten */}
+      <div className="pr-0">
+        <div className="flex gap-6">
+          <div className="flex-1 min-w-0 space-y-6">
+            {/* Header Summary — selebar kolom kiri agar alur status sejajar di atas */}
+            <div className="rounded-lg border border-gray-100 bg-white shadow-sm px-6 py-4">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-[24px] font-semibold text-black">{c.program}</h1>
+                <StatusBadge state={c.workflowStatus} />
+              </div>
+              <p className="mt-2 text-sm text-gray-400">
+                Diperbarui:{" "}
+                <span className="font-medium text-gray-500">
+                  {formatDate(c.lastUpdate)}
                 </span>
-              )}
-              <StatusBadge state={c.workflowStatus} />
+              </p>
             </div>
-            <p className="text-sm text-gray-400">
-              Diperbarui:{" "}
-              <span className="font-medium text-gray-500">
-                {formatDate(c.lastUpdate)}
-              </span>
-            </p>
+
+            <InformasiBantuan c={c} />
+            <DokumenSection
+              key={dokumenVersion}
+              c={c}
+              onDokumenChange={() => setDokumenVersion((v) => v + 1)}
+            />
+          </div>
+          <div className="w-84 shrink-0">
+            <WorkflowStepsSidebar contribution={c} readOnly />
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-100 bg-white px-6">
-        <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`relative px-3 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "text-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-none" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="py-6 pr-0">
-        {activeTab === "info" && (
-          <div className="flex gap-6">
-            <div className="flex-1 min-w-0 space-y-6">
-              <InformasiMitra c={c} />
-              <InformasiBantuan c={c} />
-              <TargetPenerima c={c} />
-              <DokumenSection c={c} />
-            </div>
-            <div className="w-84 shrink-0">
-              <WorkflowStepsSidebar contribution={c} />
-            </div>
-          </div>
-        )}
-        {activeTab === "timeline" && (
-          <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-            <WorkflowTimeline contribution={c} />
-          </div>
-        )}
       </div>
     </div>
   );
@@ -161,29 +118,6 @@ function Dl({ fields }: { fields: [string, React.ReactNode][] }) {
         </div>
       ))}
     </dl>
-  );
-}
-
-function InformasiMitra({ c }: { c: Contribution }) {
-  return (
-    <SectionCard icon={<Building2 className="h-4 w-4" />} title="Informasi Mitra">
-      <Dl
-        fields={[
-          ["Nama Instansi", c.instansi || c.namaMitra],
-          ["Badan Hukum", c.badanHukum],
-          ["Status Mitra (Lama/Baru)", c.statusMitra],
-        ]}
-      />
-      <hr className="my-5 border-gray-100" />
-      <Dl
-        fields={[
-          ["Nama Narahubung", c.narahubung],
-          ["Jabatan & Posisi", c.jabatan],
-          ["Nomor Telepon", c.kontak],
-          ["Email", c.email],
-        ]}
-      />
-    </SectionCard>
   );
 }
 
@@ -294,31 +228,99 @@ function InformasiBantuan({ c }: { c: Contribution }) {
   );
 }
 
-function TargetPenerima({ c }: { c: Contribution }) {
-  const hasData = !!(c.targetPenerima || c.wilayah || c.jumlahPenerima);
-  if (!hasData) return null;
+function DokumenSection({
+  c,
+  onDokumenChange,
+}: {
+  c: Contribution;
+  onDokumenChange: () => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputId = `mitra-dokumen-upload-${c.id}`;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newDocs: Document[] = Array.from(files).map((file, idx) => ({
+      id: `doc-${Date.now()}-${idx}`,
+      name: file.name,
+      type: "lainnya" as Document["type"],
+      uploadedAt: new Date(),
+      uploadedBy: c.narahubung || c.namaMitra,
+    }));
+
+    const updated = getContributionById(c.id);
+    if (updated) {
+      updated.dokumen = [...updated.dokumen, ...newDocs];
+      updateContribution(updated);
+    }
+    setUploading(false);
+    onDokumenChange();
+
+    if (e.target) e.target.value = "";
+  };
+
+  const handleDelete = (docId: string) => {
+    const updated = getContributionById(c.id);
+    if (updated) {
+      updated.dokumen = updated.dokumen.filter((d) => d.id !== docId);
+      updateContribution(updated);
+      onDokumenChange();
+    }
+  };
 
   return (
-    <SectionCard icon={<School className="h-4 w-4" />} title="Target Penerima">
-      <Dl
-        fields={[
-          ["Target Penerima", c.targetPenerima],
-          ["Jumlah Penerima", c.jumlahPenerima ? (c.jumlahPenerima || 0).toLocaleString("id-ID") : ""],
-          ["Wilayah", c.wilayah],
-        ]}
-      />
-    </SectionCard>
-  );
-}
+    <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <FileText className="h-4 w-4" /> Dokumen Pendukung Lainnya
+        </h3>
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+            onChange={handleFileChange}
+            className="hidden"
+            id={inputId}
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById(inputId)?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            {uploading ? "Mengunggah..." : "Upload Dokumen"}
+          </button>
+        </div>
+      </div>
 
-function DokumenSection({ c }: { c: Contribution }) {
-  return (
-    <SectionCard icon={<FileText className="h-4 w-4" />} title="Dokumen Pendukung Lainnya">
-      {c.dokumen.length === 0 ? (
-        <p className="text-sm text-gray-400">Belum ada dokumen.</p>
-      ) : (
-        <div className="divide-y divide-gray-100">
-          {c.dokumen.map((doc) => (
+      <div className="divide-y divide-gray-100">
+        {/* Company Profile mitra — dokumen bawaan, tidak dapat dihapus */}
+        <div className="flex items-start gap-3 py-2">
+          <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="text-gray-900 text-sm truncate block">
+              Company Profile {c.namaMitra}
+            </span>
+            <p className="text-xs text-gray-400 mt-0.5">Company Profile</p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+            <a
+              href={c.companyProfile || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Lihat
+            </a>
+          </div>
+        </div>
+
+        {c.dokumen.map((doc) => (
             <div key={doc.id} className="flex items-start gap-3 py-2">
               <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -334,11 +336,17 @@ function DokumenSection({ c }: { c: Contribution }) {
                 >
                   Lihat
                 </a>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(doc.id)}
+                  className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                >
+                  Hapus
+                </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </SectionCard>
+      </div>
+    </div>
   );
 }

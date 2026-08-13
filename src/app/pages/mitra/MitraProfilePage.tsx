@@ -1,59 +1,47 @@
 import { useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
-import {
-  CheckCircle2,
-  ClipboardList,
-  Eye,
-  EyeOff,
-  FileText,
-  Info,
-  ShieldCheck,
-  Upload,
-  X,
-  AlertTriangle,
-  Clock3,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Eye, EyeOff, FileText, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import {
   BADAN_HUKUM_OPTIONS,
-  DOKUMEN_VALIDASI_JENIS,
   MAX_DOKUMEN_SIZE,
-  addMitraDokumen,
   getMitraProfile,
   getMitraSession,
   removeMitraDokumen,
   updateMitraProfile,
-  verifikasiStatusLabel,
 } from "../../lib/mitra";
-import type { VerifikasiStatus } from "../../types/mitra";
+import type { MitraDokumen } from "../../types/mitra";
+import { Button } from "../../components/Button";
 
-const VERIFIKASI_STYLE: Record<
-  VerifikasiStatus,
-  { bg: string; text: string; icon: ReactNode }
-> = {
-  "belum-lengkap": {
-    bg: "bg-[#FFDFA3]",
-    text: "text-[#92400E]",
-    icon: <AlertTriangle className="h-4 w-4" />,
-  },
-  "menunggu-verifikasi": {
-    bg: "bg-[#EDE9FE]",
-    text: "text-[#7C3AED]",
-    icon: <Clock3 className="h-4 w-4" />,
-  },
-  terverifikasi: {
-    bg: "bg-[#D1FAE5]",
-    text: "text-[#35825A]",
-    icon: <CheckCircle2 className="h-4 w-4" />,
-  },
-  ditolak: {
-    bg: "bg-[#FFE9EA]",
-    text: "text-[#C82236]",
-    icon: <X className="h-4 w-4" />,
-  },
-};
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[var(--radius-card)] border border-[var(--gray-10)] bg-white p-6">
+      <div className="mb-5">
+        <h2 className="text-base font-semibold text-[var(--text-default)]">{title}</h2>
+        {description && (
+          <p className="mt-0.5 text-sm text-[var(--text-subdued)]">{description}</p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ReadField({ label, value }: { label: string; value?: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-sm text-[var(--text-subdued)]">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-[var(--text-default)]">{value || "-"}</p>
+    </div>
+  );
+}
 
 function formatBytes(bytes: number) {
   if (!bytes) return "";
@@ -88,35 +76,28 @@ export default function MitraProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
 
-  // Dokumen upload state
-  const [docType, setDocType] = useState<string>(DOKUMEN_VALIDASI_JENIS[0]);
-  const [customType, setCustomType] = useState("");
-  const [docFile, setDocFile] = useState<File | null>(null);
+  // Ganti berkas dokumen: menyimpan target yang sedang diganti
+  const [replaceTarget, setReplaceTarget] = useState<
+    { kind: "company" } | { kind: "dokumen"; id: string } | null
+  >(null);
   const [docError, setDocError] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
   if (!session || !profile) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--border-light)] bg-white p-12 text-center">
+      <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-[var(--gray-10)] bg-white p-12 text-center">
         <ShieldCheck className="mb-3 h-10 w-10 text-[var(--text-subdued)]" />
         <p className="text-sm text-[var(--text-subdued)]">
           Anda belum masuk sebagai Mitra.
         </p>
-        <button
-          onClick={() => navigate("/mitra/login")}
-          className="mt-4 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--primary-hover)]"
-        >
-          Masuk sebagai Mitra
-        </button>
+        <div className="mt-4">
+          <Button color="blue" size="md" onClick={() => navigate("/mitra/login")}>
+            Masuk sebagai Mitra
+          </Button>
+        </div>
       </div>
     );
   }
-
-  const verifStyle = VERIFIKASI_STYLE[profile.verifikasiStatus];
-  const dokumenLengkap =
-    profile.verifikasiStatus === "terverifikasi" ||
-    profile.verifikasiStatus === "menunggu-verifikasi";
 
   const setField = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -157,172 +138,202 @@ export default function MitraProfilePage() {
     }
   };
 
-  const handleDocFileChange = (file: File | null) => {
-    setDocFile(file);
+  const startReplace = (target: { kind: "company" } | { kind: "dokumen"; id: string }) => {
+    setReplaceTarget(target);
     setDocError("");
+    docInputRef.current?.click();
   };
 
-  const handleUpload = () => {
-    const jenis = docType === "Lainnya" ? customType.trim() : docType;
-    if (!jenis) {
-      setDocError("Pilih atau isi jenis dokumen.");
-      return;
-    }
-    if (!docFile) {
-      setDocError("Pilih berkas dokumen terlebih dahulu.");
-      return;
-    }
-    if (!docFile.name.toLowerCase().endsWith(".pdf")) {
+  const handleReplaceFile = (file: File | null) => {
+    const target = replaceTarget;
+    setReplaceTarget(null);
+    if (docInputRef.current) docInputRef.current.value = "";
+    if (!file || !target) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
       setDocError("Dokumen harus berformat PDF.");
       return;
     }
-    if (docFile.size > MAX_DOKUMEN_SIZE) {
+    if (file.size > MAX_DOKUMEN_SIZE) {
       setDocError("Ukuran dokumen maksimal 10 MB.");
       return;
     }
-    if (profile.dokumen.some((d) => d.jenis.toLowerCase() === jenis.toLowerCase())) {
-      setDocError("Jenis dokumen ini sudah pernah diunggah.");
-      return;
+
+    const berkas = {
+      fileName: file.name,
+      fileSize: file.size,
+      uploadedAt: new Date().toISOString(),
+    };
+    const updated =
+      target.kind === "company"
+        ? updateMitraProfile(session.email, {
+            companyProfile: {
+              id: profile.companyProfile?.id || `cp-${Date.now()}`,
+              jenis: "Company Profile",
+              ...berkas,
+            },
+          })
+        : updateMitraProfile(session.email, {
+            dokumen: profile.dokumen.map((d: MitraDokumen) =>
+              d.id === target.id ? { ...d, ...berkas } : d
+            ),
+          });
+
+    if (updated) {
+      setProfile(updated);
+      setDocError("");
+      setSaveError("");
+      setSaveMsg("Dokumen berhasil diganti.");
+    } else {
+      setDocError("Gagal mengganti dokumen. Coba lagi.");
     }
-    setUploading(true);
-    setDocError("");
-    setTimeout(() => {
-      const updated = addMitraDokumen(session.email, {
-        jenis,
-        fileName: docFile.name,
-        fileSize: docFile.size,
-      });
-      setUploading(false);
-      if (updated) {
-        setProfile(updated);
-        setDocFile(null);
-        setCustomType("");
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        setSaveMsg("Dokumen berhasil diunggah. Status verifikasi diperbarui.");
-      } else {
-        setDocError("Gagal menyimpan metadata dokumen. Coba lagi.");
-      }
-    }, 500);
   };
 
-  const handleRemoveDoc = (id: string) => {
+  const handleDeleteCompanyProfile = () => {
+    const updated = updateMitraProfile(session.email, { companyProfile: undefined });
+    if (updated) {
+      setProfile(updated);
+      setSaveError("");
+      setSaveMsg("Dokumen berhasil dihapus.");
+    }
+  };
+
+  const handleDeleteDokumen = (id: string) => {
     const updated = removeMitraDokumen(session.email, id);
     if (updated) {
       setProfile(updated);
+      setSaveError("");
       setSaveMsg("Dokumen berhasil dihapus.");
     }
   };
 
   const inputClass = (hasError: boolean) =>
-    `w-full rounded-md border bg-white px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--primary-200)] disabled:bg-[var(--surface-subdued)] disabled:text-[var(--text-subdued)] ${
+    `h-11 w-full rounded-[var(--radius-button)] border bg-white px-3.5 text-sm outline-none transition-colors focus:ring-4 focus:ring-[var(--primary-200)]/40 disabled:bg-[var(--gray-0)] disabled:text-[var(--text-subdued)] ${
       hasError
         ? "border-[var(--red-60)]"
-        : "border-[var(--border-light)] focus:border-[var(--primary)]"
+        : "border-[var(--gray-10)] hover:border-[var(--gray-20)] focus:border-[var(--primary)]"
     }`;
 
   const errorText = (msg?: string) =>
     msg ? <p className="mt-1 text-sm text-[var(--red-70)]">{msg}</p> : null;
 
+  const fieldLabel = "mb-1.5 block text-sm font-medium text-[var(--text-default)]";
+
+  const handleCancel = () => {
+    setForm({
+      nama: profile.nama,
+      nomorTelepon: profile.nomorTelepon,
+      jabatan: profile.jabatan,
+      password: profile.password,
+      konfirmasiPassword: profile.password,
+      namaPerusahaan: profile.namaPerusahaan,
+      badanHukum: profile.badanHukum,
+      badanHukumLainnya: profile.badanHukumLainnya || "",
+      statusMitra: profile.statusMitra,
+    });
+    setErrors({});
+    setSaveMsg("");
+    setSaveError("");
+    setDocError("");
+    setEditMode(false);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Status Verifikasi */}
-      <div className={`flex items-start gap-3 rounded-xl border p-4 ${verifStyle.bg}`}>
-        <div className={`mt-0.5 ${verifStyle.text}`}>{verifStyle.icon}</div>
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-semibold text-[var(--text-default)]">Status Verifikasi Organisasi</h2>
-            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium ${verifStyle.bg} ${verifStyle.text}`}>
-              {verifikasiStatusLabel(profile.verifikasiStatus)}
-            </span>
-          </div>
+      {/* Header halaman */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-[var(--text-default)]">Profil Mitra</h1>
           <p className="mt-1 text-sm text-[var(--text-subdued)]">
-            {profile.verifikasiStatus === "terverifikasi" &&
-              "Organisasi Anda telah terverifikasi dan dapat mengajukan kontribusi."}
-            {profile.verifikasiStatus === "menunggu-verifikasi" &&
-              "Dokumen Anda sedang dalam proses verifikasi oleh tim pelaksana PSPB."}
-            {profile.verifikasiStatus === "belum-lengkap" &&
-              "Lengkapi dokumen validasi organisasi agar dapat diverifikasi oleh tim pelaksana PSPB."}
-            {profile.verifikasiStatus === "ditolak" &&
-              "Dokumen Anda ditolak. Silakan periksa kembali dan unggah ulang dokumen yang valid."}
+            Data narahubung dan organisasi yang digunakan pada setiap pengajuan kontribusi.
           </p>
         </div>
+        {editMode ? (
+          <div className="flex shrink-0 gap-2">
+            <Button color="white" size="md" className="h-10 text-sm" onClick={handleCancel}>
+              Batal
+            </Button>
+            <Button color="blue" size="md" className="h-10 text-sm" onClick={handleSave}>
+              Simpan Perubahan
+            </Button>
+          </div>
+        ) : (
+          <Button
+            color="white"
+            size="md"
+            className="h-10 shrink-0 text-sm"
+            onClick={() => {
+              setEditMode(true);
+              setSaveMsg("");
+              setSaveError("");
+            }}
+          >
+            Edit Profil
+          </Button>
+        )}
       </div>
 
       {(saveMsg || saveError) && (
-        <div className={`rounded-lg px-4 py-3 text-sm ${saveError ? "bg-[var(--red-0)] text-[var(--red-70)]" : "bg-[#D1FAE5] text-[#35825A]"}`}>
+        <div
+          className={`rounded-[var(--radius-button)] px-4 py-3 text-sm ${
+            saveError
+              ? "bg-[var(--red-0)] text-[var(--red-70)]"
+              : "bg-[var(--green-0)] text-[var(--green-70)]"
+          }`}
+        >
           {saveError || saveMsg}
         </div>
       )}
 
       {/* Data Narahubung */}
-      <section className="overflow-hidden rounded-xl border border-[var(--border-light)] bg-white">
-        <div className="flex items-center justify-between border-b border-[var(--border-light)] px-5 py-3">
-          <h2 className="text-sm font-semibold text-[var(--text-default)]">Data Narahubung</h2>
-          {!editMode && (
-            <button
-              onClick={() => {
-                setEditMode(true);
-                setSaveMsg("");
-                setSaveError("");
-              }}
-              className="rounded-md border border-[var(--border-light)] px-3 py-1.5 text-sm font-medium text-[var(--text-default)] transition-colors hover:bg-[var(--surface-subdued)]"
-            >
-              Edit
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Nama</label>
-            <input
-              type="text"
-              value={form.nama}
-              disabled={!editMode}
-              onChange={(e) => setField("nama", e.target.value)}
-              className={inputClass(!!errors.nama)}
-            />
-            {errorText(errors.nama)}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Email Kantor</label>
-            <input type="text" value={profile.email} disabled className={inputClass(false)} />
-            <p className="mt-1 text-xs text-[var(--text-subdued)]">
-              Email digunakan sebagai identitas akun dan tidak dapat diubah.
-            </p>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Nomor Telepon</label>
-            <input
-              type="tel"
-              value={form.nomorTelepon}
-              disabled={!editMode}
-              onChange={(e) => setField("nomorTelepon", e.target.value.replace(/[^0-9]/g, ""))}
-              className={inputClass(!!errors.nomorTelepon)}
-            />
-            {errorText(errors.nomorTelepon)}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Jabatan dan Posisi</label>
-            <input
-              type="text"
-              value={form.jabatan}
-              disabled={!editMode}
-              onChange={(e) => setField("jabatan", e.target.value)}
-              className={inputClass(!!errors.jabatan)}
-            />
-            {errorText(errors.jabatan)}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Kata Sandi</label>
-            <div className="relative">
+      <Section title="Data Narahubung">
+        {editMode ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className={fieldLabel}>Nama</label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                disabled={!editMode}
-                onChange={(e) => setField("password", e.target.value)}
-                className={`${inputClass(!!errors.password)} pr-10`}
+                type="text"
+                value={form.nama}
+                onChange={(e) => setField("nama", e.target.value)}
+                className={inputClass(!!errors.nama)}
               />
-              {editMode && (
+              {errorText(errors.nama)}
+            </div>
+            <div>
+              <label className={fieldLabel}>Email Kantor</label>
+              <input type="text" value={profile.email} disabled className={inputClass(false)} />
+              <p className="mt-1.5 text-xs text-[var(--text-subdued)]">
+                Email digunakan sebagai identitas akun dan tidak dapat diubah.
+              </p>
+            </div>
+            <div>
+              <label className={fieldLabel}>Nomor Telepon</label>
+              <input
+                type="tel"
+                value={form.nomorTelepon}
+                onChange={(e) => setField("nomorTelepon", e.target.value.replace(/[^0-9]/g, ""))}
+                className={inputClass(!!errors.nomorTelepon)}
+              />
+              {errorText(errors.nomorTelepon)}
+            </div>
+            <div>
+              <label className={fieldLabel}>Jabatan dan Posisi</label>
+              <input
+                type="text"
+                value={form.jabatan}
+                onChange={(e) => setField("jabatan", e.target.value)}
+                className={inputClass(!!errors.jabatan)}
+              />
+              {errorText(errors.jabatan)}
+            </div>
+            <div>
+              <label className={fieldLabel}>Kata Sandi</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setField("password", e.target.value)}
+                  className={`${inputClass(!!errors.password)} pr-10`}
+                />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
@@ -331,276 +342,198 @@ export default function MitraProfilePage() {
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              )}
+              </div>
+              {errorText(errors.password)}
             </div>
-            {errorText(errors.password)}
+            <div>
+              <label className={fieldLabel}>Konfirmasi Kata Sandi</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.konfirmasiPassword}
+                onChange={(e) => setField("konfirmasiPassword", e.target.value)}
+                className={inputClass(!!errors.konfirmasiPassword)}
+              />
+              {errorText(errors.konfirmasiPassword)}
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Konfirmasi Kata Sandi</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              value={form.konfirmasiPassword}
-              disabled={!editMode}
-              onChange={(e) => setField("konfirmasiPassword", e.target.value)}
-              className={inputClass(!!errors.konfirmasiPassword)}
-            />
-            {errorText(errors.konfirmasiPassword)}
-          </div>
-        </div>
-        {editMode && (
-          <div className="flex justify-end gap-2 border-t border-[var(--border-light)] px-5 py-3">
-            <button
-              onClick={() => {
-                setForm({
-                  nama: profile.nama,
-                  nomorTelepon: profile.nomorTelepon,
-                  jabatan: profile.jabatan,
-                  password: profile.password,
-                  konfirmasiPassword: profile.password,
-                  namaPerusahaan: profile.namaPerusahaan,
-                  badanHukum: profile.badanHukum,
-                  badanHukumLainnya: profile.badanHukumLainnya || "",
-                  statusMitra: profile.statusMitra,
-                });
-                setErrors({});
-                setEditMode(false);
-              }}
-              className="rounded-md border border-[var(--border-light)] px-4 py-2 text-sm font-medium text-[var(--text-default)] transition-colors hover:bg-[var(--surface-subdued)]"
-            >
-              Batal
-            </button>
-            <button
-              onClick={handleSave}
-              className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--primary-hover)]"
-            >
-              Simpan
-            </button>
+        ) : (
+          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+            <ReadField label="Nama" value={profile.nama} />
+            <ReadField label="Email Kantor" value={profile.email} />
+            <ReadField label="Nomor Telepon" value={profile.nomorTelepon} />
+            <ReadField label="Jabatan dan Posisi" value={profile.jabatan} />
+            <ReadField label="Kata Sandi" value={"•".repeat(8)} />
           </div>
         )}
-      </section>
+      </Section>
 
       {/* Informasi Perusahaan */}
-      <section className="overflow-hidden rounded-xl border border-[var(--border-light)] bg-white">
-        <div className="border-b border-[var(--border-light)] px-5 py-3">
-          <h2 className="text-sm font-semibold text-[var(--text-default)]">Informasi Perusahaan</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Nama Perusahaan</label>
-            <input
-              type="text"
-              value={form.namaPerusahaan}
-              disabled={!editMode}
-              onChange={(e) => setField("namaPerusahaan", e.target.value)}
-              className={inputClass(!!errors.namaPerusahaan)}
-            />
-            {errorText(errors.namaPerusahaan)}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Bentuk Badan Hukum</label>
-            <select
-              value={form.badanHukum}
-              disabled={!editMode}
-              onChange={(e) => setField("badanHukum", e.target.value)}
-              className={inputClass(!!errors.badanHukum)}
-            >
-              <option value="">Pilih bentuk badan hukum</option>
-              {BADAN_HUKUM_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-            {form.badanHukum === "Lainnya" && (
+      <Section title="Informasi Perusahaan">
+        {editMode ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className={fieldLabel}>Nama Perusahaan</label>
               <input
                 type="text"
-                value={form.badanHukumLainnya}
-                disabled={!editMode}
-                onChange={(e) => setField("badanHukumLainnya", e.target.value)}
-                placeholder="Tulis bentuk badan hukum"
-                className={`mt-2 ${inputClass(!!errors.badanHukum)}`}
+                value={form.namaPerusahaan}
+                onChange={(e) => setField("namaPerusahaan", e.target.value)}
+                className={inputClass(!!errors.namaPerusahaan)}
               />
-            )}
-            {errorText(errors.badanHukum)}
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Status Mitra</label>
-            <div className="flex gap-4">
-              {(
-                [
-                  { value: "baru", label: "Baru" },
-                  { value: "lama", label: "Lama" },
-                ] as const
-              ).map((opt) => (
-                <label key={opt.value} className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="statusMitra-profil"
-                    checked={form.statusMitra === opt.value}
-                    disabled={!editMode}
-                    onChange={() => setField("statusMitra", opt.value)}
-                    className="h-4 w-4 accent-[var(--primary)]"
-                  />
-                  <span className="text-sm text-[var(--text-default)]">{opt.label}</span>
-                </label>
-              ))}
+              {errorText(errors.namaPerusahaan)}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Dokumen Validasi */}
-      <section className="overflow-hidden rounded-xl border border-[var(--border-light)] bg-white">
-        <div className="border-b border-[var(--border-light)] px-5 py-3">
-          <h2 className="text-sm font-semibold text-[var(--text-default)]">Dokumen Validasi Organisasi</h2>
-        </div>
-        <div className="space-y-5 p-5">
-          {/* Company Profile */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">Company Profile</label>
-            {profile.companyProfile ? (
-              <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--border-light)] bg-[var(--surface-subdued)] px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <FileText className="h-5 w-5 shrink-0 text-[var(--text-subdued)]" />
-                  <span className="truncate text-sm font-medium text-[var(--text-default)]">
-                    {profile.companyProfile.fileName}
-                  </span>
-                  <span className="shrink-0 text-xs text-[var(--text-subdued)]">
-                    {formatBytes(profile.companyProfile.fileSize)}
-                  </span>
-                </div>
-                <span className="shrink-0 text-xs font-medium text-[var(--green-60)]">Terverifikasi</span>
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--text-subdued)]">Belum ada company profile.</p>
-            )}
-          </div>
-
-          {/* Daftar dokumen yang sudah diunggah */}
-          {profile.dokumen.length > 0 && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--text-default)]">
-                Dokumen Terunggah
-              </label>
-              <div className="space-y-2">
-                {profile.dokumen.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-[var(--border-light)] bg-white px-4 py-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <FileText className="h-5 w-5 shrink-0 text-[var(--primary)]" />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[var(--text-default)]">{doc.fileName}</p>
-                        <p className="text-xs text-[var(--text-subdued)]">
-                          {doc.jenis} • {new Date(doc.uploadedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                          {doc.fileSize ? ` • ${formatBytes(doc.fileSize)}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveDoc(doc.id)}
-                      className="shrink-0 rounded p-1.5 text-[var(--text-subdued)] transition-colors hover:bg-[var(--red-0)] hover:text-[var(--red-70)]"
-                      aria-label="Hapus dokumen"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Upload dokumen baru */}
-          <div className="rounded-lg border border-dashed border-[var(--border-light)] bg-[var(--surface-subdued)] p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[var(--text-default)]">
-              <Upload className="h-4 w-4 text-[var(--primary)]" />
-              Unggah Dokumen Validasi
-            </h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className={fieldLabel}>Bentuk Badan Hukum</label>
               <select
-                value={docType}
-                onChange={(e) => {
-                  setDocType(e.target.value);
-                  setDocError("");
-                }}
-                className="rounded-md border border-[var(--border-light)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
+                value={form.badanHukum}
+                onChange={(e) => setField("badanHukum", e.target.value)}
+                className={inputClass(!!errors.badanHukum)}
               >
-                {DOKUMEN_VALIDASI_JENIS.map((jenis) => (
-                  <option key={jenis} value={jenis}>
-                    {jenis}
+                <option value="">Pilih bentuk badan hukum</option>
+                {BADAN_HUKUM_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
                   </option>
                 ))}
-                <option value="Lainnya">Lainnya</option>
               </select>
-              {docType === "Lainnya" && (
+              {form.badanHukum === "Lainnya" && (
                 <input
                   type="text"
-                  value={customType}
-                  onChange={(e) => {
-                    setCustomType(e.target.value);
-                    setDocError("");
-                  }}
-                  placeholder="Jenis dokumen lain"
-                  className="rounded-md border border-[var(--border-light)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
+                  value={form.badanHukumLainnya}
+                  onChange={(e) => setField("badanHukumLainnya", e.target.value)}
+                  placeholder="Tulis bentuk badan hukum"
+                  className={`mt-2 ${inputClass(!!errors.badanHukum)}`}
                 />
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => handleDocFileChange(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-              <div className="flex items-center gap-2 sm:col-span-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 rounded-md border border-[var(--border-light)] bg-white px-3 py-2 text-sm text-[var(--text-subdued)] transition-colors hover:bg-[var(--surface-neutral-default)]"
-                >
-                  {docFile ? docFile.name : "Pilih berkas PDF"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="flex items-center gap-1.5 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--primary-hover)] disabled:bg-[var(--border-light)] disabled:text-[var(--text-subdued)]"
-                >
-                  <Plus className="h-4 w-4" />
-                  {uploading ? "Mengunggah..." : "Unggah"}
-                </button>
+              {errorText(errors.badanHukum)}
+            </div>
+            <div className="sm:col-span-2">
+              <label className={fieldLabel}>Status Mitra</label>
+              <div className="flex gap-5">
+                {(
+                  [
+                    { value: "baru", label: "Baru" },
+                    { value: "lama", label: "Lama" },
+                  ] as const
+                ).map((opt) => (
+                  <label key={opt.value} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="statusMitra-profil"
+                      checked={form.statusMitra === opt.value}
+                      onChange={() => setField("statusMitra", opt.value)}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                    />
+                    <span className="text-sm text-[var(--text-default)]">{opt.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
-            <p className="mt-2 text-xs text-[var(--text-subdued)]">
-              Format PDF, maksimum 10 MB. Jenis dokumen yang sama tidak dapat diunggah ulang. Dokumen dapat diganti sebelum diverifikasi.
-            </p>
-            {docError && <p className="mt-1 text-sm text-[var(--red-70)]">{docError}</p>}
           </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+            <ReadField label="Nama Perusahaan" value={profile.namaPerusahaan} />
+            <ReadField label="Bentuk Badan Hukum" value={profile.badanHukum} />
+            <ReadField
+              label="Status Mitra"
+              value={profile.statusMitra === "baru" ? "Baru" : "Lama"}
+            />
+          </div>
+        )}
+      </Section>
 
-          {!dokumenLengkap && (
-            <div className="flex items-start gap-2 rounded-md bg-[var(--primary-50)] px-3 py-2 text-sm text-[var(--primary)]">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Setelah dokumen validasi diunggah, status verifikasi organisasi Anda berubah menjadi{" "}
-                <strong>Menunggu Verifikasi</strong> dan akan diproses oleh tim pelaksana PSPB.
-              </span>
-            </div>
+      {/* Dokumen Pendukung */}
+      <Section
+        title="Dokumen Pendukung"
+        description="Dokumen organisasi yang menjadi lampiran pada pengajuan kontribusi. Format PDF, maksimum 10 MB."
+      >
+        <input
+          ref={docInputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={(e) => handleReplaceFile(e.target.files?.[0] || null)}
+        />
+
+        <div className="space-y-2">
+          {profile.companyProfile ? (
+            <DocRow
+              nama={profile.companyProfile.fileName}
+              keterangan={`Company Profile${
+                profile.companyProfile.fileSize
+                  ? ` • ${formatBytes(profile.companyProfile.fileSize)}`
+                  : ""
+              }`}
+              editable={editMode}
+              onGanti={() => startReplace({ kind: "company" })}
+              onHapus={handleDeleteCompanyProfile}
+            />
+          ) : (
+            <p className="text-sm text-[var(--text-subdued)]">Belum ada company profile.</p>
           )}
-        </div>
-      </section>
 
-      {/* Status per Kontribusi */}
-      <section className="overflow-hidden rounded-xl border border-[var(--border-light)] bg-white">
-        <div className="flex items-center justify-between border-b border-[var(--border-light)] px-5 py-3">
-          <h2 className="text-sm font-semibold text-[var(--text-default)]">Status per Kontribusi</h2>
+          {profile.dokumen.map((doc: MitraDokumen) => (
+            <DocRow
+              key={doc.id}
+              nama={doc.fileName}
+              keterangan={`${doc.jenis} • ${new Date(doc.uploadedAt).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}${doc.fileSize ? ` • ${formatBytes(doc.fileSize)}` : ""}`}
+              editable={editMode}
+              onGanti={() => startReplace({ kind: "dokumen", id: doc.id })}
+              onHapus={() => handleDeleteDokumen(doc.id)}
+            />
+          ))}
         </div>
-        <div className="p-5">
-          <p className="flex items-center gap-2 text-sm text-[var(--text-subdued)]">
-            <ClipboardList className="h-4 w-4 text-[var(--primary)]" />
-            Informasi status kontribusi bersifat read-only dan diperbarui oleh tim internal PSPB.
-          </p>
-        </div>
-      </section>
+
+        {docError && <p className="mt-2 text-sm text-[var(--red-70)]">{docError}</p>}
+      </Section>
+    </div>
+  );
+}
+
+function DocRow({
+  nama,
+  keterangan,
+  editable,
+  onGanti,
+  onHapus,
+}: {
+  nama: string;
+  keterangan: string;
+  /** Aksi ganti/hapus hanya tersedia saat mode edit profil */
+  editable: boolean;
+  onGanti: () => void;
+  onHapus: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-[var(--radius-button)] border border-[var(--gray-10)] px-4 py-3">
+      <FileText className="h-5 w-5 shrink-0 text-[var(--primary)]" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-[var(--text-default)]">{nama}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-subdued)]">{keterangan}</p>
+      </div>
+      {editable && (
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onGanti}
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--gray-10)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-default)] transition-colors hover:bg-[var(--gray-0)]"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Ganti
+        </button>
+        <button
+          type="button"
+          onClick={onHapus}
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--red-10)] px-2.5 py-1.5 text-xs font-medium text-[var(--red-70)] transition-colors hover:bg-[var(--red-0)]"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Hapus
+        </button>
+      </div>
+      )}
     </div>
   );
 }

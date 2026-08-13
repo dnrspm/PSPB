@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router";
-import { ChevronDown, ChevronRight, LogOut, UserRound, Building2, LayoutDashboard, Home } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, UserRound, LayoutDashboard, Home } from "lucide-react";
 import { clearMitraSession, getMitraSession, getMitraContributionById } from "../../lib/mitra";
 import { getMitraProfile } from "../../lib/mitra";
+import LogoKemitraanPendidikan from "../LogoKemitraanPendidikan";
 
 function Breadcrumb() {
   const location = useLocation();
@@ -82,17 +83,11 @@ export default function MitraLayout() {
   const displayName = profile?.nama || session?.nama || "Mitra";
 
   return (
-    <div className="min-h-screen bg-[var(--surface-subdued)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--border-light)] bg-[var(--surface-default)]">
+    <div className="min-h-screen bg-[var(--gray-0)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--gray-10)] bg-[var(--surface-default)]">
         <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4" ref={ref}>
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold text-[var(--text-default)]">PSPB Mitra</span>
-              <span className="text-xs text-[var(--text-subdued)]">Portal Mitra Kontributor</span>
-            </div>
+          <Link to="/" className="flex items-center">
+            <LogoKemitraanPendidikan withWordmark={false} className="h-[24px] w-[137px]" />
           </Link>
 
           <div>
