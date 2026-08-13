@@ -5,6 +5,7 @@ import type { WorkflowState } from "../../types/contribution";
 export interface FilterState {
   search: string;
   program: string;
+  paket: string;
   status: WorkflowState | "";
 }
 
@@ -12,27 +13,29 @@ interface FilterBarProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   programs: string[];
+  /** Paket dukungan yang tersedia; ikut menyempit saat program dipilih */
+  pakets: string[];
 }
 
 const ALL_STATES: WorkflowState[] = [
   "kontribusi-masuk", "verifikasi-dan-validasi", "audiensi-menunggu-jadwal", "audiensi-terjadwal",
   "audiensi-konfirmasi-lanjut-pks", "perjanjian-draft-pks",
   "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks",
-  "pelaksanaan-persiapan", "pelaksanaan-dalam-proses",
+  "pelaksanaan-penandatangan-kerjasama", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses",
   "pelaksanaan-dalam-evaluasi", "pelaksanaan-penyesuaian-pks",
-  "pemantauan-terlaksana", "pemantauan-pemanfaatan",
+  "pemantauan-terlaksana", "pemantauan-dokumen-belum-lengkap", "pemantauan-pemanfaatan",
   "selesai", "tidak-dilanjutkan",
 ];
 
-export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
+export function FilterBar({ filters, onChange, programs, pakets }: FilterBarProps) {
   const set = (key: keyof FilterState, value: string) =>
     onChange({ ...filters, [key]: value });
 
   const hasActiveFilters =
-    filters.search || filters.program || filters.status;
+    filters.search || filters.program || filters.paket || filters.status;
 
   const reset = () =>
-    onChange({ search: "", program: "", status: "" });
+    onChange({ search: "", program: "", paket: "", status: "" });
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -49,11 +52,22 @@ export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
 
       <select
         value={filters.program}
-        onChange={(e) => set("program", e.target.value)}
+        onChange={(e) => onChange({ ...filters, program: e.target.value, paket: "" })}
         className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
       >
         <option value="">Semua Program</option>
         {programs.map((p) => (
+          <option key={p} value={p}>{p}</option>
+        ))}
+      </select>
+
+      <select
+        value={filters.paket}
+        onChange={(e) => set("paket", e.target.value)}
+        className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
+      >
+        <option value="">Semua Paket Dukungan</option>
+        {pakets.map((p) => (
           <option key={p} value={p}>{p}</option>
         ))}
       </select>

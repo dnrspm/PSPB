@@ -22,7 +22,7 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template" | "section-header";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template" | "section-header" | "multi-kabupaten" | "number";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -136,7 +136,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
   },
   "perjanjian-disetujui": {
     title: "Perjanjian Telah Disetujui",
-    toState: "pelaksanaan-persiapan",
+    toState: "pelaksanaan-penandatangan-kerjasama",
     fields: [
       { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
@@ -146,36 +146,50 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
   },
+  "lanjut-persiapan-pelaksanaan": {
+    title: "Lanjut Persiapan Pelaksanaan",
+    toState: "pelaksanaan-persiapan",
+    fields: [
+      { key: "filePKS", label: "Upload PKS yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileRencana", label: "Upload Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penandatanganan kerja sama..." },
+    ],
+  },
   "lanjut-pelaksanaan": {
     title: "Lanjut Pelaksanaan",
     toState: "pelaksanaan-dalam-proses",
     fields: [
-
-      { key: "siswa", label: "Siswa Terdampak", type: "text", required: true, placeholder: "Contoh: 500", inline: true },
-      { key: "guru", label: "Guru Terdampak", type: "text", required: true, placeholder: "Contoh: 50", inline: true },
-      { key: "satuanPendidikan", label: "Satuan Pendidikan", type: "text", required: true, placeholder: "Nama sekolah" },
-      { key: "provinsi", label: "Provinsi", type: "select", required: true, options: PROVINSI_OPTIONS, inline: true },
-      { key: "kabupaten", label: "Kota/Kabupaten", type: "select", required: true, inline: true },
-      { key: "kelurahan", label: "Kelurahan", type: "text", placeholder: "Nama kelurahan", inline: true },
-      { key: "kecamatan", label: "Kecamatan", type: "text", placeholder: "Nama kecamatan", inline: true },
-      { key: "file", label: "Dokumen Pendukung", type: "file" },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pelaksanaan..." },
+      { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
+      { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
+      { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten", required: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persiapan pelaksanaan..." },
     ],
   },
   "update-progress": {
     title: "Update Progress",
     fields: [
-      { key: "progress", label: "Progress Pelaksanaan", type: "select-progress", required: true },
-      { key: "file", label: "Foto / Dokumen Pendukung", type: "file" },
-      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Deskripsi progress terkini..." },
+      { key: "judul", label: "Judul Progress", type: "text", required: true, placeholder: "Contoh: Distribusi perangkat tahap 1" },
+      { key: "deskripsi", label: "Deskripsi Progress Bantuan", type: "textarea", required: true, placeholder: "Jelaskan perkembangan penyaluran bantuan..." },
+      { key: "tanggal", label: "Tanggal Kejadian", type: "date", required: true },
+      { key: "file", label: "Dokumentasi atau Dokumen Pendukung", type: "file", multiple: true },
     ],
   },
   "terlaksana": {
     title: "Terlaksana",
     toState: "pemantauan-terlaksana",
     fields: [
+      { key: "templateBAST", label: "Download Template BAST", type: "download-template" },
+      { key: "templateLaporan", label: "Download Template Laporan Penyaluran", type: "download-template" },
       { key: "file", label: "Upload BAST", type: "file", required: true },
-      { key: "fileFoto", label: "Upload Foto", type: "file", required: true },
+      { key: "fileLaporan", label: "Upload Laporan Penyaluran Bantuan", type: "file", required: true },
+      { key: "fileDistribusi", label: "Upload Dokumen Pendukung Distribusi (foto, video, faktur, dll)", type: "file", multiple: true },
+      { key: "realisasiHeader", label: "Realisasi Dampak", type: "section-header" },
+      { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
+      { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
+      { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten", required: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil pelaksanaan..." },
     ],
   },
@@ -235,6 +249,9 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
   fileRencana: () => "rencana-kerja-final",
   fileLainnya: () => "lainnya",
   fileFoto: () => "dokumentasi",
+  filePKS: () => "pks-final",
+  fileLaporan: () => "lainnya",
+  fileDistribusi: () => "dokumentasi",
 };
 
 export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
@@ -251,6 +268,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     return initial;
   });
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
+  // Pemilih kabupaten/kota (multi) — provinsi hanya sebagai penyaring
+  const [wilayahProvinsi, setWilayahProvinsi] = useState("");
+  const [wilayahKabupaten, setWilayahKabupaten] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
@@ -326,6 +346,29 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     });
   };
 
+  const addWilayah = (key: string) => {
+    if (!wilayahProvinsi || !wilayahKabupaten) return;
+    const provLabel = PROVINSI_OPTIONS.find(o => o.value === wilayahProvinsi)?.label || wilayahProvinsi;
+    const kabLabel =
+      (KABUPATEN_BY_PROVINSI[wilayahProvinsi] || []).find(o => o.value === wilayahKabupaten)?.label ||
+      wilayahKabupaten;
+    const item = `${kabLabel} (${provLabel})`;
+    setValues((prev) => {
+      const current = (prev[key] as string) || "";
+      const items = current ? current.split(" || ").filter(Boolean) : [];
+      if (!items.includes(item)) items.push(item);
+      return { ...prev, [key]: items.join(" || ") };
+    });
+    setWilayahKabupaten("");
+  };
+
+  const removeWilayah = (key: string, item: string) => {
+    setValues((prev) => {
+      const items = ((prev[key] as string) || "").split(" || ").filter(Boolean).filter(i => i !== item);
+      return { ...prev, [key]: items.join(" || ") };
+    });
+  };
+
   const addTag = (key: string, defaults: string[] = []) => {
     const input = (tagInputs[key] || "").trim();
     if (!input) return;
@@ -361,6 +404,18 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           continue;
         }
         const val = values[field.key];
+        if (field.type === "multi-kabupaten") {
+          const wilayah = ((val as string) || "").split(" || ").filter(Boolean);
+          if (wilayah.length === 0) {
+            newErrors[field.key] = "Pilih minimal satu kabupaten/kota";
+          }
+          continue;
+        }
+        if (field.type === "number") {
+          // 0 adalah nilai valid (mis. tidak ada guru terdampak)
+          if (val === undefined || val === "") newErrors[field.key] = "Field ini wajib diisi";
+          continue;
+        }
         const isTags = field.type === "tags";
         const tagsVal = isTags ? (val as string || "").split(", ").filter(Boolean) : [];
         if (isTags ? tagsVal.length === 0 : (!val || val === "" || val === false)) {
@@ -396,7 +451,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         }
         const val = values[f.key];
         if (val === undefined || val === false || val === "") continue;
-        fields[f.label] = String(val);
+        fields[f.label] = f.type === "multi-kabupaten" ? String(val).split(" || ").join(", ") : String(val);
       }
       const newDocs = config.fields
         .filter(f => f.type === "file" && values[f.key])
@@ -452,25 +507,45 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         updated.pic = values.emailPIC as string;
       }
 
-      if (config.toState === "pelaksanaan-dalam-proses" || action === "update-progress") {
-        if (!updated.pelaksanaan) {
-          updated.pelaksanaan = { progress: 0, dokumentasi: [] };
-        }
-        if (action === "update-progress" && updated.pelaksanaan) {
-          updated.pelaksanaan = {
-            ...updated.pelaksanaan,
-            progress: parseInt(values.progress as string) || updated.pelaksanaan.progress,
-            latestUpdate: values.notes as string,
+      const isPelaksanaanUpdate =
+        config.toState === "pelaksanaan-dalam-proses" ||
+        config.toState === "pemantauan-terlaksana" ||
+        action === "update-progress";
+
+      if (isPelaksanaanUpdate) {
+        const base = updated.pelaksanaan || { progress: 0, dokumentasi: [] };
+
+        // "Update Progress" tidak mengubah status; hanya menambah entri timeline penyaluran
+        if (action === "update-progress") {
+          const entry = {
+            id: `pu-${Date.now()}`,
+            judul: (values.judul as string) || "Update Progress",
+            deskripsi: (values.deskripsi as string) || "",
+            tanggal: values.tanggal ? new Date(values.tanggal as string) : now,
+            actor: currentUser.name,
+            dokumen: newDocs,
           };
-        }
-        if (config.toState === "pelaksanaan-dalam-proses" && !updated.pelaksanaan.startDate) {
-          updated.pelaksanaan = { ...updated.pelaksanaan!, startDate: now };
-        }
-        if (config.toState === "pemantauan-terlaksana" && updated.pelaksanaan) {
-          updated.pelaksanaan = { ...updated.pelaksanaan, completionDate: now };
-        }
-        if (config.toState === "selesai" && updated.pelaksanaan) {
-          updated.pelaksanaan = { ...updated.pelaksanaan, completionDate: now };
+          const updates = [...(base.progressUpdates || []), entry];
+          updated.pelaksanaan = {
+            ...base,
+            progressUpdates: updates,
+            latestUpdate: entry.judul,
+            dokumentasi: [...base.dokumentasi, ...newDocs],
+          };
+        } else {
+          const dampak = {
+            siswa: parseInt((values.siswa as string) || "0", 10) || 0,
+            guru: parseInt((values.guru as string) || "0", 10) || 0,
+            satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
+            wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
+          };
+          updated.pelaksanaan = {
+            ...base,
+            // Persiapan -> Dalam Proses mencatat target, Terlaksana mencatat realisasi
+            ...(config.toState === "pelaksanaan-dalam-proses"
+              ? { targetDampak: dampak, startDate: base.startDate || now }
+              : { realisasiDampak: dampak, completionDate: now }),
+          };
         }
       }
 
@@ -509,7 +584,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                           onClick={() => {
                             const link = document.createElement("a");
                             link.href = "#";
-                            link.download = "Template_Rencana_Kerjasama.docx";
+                            link.download = `${field.label.replace(/^Download /, "").replace(/\s+/g, "_")}.docx`;
                             link.click();
                           }}
                           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
@@ -524,7 +599,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                           onClick={() => {
                             const link = document.createElement("a");
                             link.href = "#";
-                            link.download = "Template_Surat_Kuasa.docx";
+                            link.download = `${nextField.label.replace(/^Download /, "").replace(/\s+/g, "_")}.docx`;
                             link.click();
                           }}
                           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
@@ -558,6 +633,16 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                           type="text"
                           value={(values[f.key] as string) || ""}
                           onChange={(e) => set(f.key, e.target.value)}
+                          placeholder={f.placeholder}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                        />
+                      )}
+                      {f.type === "number" && (
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={(values[f.key] as string) || ""}
+                          onChange={(e) => set(f.key, e.target.value.replace(/[^0-9]/g, ""))}
                           placeholder={f.placeholder}
                           className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                         />
@@ -618,6 +703,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                           ? "Template_PKS.docx"
                           : field.key === "templateSuratKuasa"
                           ? "Template_Surat_Kuasa.docx"
+                          : field.key === "templateBAST"
+                          ? "Template_BAST.docx"
+                          : field.key === "templateLaporan"
+                          ? "Template_Laporan_Penyaluran.docx"
                           : "Template_Rencana_Kerjasama.docx";
                         link.click();
                       }}
@@ -653,6 +742,81 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
                     />
                   )}
+
+                  {field.type === "number" && (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={(values[field.key] as string) || ""}
+                      onChange={(e) => set(field.key, e.target.value.replace(/[^0-9]/g, ""))}
+                      placeholder={field.placeholder}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400"
+                    />
+                  )}
+
+                  {field.type === "multi-kabupaten" && (() => {
+                    const items = ((values[field.key] as string) || "").split(" || ").filter(Boolean);
+                    const kabOptions = KABUPATEN_BY_PROVINSI[wilayahProvinsi] || [];
+                    return (
+                      <div>
+                        {items.length > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {items.map((item) => (
+                              <span
+                                key={item}
+                                className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-sm text-blue-700"
+                              >
+                                {item}
+                                <button
+                                  type="button"
+                                  onClick={() => removeWilayah(field.key, item)}
+                                  className="leading-none text-blue-400 hover:text-red-500"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            value={wilayahProvinsi}
+                            onChange={(e) => {
+                              setWilayahProvinsi(e.target.value);
+                              setWilayahKabupaten("");
+                            }}
+                            className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${wilayahProvinsi ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900`}
+                          >
+                            <option value="" disabled>Pilih provinsi...</option>
+                            {PROVINSI_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={wilayahKabupaten}
+                            disabled={!wilayahProvinsi}
+                            onChange={(e) => setWilayahKabupaten(e.target.value)}
+                            className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${wilayahKabupaten ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                          >
+                            <option value="" disabled>
+                              {wilayahProvinsi ? "Pilih kabupaten/kota..." : "Pilih provinsi dahulu"}
+                            </option>
+                            {kabOptions.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addWilayah(field.key)}
+                          disabled={!wilayahKabupaten}
+                          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
+                        >
+                          Tambah Kabupaten/Kota
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   {field.type === "date" && (
                     <div className="relative">

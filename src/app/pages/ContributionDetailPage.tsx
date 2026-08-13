@@ -1,22 +1,21 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, EyeOff, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
-import { WorkflowTimeline } from "../components/detail/WorkflowTimeline";
 import { WorkflowStepsSidebar } from "../components/detail/WorkflowStepsSidebar";
 import { ActionModal } from "../components/modals/ActionModal";
 import { VervalModal } from "../components/modals/VervalModal";
 import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS, UNIT_KERJA_OPTIONS } from "../lib/workflow";
 import type { SessionUser } from "../lib/auth";
-import type { Contribution, Document, WorkflowAction, WorkflowState } from "../types/contribution";
+import type { Contribution, DampakPelaksanaan, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
 }
 
-type Tab = "info" | "timeline" | "pelaksanaan";
+type Tab = "info" | "pelaksanaan";
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
@@ -28,7 +27,6 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("info");
-  const [showTabs, setShowTabs] = useState(false);
   const [, forceRefresh] = useState(0);
   const [activeAction, setActiveAction] = useState<WorkflowAction | null>(null);
 
@@ -59,8 +57,8 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Informasi" },
-    { key: "timeline", label: "Riwayat Alur Kerja" },
-    ...(c.workflowStatus.startsWith("pelaksanaan-") ? [{ key: "pelaksanaan" as Tab, label: "Pelaksanaan" }] : []),
+    // Tetap tampil setelah tahap pelaksanaan lewat, agar realisasi & timeline masih bisa dilihat
+    ...(c.workflowStatus.startsWith("pelaksanaan-") || c.pelaksanaan ? [{ key: "pelaksanaan" as Tab, label: "Pelaksanaan" }] : []),
   ];
 
   return (
@@ -125,7 +123,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
       </div>
 
       {/* Tabs */}
-      {showTabs && (
+      {tabs.length > 1 && (
         <div className="border-b border-gray-100 bg-white px-6">
           <div className="flex">
             {tabs.map((tab) => (
@@ -161,29 +159,10 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
                 </div>
               </div>
             )}
-            {activeTab === "timeline" && (
-              <div className="max-w-2xl rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-                <WorkflowTimeline contribution={c} />
-              </div>
-            )}
             {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
           </div>
         </div>
 
-      {/* Floating toggle button */}
-      <div className="fixed bottom-5 right-5 z-50 group">
-        <button
-          onClick={() => setShowTabs((v) => !v)}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg hover:bg-gray-700 transition-colors"
-        >
-          {showTabs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </button>
-        <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          <div className="rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white whitespace-nowrap shadow-md">
-            Demo (show/hide) tab
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -654,6 +633,9 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
               <dt className="text-gray-400">Wilayah</dt>
               <dd className="text-gray-900">
                 {(() => {
+                  // Sejak PRD Tahapan Pelaksanaan, wilayah dicatat sebagai daftar kabupaten/kota
+                  const multi = targetPenerima["Kabupaten/Kota yang Dibantu"];
+                  if (multi) return multi;
                   const provLabel = getLabelByValue(PROVINSI_OPTIONS, targetPenerima["Provinsi"] || "");
                   const kabLabel = getLabelByValue(
                     KABUPATEN_BY_PROVINSI[targetPenerima["Provinsi"] || ""] || [],
@@ -1098,6 +1080,33 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
 
 /* ────────────── Pelaksanaan Tab ────────────── */
 
+function formatTanggal(d: Date | string) {
+  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function DampakGrid({ dampak }: { dampak: DampakPelaksanaan }) {
+  return (
+    <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
+      <div>
+        <dt className="text-gray-400">Siswa Terdampak</dt>
+        <dd className="text-gray-900">{dampak.siswa.toLocaleString("id-ID")}</dd>
+      </div>
+      <div>
+        <dt className="text-gray-400">Guru Terdampak</dt>
+        <dd className="text-gray-900">{dampak.guru.toLocaleString("id-ID")}</dd>
+      </div>
+      <div>
+        <dt className="text-gray-400">Satuan Pendidikan</dt>
+        <dd className="text-gray-900">{dampak.satuanPendidikan.toLocaleString("id-ID")}</dd>
+      </div>
+      <div className="col-span-2 sm:col-span-1">
+        <dt className="text-gray-400">Kabupaten/Kota</dt>
+        <dd className="text-gray-900">{dampak.wilayah || "-"}</dd>
+      </div>
+    </dl>
+  );
+}
+
 function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
   const p = c.pelaksanaan;
 
@@ -1112,34 +1121,94 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
     );
   }
 
+  const timeline = [...(p.progressUpdates || [])].sort(
+    (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+  );
+
   return (
-    <div className="max-w-2xl space-y-4">
-      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Status Pelaksanaan</h3>
-          <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-sm font-medium text-teal-700">
-            {p.progress}%
-          </span>
-        </div>
-        <div className="mt-3">
-          <div className="flex justify-between text-sm text-gray-500 mb-1">
-            <span>Kemajuan</span>
-            <span>{p.progress}%</span>
+    <div className="max-w-3xl space-y-4">
+      {/* Ringkasan pelaksanaan */}
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Status Pelaksanaan</h3>
+        <dl className="mb-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <div>
+            <dt className="text-gray-400">Mulai Pelaksanaan</dt>
+            <dd className="text-gray-900">{p.startDate ? formatTanggal(p.startDate) : "-"}</dd>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-            <div
-              className="h-full rounded-full bg-teal-500 transition-all"
-              style={{ width: `${p.progress}%` }}
-            />
+          <div>
+            <dt className="text-gray-400">Selesai Pelaksanaan</dt>
+            <dd className="text-gray-900">{p.completionDate ? formatTanggal(p.completionDate) : "-"}</dd>
           </div>
-        </div>
-        {p.latestUpdate && (
-          <p className="mt-3 text-sm text-gray-600">{p.latestUpdate}</p>
+        </dl>
+
+        {p.targetDampak && (
+          <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
+            <DampakGrid dampak={p.targetDampak} />
+          </div>
+        )}
+
+        {p.realisasiDampak && (
+          <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
+            <DampakGrid dampak={p.realisasiDampak} />
+          </div>
+        )}
+      </div>
+
+      {/* Timeline penyaluran bantuan */}
+      <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Timeline Penyaluran Bantuan</h3>
+        {timeline.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            Belum ada update progress. Gunakan tombol aksi &quot;Update Progress&quot; untuk mencatat perkembangan penyaluran bantuan.
+          </p>
+        ) : (
+          <div className="relative">
+            <div className="absolute bottom-2 left-[7px] top-2 w-0.5 bg-gray-100" />
+            <div className="space-y-5">
+              {timeline.map((entry, i) => (
+                <div key={entry.id} className="relative flex gap-3">
+                  <div className="relative z-10 mt-1 shrink-0">
+                    <div className={`h-4 w-4 rounded-full border-2 bg-white ${i === 0 ? "border-blue-600" : "border-gray-200"}`} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-gray-800">{entry.judul}</p>
+                      <span className="text-xs text-gray-400">{formatTanggal(entry.tanggal)}</span>
+                    </div>
+                    {entry.deskripsi && (
+                      <p className="mt-1 text-sm leading-relaxed text-gray-600">{entry.deskripsi}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">Dicatat oleh {entry.actor}</p>
+                    {entry.dokumen.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {entry.dokumen.map((doc) => (
+                          <div key={doc.id} className="flex items-center gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm">
+                            <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                            <span className="flex-1 truncate text-gray-700">{doc.name}</span>
+                            <a
+                              href={doc.url || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                            >
+                              Lihat
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
       {p.dokumentasi.length > 0 && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
           <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Dokumentasi Pelaksanaan</h3>
           <div className="space-y-2">
             {p.dokumentasi.map((doc) => (

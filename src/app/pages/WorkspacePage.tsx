@@ -10,6 +10,7 @@ export default function WorkspacePage() {
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     program: "",
+    paket: "",
     status: "",
   });
 
@@ -18,12 +19,27 @@ export default function WorkspacePage() {
     [contributions]
   );
 
+  // Daftar paket menyesuaikan program yang sedang dipilih
+  const pakets = useMemo(
+    () =>
+      [
+        ...new Set(
+          contributions
+            .filter((c) => !filters.program || c.program === filters.program)
+            .map((c) => c.paketBantuan)
+            .filter(Boolean)
+        ),
+      ].sort(),
+    [contributions, filters.program]
+  );
+
   const filtered = useMemo(() => {
     const q = filters.search.toLowerCase();
     return contributions.filter((c) => {
-      if (q && ![c.namaMitra, c.program].some((s) => s.toLowerCase().includes(q)))
+      if (q && ![c.namaMitra, c.program, c.paketBantuan].some((s) => (s || "").toLowerCase().includes(q)))
         return false;
       if (filters.program && c.program !== filters.program) return false;
+      if (filters.paket && c.paketBantuan !== filters.paket) return false;
       if (filters.status && c.workflowStatus !== filters.status) return false;
       return true;
     });
@@ -37,7 +53,7 @@ export default function WorkspacePage() {
           <MonitoringSummary contributions={contributions} />
 
           {/* Filter bar */}
-          <FilterBar filters={filters} onChange={setFilters} programs={programs} />
+          <FilterBar filters={filters} onChange={setFilters} programs={programs} pakets={pakets} />
 
           {/* Table */}
           <WorkspaceTable contributions={filtered} />

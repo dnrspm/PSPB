@@ -7,11 +7,13 @@ export type WorkflowState =
   | "perjanjian-draft-pks"
   | "perjanjian-pembahasan-pks"
   | "perjanjian-finalisasi-pks"
+  | "pelaksanaan-penandatangan-kerjasama"
   | "pelaksanaan-persiapan"
   | "pelaksanaan-dalam-proses"
   | "pelaksanaan-dalam-evaluasi"
   | "pelaksanaan-penyesuaian-pks"
   | "pemantauan-terlaksana"
+  | "pemantauan-dokumen-belum-lengkap"
   | "pemantauan-pemanfaatan"
   | "selesai"
   | "tidak-dilanjutkan";
@@ -45,12 +47,33 @@ export interface ActivityLog {
   toState?: WorkflowState;
 }
 
+/** Satu entri timeline penyaluran bantuan (CTA "Update Progress"). */
+export interface ProgressUpdate {
+  id: string;
+  judul: string;
+  deskripsi: string;
+  tanggal: Date;
+  actor: string;
+  dokumen: Document[];
+}
+
+/** Jumlah penerima manfaat: target saat persiapan, realisasi saat terlaksana. */
+export interface DampakPelaksanaan {
+  siswa: number;
+  guru: number;
+  satuanPendidikan: number;
+  wilayah: string;
+}
+
 export interface PelaksanaanInfo {
   progress: number;
   startDate?: Date;
   completionDate?: Date;
   latestUpdate?: string;
   dokumentasi: Document[];
+  progressUpdates?: ProgressUpdate[];
+  targetDampak?: DampakPelaksanaan;
+  realisasiDampak?: DampakPelaksanaan;
 }
 
 export interface SekolahDetail {
@@ -123,6 +146,7 @@ export type WorkflowAction =
   | "ajukan-perjanjian"
   | "lanjutkan-pembahasan"
   | "perjanjian-disetujui"
+  | "lanjut-persiapan-pelaksanaan"
   | "lanjut-pelaksanaan"
   | "update-progress"
   | "terlaksana"
