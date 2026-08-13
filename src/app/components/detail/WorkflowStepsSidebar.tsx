@@ -19,6 +19,43 @@ export const HAPPY_FLOW: WorkflowState[] = [
   "selesai",
 ];
 
+/**
+ * Urutan lengkap termasuk state cabang. Dipakai untuk menyisipkan cabang
+ * pada posisi yang benar bila kontribusi memang pernah melewatinya.
+ */
+const FULL_FLOW: WorkflowState[] = [
+  "kontribusi-masuk",
+  "verifikasi-dan-validasi",
+  "audiensi-menunggu-jadwal",
+  "audiensi-terjadwal",
+  "audiensi-konfirmasi-lanjut-pks",
+  "perjanjian-draft-pks",
+  "perjanjian-pembahasan-pks",
+  "perjanjian-finalisasi-pks",
+  "pelaksanaan-penandatangan-kerjasama",
+  "pelaksanaan-persiapan",
+  "pelaksanaan-dalam-proses",
+  "pelaksanaan-dalam-evaluasi",
+  "pelaksanaan-penyesuaian-pks",
+  "pemantauan-terlaksana",
+  "pemantauan-dokumen-belum-lengkap",
+  "pemantauan-pemanfaatan",
+  "selesai",
+];
+
+/**
+ * Happy flow + state cabang yang benar-benar dilalui kontribusi ini.
+ * Kontribusi yang tidak pernah masuk cabang tetap menampilkan happy flow saja.
+ */
+function buildFlow(c: Contribution): WorkflowState[] {
+  const visited = new Set<WorkflowState>([c.workflowStatus as WorkflowState]);
+  for (const a of c.aktivitas) {
+    if (a.fromState) visited.add(a.fromState as WorkflowState);
+    if (a.toState) visited.add(a.toState as WorkflowState);
+  }
+  return FULL_FLOW.filter((state) => HAPPY_FLOW.includes(state) || visited.has(state));
+}
+
 export function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
     day: "numeric", month: "long", year: "numeric",
@@ -122,14 +159,15 @@ export function WorkflowStepsSidebar({
   /** true = tampilkan indikator alur saja, tanpa interaksi (dipakai di portal mitra) */
   readOnly?: boolean;
 }) {
-  const currentIndex = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
+  const flow = buildFlow(c);
+  const currentIndex = flow.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
   const [detailState, setDetailState] = useState<WorkflowState | null>(null);
   const maxReachedIdx = Math.max(
     ...c.aktivitas.flatMap(a => {
-      const fromIdx = HAPPY_FLOW.indexOf(a.fromState as WorkflowState);
-      const toIdx = HAPPY_FLOW.indexOf(a.toState as WorkflowState);
+      const fromIdx = flow.indexOf(a.fromState as WorkflowState);
+      const toIdx = flow.indexOf(a.toState as WorkflowState);
       return [fromIdx, toIdx];
     }).filter(idx => idx >= 0),
     -1
@@ -138,14 +176,14 @@ export function WorkflowStepsSidebar({
     ? c.aktivitas.find(a => a.action === "Tidak Dilanjutkan")?.fromState
     : undefined;
   const hasReentryMarker = c.aktivitas.some(a => {
-    const fromIdx = HAPPY_FLOW.indexOf(a.fromState as WorkflowState);
-    const toIdx = HAPPY_FLOW.indexOf(a.toState as WorkflowState);
+    const fromIdx = flow.indexOf(a.fromState as WorkflowState);
+    const toIdx = flow.indexOf(a.toState as WorkflowState);
     return fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx;
   });
 
   const getStepInfo = (state: WorkflowState) => {
-    const currentIdx = HAPPY_FLOW.indexOf(c.workflowStatus as WorkflowState);
-    const stateIdx = HAPPY_FLOW.indexOf(state);
+    const currentIdx = flow.indexOf(c.workflowStatus as WorkflowState);
+    const stateIdx = flow.indexOf(state);
     const allSorted = [...c.aktivitas].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
@@ -181,13 +219,13 @@ export function WorkflowStepsSidebar({
         <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-gray-100" />
 
         <div className="space-y-0">
-          {HAPPY_FLOW.map((state, i) => {
+          {flow.map((state, i) => {
             const stateHasAktivitas = c.aktivitas.some(a => a.fromState === state || a.toState === state);
             const isCurrent = c.workflowStatus === state;
             const isPast = currentIndex >= 0 && i < currentIndex && stateHasAktivitas;
             const isFuture = currentIndex >= 0 && i > currentIndex;
             const isPreviouslyVisited = currentIndex >= 0 && i >= currentIndex && i <= maxReachedIdx && (maxReachedIdx > currentIndex || hasReentryMarker) && stateHasAktivitas;
-            const rejectedIndex = rejectedState ? HAPPY_FLOW.indexOf(rejectedState) : -1;
+            const rejectedIndex = rejectedState ? flow.indexOf(rejectedState) : -1;
             const isRejected = rejectedIndex >= 0 && i === rejectedIndex;
             const isPastRejected = rejectedIndex >= 0 && i < rejectedIndex;
             const info = getStepInfo(state);
