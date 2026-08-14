@@ -22,8 +22,6 @@ const ALL_STATES: WorkflowState[] = [
   "audiensi-konfirmasi-lanjut-pks", "perjanjian-draft-pks",
   "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks",
   "pelaksanaan-penandatangan-kerjasama", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses",
-  "pelaksanaan-dalam-evaluasi", "pelaksanaan-penyesuaian-pks",
-  "pemantauan-terlaksana", "pemantauan-dokumen-belum-lengkap", "pemantauan-pemanfaatan",
   "selesai", "tidak-dilanjutkan",
 ];
 

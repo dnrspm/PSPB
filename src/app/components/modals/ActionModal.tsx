@@ -32,6 +32,26 @@ interface FieldConfig {
   inline?: boolean;
 }
 
+interface WilayahRow {
+  provinsi: string;
+  kabupaten: string;
+}
+
+/** Baris terisi lengkap -> "Kabupaten (Provinsi)", dipisah " || " dan tanpa duplikat. */
+function formatWilayahRows(rows: WilayahRow[]): string {
+  const items: string[] = [];
+  for (const row of rows) {
+    if (!row.provinsi || !row.kabupaten) continue;
+    const provLabel = PROVINSI_OPTIONS.find(o => o.value === row.provinsi)?.label || row.provinsi;
+    const kabLabel =
+      (KABUPATEN_BY_PROVINSI[row.provinsi] || []).find(o => o.value === row.kabupaten)?.label ||
+      row.kabupaten;
+    const item = `${kabLabel} (${provLabel})`;
+    if (!items.includes(item)) items.push(item);
+  }
+  return items.join(" || ");
+}
+
 function parseUnitKerjaFromActivity(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
   for (let i = aktivitas.length - 1; i >= 0; i--) {
     const fields = aktivitas[i].fields;
@@ -178,7 +198,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
   },
   "terlaksana": {
     title: "Terlaksana",
-    toState: "pemantauan-terlaksana",
+    toState: "selesai",
     fields: [
       { key: "templateBAST", label: "Download Template BAST", type: "download-template" },
       { key: "templateLaporan", label: "Download Template Laporan Penyaluran", type: "download-template" },
@@ -193,45 +213,6 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil pelaksanaan..." },
     ],
   },
-  "dalam-evaluasi": {
-    title: "Dalam Evaluasi",
-    toState: "pelaksanaan-dalam-evaluasi",
-    fields: [
-      { key: "notes", label: "Keterangan", type: "textarea", required: true, placeholder: "Alasan evaluasi..." },
-    ],
-  },
-  "ajukan-addendum": {
-    title: "Ajukan Addendum PKS",
-    toState: "pelaksanaan-penyesuaian-pks",
-    fields: [
-      { key: "file", label: "Draft Addendum PKS", type: "file", required: true },
-      { key: "fileRencana", label: "Rencana Kerja Sama", type: "file", required: true },
-      { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan addendum..." },
-    ],
-  },
-  "pemantauan-selesai": {
-    title: "Pemantauan Selesai",
-    toState: "selesai",
-    fields: [
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pemantauan..." },
-    ],
-  },
-  "pemantauan-pemanfaatan": {
-    title: "Pemantauan Pemanfaatan (Opsional)",
-    toState: "pemantauan-pemanfaatan",
-    fields: [
-      { key: "notes", label: "Keterangan (link form)", type: "textarea", placeholder: "Masukkan link form pemantauan..." },
-    ],
-  },
-  "pemantauan-pemanfaatan-selesai": {
-    title: "Pemantauan Pemanfaatan Selesai",
-    toState: "selesai",
-    fields: [
-      { key: "file", label: "Upload Report", type: "file", required: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan hasil pemantauan..." },
-    ],
-  },
 };
 
 const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
@@ -241,7 +222,6 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
       case "ajukan-perjanjian": return "pks-draft";
       case "perjanjian-disetujui": return "pks-final";
       case "terlaksana": return "bast";
-      case "ajukan-addendum": return "adendum";
       case "update-progress": return "dokumentasi";
       default: return "lainnya";
     }
@@ -268,9 +248,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     return initial;
   });
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
-  // Pemilih kabupaten/kota (multi) — provinsi hanya sebagai penyaring
-  const [wilayahProvinsi, setWilayahProvinsi] = useState("");
-  const [wilayahKabupaten, setWilayahKabupaten] = useState("");
+  // Pemilih kabupaten/kota (multi) — satu baris = satu kab/kota, provinsi sebagai penyaring
+  const [wilayahRows, setWilayahRows] = useState<WilayahRow[]>([{ provinsi: "", kabupaten: "" }]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
@@ -346,27 +325,23 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     });
   };
 
-  const addWilayah = (key: string) => {
-    if (!wilayahProvinsi || !wilayahKabupaten) return;
-    const provLabel = PROVINSI_OPTIONS.find(o => o.value === wilayahProvinsi)?.label || wilayahProvinsi;
-    const kabLabel =
-      (KABUPATEN_BY_PROVINSI[wilayahProvinsi] || []).find(o => o.value === wilayahKabupaten)?.label ||
-      wilayahKabupaten;
-    const item = `${kabLabel} (${provLabel})`;
-    setValues((prev) => {
-      const current = (prev[key] as string) || "";
-      const items = current ? current.split(" || ").filter(Boolean) : [];
-      if (!items.includes(item)) items.push(item);
-      return { ...prev, [key]: items.join(" || ") };
-    });
-    setWilayahKabupaten("");
+  /** Baris wilayah adalah sumber kebenaran; nilai field selalu ikut disinkronkan. */
+  const setWilayah = (key: string, rows: WilayahRow[]) => {
+    setWilayahRows(rows);
+    setValues((prev) => ({ ...prev, [key]: formatWilayahRows(rows) }));
   };
 
-  const removeWilayah = (key: string, item: string) => {
-    setValues((prev) => {
-      const items = ((prev[key] as string) || "").split(" || ").filter(Boolean).filter(i => i !== item);
-      return { ...prev, [key]: items.join(" || ") };
-    });
+  const updateWilayahRow = (key: string, index: number, patch: Partial<WilayahRow>) => {
+    setWilayah(key, wilayahRows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  };
+
+  const addWilayahRow = (key: string) => {
+    setWilayah(key, [...wilayahRows, { provinsi: "", kabupaten: "" }]);
+  };
+
+  const removeWilayahRow = (key: string, index: number) => {
+    const rest = wilayahRows.filter((_, i) => i !== index);
+    setWilayah(key, rest.length > 0 ? rest : [{ provinsi: "", kabupaten: "" }]);
   };
 
   const addTag = (key: string, defaults: string[] = []) => {
@@ -509,7 +484,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
       const isPelaksanaanUpdate =
         config.toState === "pelaksanaan-dalam-proses" ||
-        config.toState === "pemantauan-terlaksana" ||
+        config.toState === "selesai" ||
         action === "update-progress";
 
       if (isPelaksanaanUpdate) {
@@ -755,61 +730,64 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   )}
 
                   {field.type === "multi-kabupaten" && (() => {
-                    const items = ((values[field.key] as string) || "").split(" || ").filter(Boolean);
-                    const kabOptions = KABUPATEN_BY_PROVINSI[wilayahProvinsi] || [];
+                    const canAddRow = wilayahRows.every(r => r.provinsi && r.kabupaten);
                     return (
                       <div>
-                        {items.length > 0 && (
-                          <div className="mb-2 flex flex-wrap gap-1.5">
-                            {items.map((item) => (
-                              <span
-                                key={item}
-                                className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-sm text-blue-700"
-                              >
-                                {item}
-                                <button
-                                  type="button"
-                                  onClick={() => removeWilayah(field.key, item)}
-                                  className="leading-none text-blue-400 hover:text-red-500"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            value={wilayahProvinsi}
-                            onChange={(e) => {
-                              setWilayahProvinsi(e.target.value);
-                              setWilayahKabupaten("");
-                            }}
-                            className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${wilayahProvinsi ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900`}
-                          >
-                            <option value="" disabled>Pilih provinsi...</option>
-                            {PROVINSI_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={wilayahKabupaten}
-                            disabled={!wilayahProvinsi}
-                            onChange={(e) => setWilayahKabupaten(e.target.value)}
-                            className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${wilayahKabupaten ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
-                          >
-                            <option value="" disabled>
-                              {wilayahProvinsi ? "Pilih kabupaten/kota..." : "Pilih provinsi dahulu"}
-                            </option>
-                            {kabOptions.map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
+                        <div className="space-y-2">
+                          {wilayahRows.map((row, rowIndex) => {
+                            const kabOptions = KABUPATEN_BY_PROVINSI[row.provinsi] || [];
+                            const usedKabupaten = wilayahRows
+                              .filter((_, i) => i !== rowIndex)
+                              .filter(r => r.provinsi === row.provinsi)
+                              .map(r => r.kabupaten);
+                            return (
+                              <div key={rowIndex} className="flex items-center gap-1.5">
+                                <div className="grid flex-1 grid-cols-2 gap-2 min-w-0">
+                                  <select
+                                    value={row.provinsi}
+                                    onChange={(e) =>
+                                      updateWilayahRow(field.key, rowIndex, { provinsi: e.target.value, kabupaten: "" })
+                                    }
+                                    className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${row.provinsi ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900`}
+                                  >
+                                    <option value="" disabled>Pilih provinsi...</option>
+                                    {PROVINSI_OPTIONS.map((o) => (
+                                      <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={row.kabupaten}
+                                    disabled={!row.provinsi}
+                                    onChange={(e) => updateWilayahRow(field.key, rowIndex, { kabupaten: e.target.value })}
+                                    className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${row.kabupaten ? "text-gray-900" : "text-gray-400"} [&_option]:text-gray-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                                  >
+                                    <option value="" disabled>
+                                      {row.provinsi ? "Pilih kabupaten/kota..." : "Pilih provinsi dahulu"}
+                                    </option>
+                                    {kabOptions
+                                      .filter(o => !usedKabupaten.includes(o.value))
+                                      .map((o) => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                      ))}
+                                  </select>
+                                </div>
+                                {wilayahRows.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeWilayahRow(field.key, rowIndex)}
+                                    className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                         <button
                           type="button"
-                          onClick={() => addWilayah(field.key)}
-                          disabled={!wilayahKabupaten}
+                          onClick={() => addWilayahRow(field.key)}
+                          disabled={!canAddRow}
                           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
                         >
                           Tambah Kabupaten/Kota

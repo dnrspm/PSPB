@@ -12,11 +12,6 @@ export const WORKFLOW_STATE_LABELS: Record<WorkflowState, string> = {
   "pelaksanaan-penandatangan-kerjasama": "Pelaksanaan - Penandatangan Kerjasama",
   "pelaksanaan-persiapan": "Pelaksanaan - Persiapan",
   "pelaksanaan-dalam-proses": "Pelaksanaan - Dalam Proses",
-  "pelaksanaan-dalam-evaluasi": "Pelaksanaan - Dalam Evaluasi",
-  "pelaksanaan-penyesuaian-pks": "Pelaksanaan - Penyesuaian PKS",
-  "pemantauan-terlaksana": "Pemantauan - Pelaksanaan Terlaksana",
-  "pemantauan-dokumen-belum-lengkap": "Pemantauan - Dokumen Belum Lengkap",
-  "pemantauan-pemanfaatan": "Pemantauan - Pemanfaatan",
   "selesai": "Selesai",
   "tidak-dilanjutkan": "Tidak Dilanjutkan",
 };
@@ -33,11 +28,6 @@ export const WORKFLOW_STATE_COLORS: Record<WorkflowState, { bg: string; text: st
   "pelaksanaan-penandatangan-kerjasama": { bg: "bg-[#DBEAFE]", text: "text-[#0B5FEF]", border: "border-[#DBEAFE]" },
   "pelaksanaan-persiapan": { bg: "bg-[#DBEAFE]", text: "text-[#0B5FEF]", border: "border-[#DBEAFE]" },
   "pelaksanaan-dalam-proses": { bg: "bg-[#DBEAFE]", text: "text-[#0B5FEF]", border: "border-[#DBEAFE]" },
-  "pelaksanaan-dalam-evaluasi": { bg: "bg-[#DBEAFE]", text: "text-[#0B5FEF]", border: "border-[#DBEAFE]" },
-  "pelaksanaan-penyesuaian-pks": { bg: "bg-[#DBEAFE]", text: "text-[#0B5FEF]", border: "border-[#DBEAFE]" },
-  "pemantauan-terlaksana": { bg: "bg-[#FCE7F3]", text: "text-[#EC4899]", border: "border-[#FCE7F3]" },
-  "pemantauan-dokumen-belum-lengkap": { bg: "bg-[#FCE7F3]", text: "text-[#EC4899]", border: "border-[#FCE7F3]" },
-  "pemantauan-pemanfaatan": { bg: "bg-[#FCE7F3]", text: "text-[#EC4899]", border: "border-[#FCE7F3]" },
   "selesai": { bg: "bg-[#D1FAE5]", text: "text-[#35825A]", border: "border-[#D1FAE5]" },
   "tidak-dilanjutkan": { bg: "bg-[#E5E5E5]", text: "text-[#6B7280]", border: "border-[#E5E5E5]" },
 };
@@ -53,12 +43,7 @@ const VALID_TRANSITIONS: Partial<Record<WorkflowState, WorkflowState[]>> = {
   "perjanjian-finalisasi-pks": ["pelaksanaan-penandatangan-kerjasama", "tidak-dilanjutkan"],
   "pelaksanaan-penandatangan-kerjasama": ["pelaksanaan-persiapan", "tidak-dilanjutkan"],
   "pelaksanaan-persiapan": ["pelaksanaan-dalam-proses"],
-  "pelaksanaan-dalam-proses": ["pelaksanaan-dalam-evaluasi", "pemantauan-terlaksana"],
-  "pelaksanaan-dalam-evaluasi": ["pelaksanaan-dalam-proses", "pelaksanaan-penyesuaian-pks", "pemantauan-terlaksana"],
-  "pelaksanaan-penyesuaian-pks": ["pelaksanaan-dalam-proses"],
-  "pemantauan-terlaksana": ["selesai", "pemantauan-pemanfaatan", "pemantauan-dokumen-belum-lengkap"],
-  "pemantauan-dokumen-belum-lengkap": ["pemantauan-terlaksana"],
-  "pemantauan-pemanfaatan": ["selesai"],
+  "pelaksanaan-dalam-proses": ["selesai", "tidak-dilanjutkan"],
   "selesai": [],
   "tidak-dilanjutkan": [],
 };
@@ -78,12 +63,7 @@ export const ACTIONS_BY_STATE: Record<WorkflowState, WorkflowAction[]> = {
   "perjanjian-finalisasi-pks": ["perjanjian-disetujui", "tidak-dilanjutkan"],
   "pelaksanaan-penandatangan-kerjasama": ["lanjut-persiapan-pelaksanaan", "tidak-dilanjutkan"],
   "pelaksanaan-persiapan": ["lanjut-pelaksanaan"],
-  "pelaksanaan-dalam-proses": ["update-progress", "terlaksana", "dalam-evaluasi"],
-  "pelaksanaan-dalam-evaluasi": ["ajukan-addendum", "lanjut-pelaksanaan", "terlaksana"],
-  "pelaksanaan-penyesuaian-pks": ["lanjut-pelaksanaan"],
-  "pemantauan-terlaksana": ["pemantauan-selesai", "pemantauan-pemanfaatan"],
-  "pemantauan-dokumen-belum-lengkap": [],
-  "pemantauan-pemanfaatan": ["pemantauan-pemanfaatan-selesai"],
+  "pelaksanaan-dalam-proses": ["update-progress", "terlaksana", "tidak-dilanjutkan"],
   "selesai": [],
   "tidak-dilanjutkan": [],
 };
@@ -103,11 +83,6 @@ export const ACTION_LABELS: Record<WorkflowAction, string> = {
   "lanjut-pelaksanaan": "Lanjut Pelaksanaan",
   "update-progress": "Update Progress",
   "terlaksana": "Terlaksana",
-  "dalam-evaluasi": "Dalam Evaluasi",
-  "ajukan-addendum": "Ajukan Addendum PKS",
-  "pemantauan-selesai": "Pemantauan Selesai",
-  "pemantauan-pemanfaatan": "Pemantauan Pemanfaatan (Opsional)",
-  "pemantauan-pemanfaatan-selesai": "Pemantauan Pemanfaatan Selesai",
   "view-detail": "Lihat Detail",
 };
 
@@ -123,11 +98,6 @@ const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
     "lanjut-pelaksanaan",
     "update-progress",
     "terlaksana",
-    "dalam-evaluasi",
-    "ajukan-addendum",
-    "pemantauan-selesai",
-    "pemantauan-pemanfaatan",
-    "pemantauan-pemanfaatan-selesai",
     "view-detail",
   ],
   "pusat-dir-eselon": [
@@ -174,19 +144,12 @@ export const STATE_OWNERS: Partial<Record<WorkflowState, UserRole>> = {
   "pelaksanaan-penandatangan-kerjasama": "biro-hukum",
   "pelaksanaan-persiapan": "biro-perencanaan",
   "pelaksanaan-dalam-proses": "biro-perencanaan",
-  "pelaksanaan-dalam-evaluasi": "biro-perencanaan",
-  "pelaksanaan-penyesuaian-pks": "biro-perencanaan",
-  "pemantauan-terlaksana": "biro-perencanaan",
-  "pemantauan-dokumen-belum-lengkap": "biro-perencanaan",
-  "pemantauan-pemanfaatan": "biro-perencanaan",
   "selesai": "biro-perencanaan",
 };
 
 export const ACTION_VARIANTS: Partial<Record<WorkflowAction, "default" | "destructive" | "outline">> = {
   "tidak-dilanjutkan": "destructive",
   "audiensi-ulang": "outline",
-  "pemantauan-pemanfaatan": "outline",
-  "dalam-evaluasi": "outline",
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -245,13 +208,8 @@ export const WORKFLOW_PHASES: { label: string; states: WorkflowState[]; color: s
   },
   {
     label: "Pelaksanaan",
-    states: ["pelaksanaan-penandatangan-kerjasama", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses", "pelaksanaan-dalam-evaluasi", "pelaksanaan-penyesuaian-pks"],
+    states: ["pelaksanaan-penandatangan-kerjasama", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses"],
     color: "#0B5FEF",
-  },
-  {
-    label: "Pemantauan",
-    states: ["pemantauan-terlaksana", "pemantauan-dokumen-belum-lengkap", "pemantauan-pemanfaatan"],
-    color: "#EC4899",
   },
   {
     label: "Selesai",

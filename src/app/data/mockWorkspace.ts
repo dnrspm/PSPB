@@ -338,11 +338,10 @@ export const mockContributions: Contribution[] = [
     email: "raymond.wong@shopee.com",
     program: "Bahan Ajar Digital",
     paketBantuan: "Modul Digital Marketing",
-    workflowStatus: "pelaksanaan-dalam-evaluasi",
+    workflowStatus: "pelaksanaan-dalam-proses",
     pic: "Andi Pratama",
     lastUpdate: d(3),
     submissionDate: d(100),
-    evaluasiNotes: "Tim pelaksana mitra sedang ada perubahan struktur internal.",
     targetPenerima: "Siswa SMK Bisnis",
     wilayah: "Bali",
     sekolah: ["SMKN 1 Denpasar", "SMK PGRI Badung"],
@@ -361,7 +360,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a020", timestamp: d(100), actor: "Raymond Wong", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a021", timestamp: d(3), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Dalam Evaluasi", notes: "Tim pelaksana mitra sedang ada perubahan struktur internal", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
+      { id: "a021", timestamp: d(3), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Lanjut Pelaksanaan", notes: "Modul tahap 1 mulai didistribusikan ke SMK sasaran", fromState: "pelaksanaan-persiapan", toState: "pelaksanaan-persiapan" },
     ],
     pelaksanaan: {
       progress: 35,
@@ -378,7 +377,7 @@ export const mockContributions: Contribution[] = [
     email: "jessica.lim@grab.com",
     program: "Pengembangan Platform Digital",
     paketBantuan: "Integrasi Layanan ke dalam Rumah Pendidikan",
-    workflowStatus: "pelaksanaan-penyesuaian-pks",
+    workflowStatus: "pelaksanaan-dalam-proses",
     pic: "Budi Santoso",
     lastUpdate: d(2),
     submissionDate: d(110),
@@ -395,11 +394,11 @@ export const mockContributions: Contribution[] = [
     infoTambahan: "Integrasi layanan Grab untuk mendukung mobilitas guru dan tenaga kependidikan di Jawa Tengah",
     dokumen: [
       { id: "d018", name: "Proposal Grab.pdf", type: "proposal", uploadedAt: d(110), uploadedBy: "Jessica Lim" },
-      { id: "d019", name: "Addendum PKS Grab v1.pdf", type: "adendum", uploadedAt: d(2), uploadedBy: "Eka Putri" },
+      { id: "d019", name: "Dokumentasi Integrasi Tahap 1.pdf", type: "dokumentasi", uploadedAt: d(2), uploadedBy: "Budi Santoso" },
     ],
     aktivitas: [
       { id: "a022", timestamp: d(110), actor: "Jessica Lim", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a023", timestamp: d(2), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Ajukan Addendum PKS", notes: "Penambahan 1 sekolah baru di Purwokerto", fromState: "pelaksanaan-dalam-evaluasi", toState: "pelaksanaan-dalam-evaluasi" },
+      { id: "a023", timestamp: d(2), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Update Progress", notes: "Integrasi layanan tahap 1 selesai di 2 satuan pendidikan", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
     ],
     pelaksanaan: {
       progress: 70,
@@ -416,7 +415,7 @@ export const mockContributions: Contribution[] = [
     email: "ahmad.fauzi@astra.co.id",
     program: "Revitalisasi Sekolah",
     paketBantuan: "Toilet",
-    workflowStatus: "pemantauan-terlaksana",
+    workflowStatus: "selesai",
     pic: "Andi Pratama",
     lastUpdate: d(7),
     submissionDate: d(150),
@@ -483,7 +482,7 @@ export const mockContributions: Contribution[] = [
     ],
     aktivitas: [
       { id: "a026", timestamp: d(180), actor: "Mega Sitorus", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a027", timestamp: d(14), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Pemantauan Selesai", fromState: "pemantauan-terlaksana", toState: "pemantauan-terlaksana" },
+      { id: "a027", timestamp: d(14), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Terlaksana", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
     ],
     pelaksanaan: {
       progress: 100,
@@ -678,7 +677,7 @@ export const mockContributions: Contribution[] = [
     email: "bagus.prakoso@sinarmas.or.id",
     program: "Bahan Ajar Digital",
     paketBantuan: "Konten Pembelajaran Numerasi",
-    workflowStatus: "pemantauan-pemanfaatan",
+    workflowStatus: "selesai",
     pic: "Andi Pratama",
     lastUpdate: d(4),
     submissionDate: d(200),
@@ -702,7 +701,6 @@ export const mockContributions: Contribution[] = [
     aktivitas: [
       { id: "a035", timestamp: d(200), actor: "Bagus Prakoso", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
       { id: "a036", timestamp: d(30), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Terlaksana", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
-      { id: "a037", timestamp: d(4), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Pemantauan Pemanfaatan (Opsional)", notes: "Form pemantauan pemanfaatan dikirim ke satuan pendidikan penerima", fromState: "pemantauan-terlaksana", toState: "pemantauan-terlaksana" },
     ],
     pelaksanaan: {
       progress: 100,
@@ -760,7 +758,7 @@ export const mockContributions: Contribution[] = [
     email: "larasati.widodo@indofood.co.id",
     program: "Revitalisasi Sekolah",
     paketBantuan: "Perpustakaan",
-    workflowStatus: "pemantauan-dokumen-belum-lengkap",
+    workflowStatus: "pelaksanaan-dalam-proses",
     pic: "Andi Pratama",
     lastUpdate: d(6),
     submissionDate: d(160),
@@ -779,22 +777,16 @@ export const mockContributions: Contribution[] = [
     ],
     dokumen: [
       { id: "d035", name: "Proposal Indofood.pdf", type: "proposal", uploadedAt: d(160), uploadedBy: "Larasati Widodo" },
-      { id: "d036", name: "BAST - Indofood.pdf", type: "bast", uploadedAt: d(15), uploadedBy: "Andi Pratama" },
     ],
     aktivitas: [
       { id: "a040", timestamp: d(160), actor: "Larasati Widodo", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
-      { id: "a041", timestamp: d(15), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Terlaksana", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
-      { id: "a042", timestamp: d(6), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Dokumen Belum Lengkap", notes: "Laporan penyaluran bantuan belum diunggah oleh mitra.", fromState: "pemantauan-terlaksana", toState: "pemantauan-terlaksana" },
+      { id: "a041", timestamp: d(15), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Update Progress", notes: "Renovasi perpustakaan rampung, laporan penyaluran menunggu unggahan mitra.", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
     ],
     pelaksanaan: {
-      progress: 100,
+      progress: 90,
       startDate: d(80),
-      completionDate: d(15),
-      dokumentasi: [
-        { id: "d036", name: "BAST - Indofood.pdf", type: "bast", uploadedAt: d(15), uploadedBy: "Andi Pratama" },
-      ],
+      dokumentasi: [],
       targetDampak: { siswa: 1600, guru: 90, satuanPendidikan: 2, wilayah: "Kota Semarang (Jawa Tengah)" },
-      realisasiDampak: { siswa: 1580, guru: 88, satuanPendidikan: 2, wilayah: "Kota Semarang (Jawa Tengah)" },
       progressUpdates: [
         { id: "pu-c021-1", judul: "Renovasi ruang perpustakaan selesai", deskripsi: "Renovasi dua ruang perpustakaan rampung, koleksi buku mulai didistribusikan.", tanggal: d(40), actor: "Andi Pratama", dokumen: [] },
       ],

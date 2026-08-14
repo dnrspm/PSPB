@@ -10,11 +10,6 @@ export type WorkflowState =
   | "pelaksanaan-penandatangan-kerjasama"
   | "pelaksanaan-persiapan"
   | "pelaksanaan-dalam-proses"
-  | "pelaksanaan-dalam-evaluasi"
-  | "pelaksanaan-penyesuaian-pks"
-  | "pemantauan-terlaksana"
-  | "pemantauan-dokumen-belum-lengkap"
-  | "pemantauan-pemanfaatan"
   | "selesai"
   | "tidak-dilanjutkan";
 
@@ -29,7 +24,7 @@ export type UserRole =
 export interface Document {
   id: string;
   name: string;
-  type: "proposal" | "pks-draft" | "pks-final" | "rencana-kerja-final" | "bast" | "dokumentasi" | "notulen" | "adendum" | "lainnya";
+  type: "proposal" | "pks-draft" | "pks-final" | "rencana-kerja-final" | "bast" | "dokumentasi" | "notulen" | "lainnya";
   uploadedAt: Date;
   uploadedBy: string;
   url?: string;
@@ -124,8 +119,6 @@ export interface Contribution {
   audiensiNotes?: string;
   audiensiDate?: Date;
   audiensiResult?: string;
-  evaluasiNotes?: string;
-  pemantauanNotes?: string;
 }
 
 export interface WorkspaceUser {
@@ -150,9 +143,4 @@ export type WorkflowAction =
   | "lanjut-pelaksanaan"
   | "update-progress"
   | "terlaksana"
-  | "dalam-evaluasi"
-  | "ajukan-addendum"
-  | "pemantauan-selesai"
-  | "pemantauan-pemanfaatan"
-  | "pemantauan-pemanfaatan-selesai"
   | "view-detail";

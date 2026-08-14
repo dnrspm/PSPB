@@ -29,7 +29,7 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
         <h2 className="text-[24px] font-semibold text-black">Ringkasan Operasional</h2>
         <span className="text-sm text-gray-400">{contributions.length} total kontribusi</span>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <div
             key={card.label}

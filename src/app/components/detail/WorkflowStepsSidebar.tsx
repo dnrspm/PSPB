@@ -15,46 +15,8 @@ export const HAPPY_FLOW: WorkflowState[] = [
   "pelaksanaan-penandatangan-kerjasama",
   "pelaksanaan-persiapan",
   "pelaksanaan-dalam-proses",
-  "pemantauan-terlaksana",
   "selesai",
 ];
-
-/**
- * Urutan lengkap termasuk state cabang. Dipakai untuk menyisipkan cabang
- * pada posisi yang benar bila kontribusi memang pernah melewatinya.
- */
-const FULL_FLOW: WorkflowState[] = [
-  "kontribusi-masuk",
-  "verifikasi-dan-validasi",
-  "audiensi-menunggu-jadwal",
-  "audiensi-terjadwal",
-  "audiensi-konfirmasi-lanjut-pks",
-  "perjanjian-draft-pks",
-  "perjanjian-pembahasan-pks",
-  "perjanjian-finalisasi-pks",
-  "pelaksanaan-penandatangan-kerjasama",
-  "pelaksanaan-persiapan",
-  "pelaksanaan-dalam-proses",
-  "pelaksanaan-dalam-evaluasi",
-  "pelaksanaan-penyesuaian-pks",
-  "pemantauan-terlaksana",
-  "pemantauan-dokumen-belum-lengkap",
-  "pemantauan-pemanfaatan",
-  "selesai",
-];
-
-/**
- * Happy flow + state cabang yang benar-benar dilalui kontribusi ini.
- * Kontribusi yang tidak pernah masuk cabang tetap menampilkan happy flow saja.
- */
-function buildFlow(c: Contribution): WorkflowState[] {
-  const visited = new Set<WorkflowState>([c.workflowStatus as WorkflowState]);
-  for (const a of c.aktivitas) {
-    if (a.fromState) visited.add(a.fromState as WorkflowState);
-    if (a.toState) visited.add(a.toState as WorkflowState);
-  }
-  return FULL_FLOW.filter((state) => HAPPY_FLOW.includes(state) || visited.has(state));
-}
 
 export function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("id-ID", {
@@ -159,7 +121,7 @@ export function WorkflowStepsSidebar({
   /** true = tampilkan indikator alur saja, tanpa interaksi (dipakai di portal mitra) */
   readOnly?: boolean;
 }) {
-  const flow = buildFlow(c);
+  const flow = HAPPY_FLOW;
   const currentIndex = flow.indexOf(c.workflowStatus as WorkflowState);
   const isTerminal = c.workflowStatus === "selesai" || c.workflowStatus === "tidak-dilanjutkan";
   const [popupState, setPopupState] = useState<WorkflowState | null>(null);
