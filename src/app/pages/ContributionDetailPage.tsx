@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Download, Eye, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil } from "lucide-react";
 import { getContributionById, updateContribution } from "../data/mockWorkspace";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar } from "../components/detail/WorkflowStepsSidebar";
@@ -162,7 +162,6 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
           </div>
         </div>
-
     </div>
   );
 }
@@ -1207,25 +1206,6 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
         )}
       </div>
 
-      {p.dokumentasi.length > 0 && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <h3 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-gray-400">Dokumentasi Pelaksanaan</h3>
-          <div className="space-y-2">
-            {p.dokumentasi.map((doc) => (
-              <div key={doc.id} className="flex items-center gap-2 text-sm">
-                <FileText className="h-4 w-4 text-blue-400" />
-                <span className="flex-1 text-gray-700 truncate">{doc.name}</span>
-                <button className="rounded border border-gray-200 p-1 text-gray-400 hover:text-blue-600">
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
-                <button className="rounded border border-gray-200 p-1 text-gray-400 hover:text-blue-600">
-                  <Download className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

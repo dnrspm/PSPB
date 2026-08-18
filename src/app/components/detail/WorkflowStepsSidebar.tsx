@@ -184,6 +184,8 @@ export function WorkflowStepsSidebar({
           {flow.map((state, i) => {
             const stateHasAktivitas = c.aktivitas.some(a => a.fromState === state || a.toState === state);
             const isCurrent = c.workflowStatus === state;
+            // "Selesai" adalah status akhir: tandai ceklis, bukan titik "sedang berjalan"
+            const isCompleted = isCurrent && state === "selesai";
             const isPast = currentIndex >= 0 && i < currentIndex && stateHasAktivitas;
             const isFuture = currentIndex >= 0 && i > currentIndex;
             const isPreviouslyVisited = currentIndex >= 0 && i >= currentIndex && i <= maxReachedIdx && (maxReachedIdx > currentIndex || hasReentryMarker) && stateHasAktivitas;
@@ -198,6 +200,12 @@ export function WorkflowStepsSidebar({
                   <div className="relative z-10 mt-0.5 shrink-0">
                     {isRejected ? (
                       <div className="h-[18px] w-[18px] rounded-full bg-red-500" />
+                    ) : isCompleted ? (
+                      <div className="h-[18px] w-[18px] rounded-full bg-green-600 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : isCurrent ? (
                       <span className="flex h-[18px] w-[18px] items-center justify-center">
                         <span className="absolute h-[18px] w-[18px] animate-ping rounded-full bg-blue-400 opacity-40" />
@@ -224,7 +232,9 @@ export function WorkflowStepsSidebar({
                       className={`flex items-center text-[14px] leading-tight whitespace-nowrap ${
                         isRejected
                           ? "font-semibold text-red-600"
-                          : isCurrent
+                          : isCompleted
+                            ? "font-semibold text-green-700"
+                            : isCurrent
                             ? "font-semibold text-blue-700"
                             : isPast || isPastRejected
                               ? "font-medium text-gray-600"
@@ -240,7 +250,9 @@ export function WorkflowStepsSidebar({
                     className={`group flex items-center gap-1 text-[14px] leading-tight whitespace-nowrap cursor-pointer transition-colors duration-200 ${
                     isRejected
                       ? "font-semibold text-red-600 hover:text-red-700"
-                      : isPreviouslyVisited && isCurrent
+                      : isCompleted
+                        ? "font-semibold text-green-700 hover:text-green-800"
+                        : isPreviouslyVisited && isCurrent
                         ? "font-semibold text-blue-700 hover:text-blue-800"
                         : isCurrent
                           ? "font-semibold text-blue-700 hover:text-blue-800"
