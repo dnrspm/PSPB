@@ -1149,7 +1149,7 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
 
         {p.realisasiDampak && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak Terkini</p>
             <DampakGrid dampak={p.realisasiDampak} />
           </div>
         )}
@@ -1180,6 +1180,12 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
                       <p className="mt-1 text-sm leading-relaxed text-gray-600">{entry.deskripsi}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-400">Dicatat oleh {entry.actor}</p>
+                    {entry.realisasi && (
+                      <div className="mt-2 rounded-md border border-green-100 bg-green-50 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
+                        <DampakGrid dampak={entry.realisasi} />
+                      </div>
+                    )}
                     {entry.dokumen.length > 0 && (
                       <div className="mt-2 space-y-1.5">
                         {entry.dokumen.map((doc) => (

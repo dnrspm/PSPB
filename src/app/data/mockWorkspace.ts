@@ -642,7 +642,7 @@ export const mockContributions: Contribution[] = [
     email: "rani.kusumawati@xlaxiata.co.id",
     program: "Infrastruktur Digital",
     paketBantuan: "Jaringan Internet",
-    workflowStatus: "pelaksanaan-penandatangan-kerjasama",
+    workflowStatus: "pelaksanaan-persiapan",
     pic: "Eka Putri",
     lastUpdate: d(2),
     submissionDate: d(85),

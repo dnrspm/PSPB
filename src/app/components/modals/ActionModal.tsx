@@ -4,7 +4,7 @@ import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } 
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
-import { KabupatenMultiSelect, type WilayahRow } from "./KabupatenMultiSelect";
+import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
   action: WorkflowAction;
@@ -152,7 +152,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
   },
   "perjanjian-disetujui": {
     title: "Perjanjian Telah Disetujui",
-    toState: "pelaksanaan-penandatangan-kerjasama",
+    toState: "pelaksanaan-persiapan",
     fields: [
       { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
@@ -162,25 +162,19 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
   },
-  "lanjut-persiapan-pelaksanaan": {
-    title: "Lanjut Persiapan Pelaksanaan",
-    toState: "pelaksanaan-persiapan",
-    fields: [
-      { key: "filePKS", label: "Upload PKS yang Sudah Ditandatangani", type: "file", required: true },
-      { key: "fileRencana", label: "Upload Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
-      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penandatanganan kerja sama..." },
-    ],
-  },
   "lanjut-pelaksanaan": {
     title: "Lanjut Pelaksanaan",
     toState: "pelaksanaan-dalam-proses",
     fields: [
+      { key: "filePKS", label: "Upload PKS yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileRencana", label: "Upload Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
+      { key: "targetHeader", label: "Target Dampak", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
       { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten", required: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persiapan pelaksanaan..." },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penandatanganan dan persiapan pelaksanaan..." },
     ],
   },
   "update-progress": {
@@ -190,6 +184,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "deskripsi", label: "Deskripsi Progress Bantuan", type: "textarea", required: true, placeholder: "Jelaskan perkembangan penyaluran bantuan..." },
       { key: "tanggal", label: "Tanggal Kejadian", type: "date", required: true },
       { key: "file", label: "Dokumentasi atau Dokumen Pendukung", type: "file", multiple: true },
+      { key: "realisasiHeader", label: "Realisasi Dampak (opsional, isi bila sudah ada realisasi)", type: "section-header" },
+      { key: "siswa", label: "Siswa Terdampak", type: "number", placeholder: "0", inline: true },
+      { key: "guru", label: "Guru Terdampak", type: "number", placeholder: "0", inline: true },
+      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", placeholder: "0" },
+      { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten" },
     ],
   },
   "terlaksana": {
@@ -201,11 +200,6 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "file", label: "Upload BAST", type: "file", required: true },
       { key: "fileLaporan", label: "Upload Laporan Penyaluran Bantuan", type: "file", required: true },
       { key: "fileDistribusi", label: "Upload Dokumen Pendukung Distribusi (foto, video, faktur, dll)", type: "file", multiple: true },
-      { key: "realisasiHeader", label: "Realisasi Dampak", type: "section-header" },
-      { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
-      { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
-      { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
-      { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten", required: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil pelaksanaan..." },
     ],
   },
@@ -246,6 +240,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
   // Pemilih kabupaten/kota (multi) — satu baris = satu kab/kota, provinsi sebagai penyaring
   const [wilayahRows, setWilayahRows] = useState<WilayahRow[]>([]);
+  /** Bila terisi, panel pilih wilayah menggantikan isi modal untuk field tersebut. */
+  const [wilayahPickerFor, setWilayahPickerFor] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
@@ -473,8 +469,20 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
       if (isPelaksanaanUpdate) {
         const base = updated.pelaksanaan || { progress: 0, dokumentasi: [] };
 
+        const readDampak = () => ({
+          siswa: parseInt((values.siswa as string) || "0", 10) || 0,
+          guru: parseInt((values.guru as string) || "0", 10) || 0,
+          satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
+          wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
+        });
+
         // "Update Progress" tidak mengubah status; hanya menambah entri timeline penyaluran
         if (action === "update-progress") {
+          // Realisasi opsional: hanya dicatat bila salah satu field dampak diisi
+          const dampakDiisi = ["siswa", "guru", "satuanPendidikan", "wilayah"].some(
+            (k) => values[k] !== undefined && values[k] !== ""
+          );
+          const realisasi = dampakDiisi ? readDampak() : undefined;
           const entry = {
             id: `pu-${Date.now()}`,
             judul: (values.judul as string) || "Update Progress",
@@ -482,6 +490,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             tanggal: values.tanggal ? new Date(values.tanggal as string) : now,
             actor: currentUser.name,
             dokumen: newDocs,
+            ...(realisasi ? { realisasi } : {}),
           };
           const updates = [...(base.progressUpdates || []), entry];
           updated.pelaksanaan = {
@@ -489,21 +498,18 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             progressUpdates: updates,
             latestUpdate: entry.judul,
             dokumentasi: [...base.dokumentasi, ...newDocs],
+            // Realisasi terbaru menimpa akumulasi sebelumnya
+            ...(realisasi ? { realisasiDampak: realisasi } : {}),
           };
-        } else {
-          const dampak = {
-            siswa: parseInt((values.siswa as string) || "0", 10) || 0,
-            guru: parseInt((values.guru as string) || "0", 10) || 0,
-            satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
-            wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
-          };
+        } else if (config.toState === "pelaksanaan-dalam-proses") {
           updated.pelaksanaan = {
             ...base,
-            // Persiapan -> Dalam Proses mencatat target, Terlaksana mencatat realisasi
-            ...(config.toState === "pelaksanaan-dalam-proses"
-              ? { targetDampak: dampak, startDate: base.startDate || now }
-              : { realisasiDampak: dampak, completionDate: now }),
+            targetDampak: readDampak(),
+            startDate: base.startDate || now,
           };
+        } else {
+          // Terlaksana: realisasi sudah terkumpul dari Update Progress
+          updated.pelaksanaan = { ...base, completionDate: now };
         }
       }
 
@@ -516,7 +522,18 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex w-full max-w-lg flex-col rounded-xl bg-white shadow-xl max-h-[85vh]">
+      <div className={`flex w-full flex-col rounded-xl bg-white shadow-xl max-h-[85vh] ${wilayahPickerFor ? "max-w-2xl" : "max-w-lg"}`}>
+        {wilayahPickerFor ? (
+          <WilayahPickerPanel
+            initial={wilayahRows}
+            onCancel={() => setWilayahPickerFor(null)}
+            onApply={(rows) => {
+              setWilayah(wilayahPickerFor, rows);
+              setWilayahPickerFor(null);
+            }}
+          />
+        ) : (
+        <>
         <div className="flex items-start justify-between border-b border-gray-100 px-4 py-5 shrink-0">
           <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -716,6 +733,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                     <KabupatenMultiSelect
                       value={wilayahRows}
                       onChange={(rows) => setWilayah(field.key, rows)}
+                      onOpenPicker={() => setWilayahPickerFor(field.key)}
                       hasError={!!errors[field.key]}
                     />
                   )}
@@ -1041,6 +1059,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             {loading ? "Menyimpan..." : "Simpan"}
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

@@ -12,7 +12,6 @@ export const HAPPY_FLOW: WorkflowState[] = [
   "perjanjian-draft-pks",
   "perjanjian-pembahasan-pks",
   "perjanjian-finalisasi-pks",
-  "pelaksanaan-penandatangan-kerjasama",
   "pelaksanaan-persiapan",
   "pelaksanaan-dalam-proses",
   "selesai",

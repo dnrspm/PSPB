@@ -7,7 +7,6 @@ export type WorkflowState =
   | "perjanjian-draft-pks"
   | "perjanjian-pembahasan-pks"
   | "perjanjian-finalisasi-pks"
-  | "pelaksanaan-penandatangan-kerjasama"
   | "pelaksanaan-persiapan"
   | "pelaksanaan-dalam-proses"
   | "selesai"
@@ -50,6 +49,8 @@ export interface ProgressUpdate {
   tanggal: Date;
   actor: string;
   dokumen: Document[];
+  /** Realisasi dampak yang tercatat pada update ini (opsional, bisa 0). */
+  realisasi?: DampakPelaksanaan;
 }
 
 /** Jumlah penerima manfaat: target saat persiapan, realisasi saat terlaksana. */
@@ -139,7 +140,6 @@ export type WorkflowAction =
   | "ajukan-perjanjian"
   | "lanjutkan-pembahasan"
   | "perjanjian-disetujui"
-  | "lanjut-persiapan-pelaksanaan"
   | "lanjut-pelaksanaan"
   | "update-progress"
   | "terlaksana"
