@@ -299,27 +299,6 @@ function DokumenSection({
       </div>
 
       <div className="divide-y divide-gray-100">
-        {/* Company Profile mitra — dokumen bawaan, tidak dapat dihapus */}
-        <div className="flex items-start gap-3 py-2">
-          <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <span className="text-gray-900 text-sm truncate block">
-              Company Profile {c.namaMitra}
-            </span>
-            <p className="text-xs text-gray-400 mt-0.5">Company Profile</p>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-            <a
-              href={c.companyProfile || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-            >
-              Lihat
-            </a>
-          </div>
-        </div>
-
         {c.dokumen.map((doc) => (
             <div key={doc.id} className="flex items-start gap-3 py-2">
               <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
@@ -346,6 +325,10 @@ function DokumenSection({
               </div>
             </div>
           ))}
+
+        {c.dokumen.length === 0 && (
+          <p className="py-2 text-sm text-gray-400">Belum ada dokumen pendukung.</p>
+        )}
       </div>
     </div>
   );
