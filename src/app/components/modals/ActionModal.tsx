@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, Upload, Calendar, Download, FileText, AlertTriangle, Info, ChevronDown } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
-import { updateContribution } from "../../data/mockWorkspace";
+import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { akumulasiRealisasi, groupWilayah, realisasiTerkini } from "../../lib/dampak";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
@@ -227,13 +227,25 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
 };
 
 /** Realisasi terkumpul ditampilkan sebagai isian biasa yang terkunci (tidak bisa diubah di sini). */
-function RealisasiSummary({ contribution }: { contribution: Contribution }) {
+function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Contribution; onUpdateProgress?: () => void }) {
   const [wilayahTerbuka, setWilayahTerbuka] = useState(false);
   const total = contribution.pelaksanaan ? realisasiTerkini(contribution.pelaksanaan) : undefined;
   const jumlahLog = (contribution.pelaksanaan?.progressUpdates || []).filter((u) => u.realisasi).length;
   const { groups, lainnya, totalKabupaten } = groupWilayah(total?.wilayah || "");
 
   const angka = (n?: number) => (total ? (n || 0).toLocaleString("id-ID") : "");
+  /** Kata "Update Progress" jadi pintu masuk ke modal Update Progress bila handler tersedia. */
+  const updateProgressLink = onUpdateProgress ? (
+    <button
+      type="button"
+      onClick={onUpdateProgress}
+      className="text-xs font-medium underline underline-offset-2 hover:no-underline"
+    >
+      Update Progress
+    </button>
+  ) : (
+    <span className="text-xs font-medium">Update Progress</span>
+  );
   const boxClass =
     "w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500";
 
@@ -246,7 +258,7 @@ function RealisasiSummary({ contribution }: { contribution: Contribution }) {
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
           <p className="text-xs leading-relaxed text-blue-800">
             Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan. Perubahan realisasi dicatat lewat aksi{" "}
-            <span className="text-xs font-medium">Update Progress</span>.
+            {updateProgressLink}.
           </p>
         </div>
       ) : (
@@ -254,7 +266,7 @@ function RealisasiSummary({ contribution }: { contribution: Contribution }) {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-xs leading-relaxed text-amber-700">
             Realisasi dampak belum dicatat. Isi realisasi terlebih dahulu lewat aksi{" "}
-            <span className="text-xs font-medium">Update Progress</span> di tab Pelaksanaan, lalu tandai kontribusi ini
+            {updateProgressLink} di tab Pelaksanaan, lalu tandai kontribusi ini
             Terlaksana.
           </p>
         </div>
@@ -343,6 +355,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const [wilayahRows, setWilayahRows] = useState<WilayahRow[]>([]);
   /** Bila terisi, panel pilih wilayah menggantikan isi modal untuk field tersebut. */
   const [wilayahPickerFor, setWilayahPickerFor] = useState<string | null>(null);
+  /** Modal Update Progress yang dibuka dari banner realisasi dampak. */
+  const [progressOpen, setProgressOpen] = useState(false);
+  /** Naik tiap kali Update Progress tersimpan, supaya ringkasan realisasi dibaca ulang dari store. */
+  const [progressVersion, setProgressVersion] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [unitKerjaEmailPairs, setUnitKerjaEmailPairs] = useState<Array<{ unitKerja: string; emails: string[] }>>(() => {
@@ -404,8 +420,25 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
   if (!config) return null;
 
+  // Setelah Update Progress tersimpan, data kontribusi diambil ulang agar ringkasan ikut segar
+  const data = (progressVersion ? getContributionById(contribution.id) : undefined) || contribution;
+
   // Terlaksana wajib punya realisasi dampak yang sudah tercatat lewat Update Progress
-  const realisasiSiap = action !== "terlaksana" || !!(contribution.pelaksanaan && realisasiTerkini(contribution.pelaksanaan));
+  const realisasiSiap = action !== "terlaksana" || !!(data.pelaksanaan && realisasiTerkini(data.pelaksanaan));
+
+  /** Tutup modal; bila sempat ada Update Progress tersimpan, beri tahu induk agar data disegarkan. */
+  const handleClose = () => {
+    if (progressVersion) onSuccess();
+    onClose();
+  };
+
+  const realisasiSummary = (
+    <RealisasiSummary
+      key="realisasi-dampak"
+      contribution={data}
+      onUpdateProgress={action === "update-progress" ? undefined : () => setProgressOpen(true)}
+    />
+  );
 
   const set = (key: string, value: string | boolean) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -646,7 +679,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         <>
         <div className="flex items-start justify-between border-b border-gray-100 px-4 py-5 shrink-0">
           <h2 className="text-sm font-semibold text-gray-800">{config.title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -699,7 +732,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   </div>
                 );
                 if (action === "terlaksana") {
-                  renderedFields.push(<RealisasiSummary key="realisasi-dampak" contribution={contribution} />);
+                  renderedFields.push(realisasiSummary);
                   realisasiSummaryRendered = true;
                 }
                 i++;
@@ -1162,7 +1195,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
               );
             }
             if (action === "terlaksana" && !realisasiSummaryRendered) {
-              renderedFields.unshift(<RealisasiSummary key="realisasi-dampak" contribution={contribution} />);
+              renderedFields.unshift(realisasiSummary);
             }
             return renderedFields;
           })()}
@@ -1170,7 +1203,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
             Batal
@@ -1187,6 +1220,16 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         </>
         )}
       </div>
+
+      {progressOpen && (
+        <ActionModal
+          action="update-progress"
+          contribution={data}
+          currentUser={currentUser}
+          onClose={() => setProgressOpen(false)}
+          onSuccess={() => setProgressVersion((v) => v + 1)}
+        />
+      )}
     </div>
   );
 }
