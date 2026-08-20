@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { X, Upload, Calendar, Download, FileText } from "lucide-react";
+import { X, Upload, Calendar, Download, FileText, AlertTriangle, Info, ChevronDown } from "lucide-react";
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { updateContribution } from "../../data/mockWorkspace";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
+import { akumulasiRealisasi, groupWilayah, realisasiTerkini } from "../../lib/dampak";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
@@ -197,6 +198,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     fields: [
       { key: "templateBAST", label: "Download Template BAST", type: "download-template" },
       { key: "templateLaporan", label: "Download Template Laporan Penyaluran", type: "download-template" },
+      { key: "dokumenHeader", label: "Dokumen Penyelesaian", type: "section-header" },
       { key: "file", label: "Upload BAST", type: "file", required: true },
       { key: "fileLaporan", label: "Upload Laporan Penyaluran Bantuan", type: "file", required: true },
       { key: "fileDistribusi", label: "Upload Dokumen Pendukung Distribusi (foto, video, faktur, dll)", type: "file", multiple: true },
@@ -223,6 +225,105 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
   fileLaporan: () => "lainnya",
   fileDistribusi: () => "dokumentasi",
 };
+
+/** Realisasi terkumpul ditampilkan sebagai isian biasa yang terkunci (tidak bisa diubah di sini). */
+function RealisasiSummary({ contribution }: { contribution: Contribution }) {
+  const [wilayahTerbuka, setWilayahTerbuka] = useState(false);
+  const total = contribution.pelaksanaan ? realisasiTerkini(contribution.pelaksanaan) : undefined;
+  const jumlahLog = (contribution.pelaksanaan?.progressUpdates || []).filter((u) => u.realisasi).length;
+  const { groups, lainnya, totalKabupaten } = groupWilayah(total?.wilayah || "");
+
+  const angka = (n?: number) => (total ? (n || 0).toLocaleString("id-ID") : "");
+  const boxClass =
+    "w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500";
+
+  return (
+    <div className="space-y-3">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Realisasi Dampak</h4>
+
+      {total ? (
+        <div className="flex gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+          <p className="text-xs leading-relaxed text-blue-800">
+            Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan. Perubahan realisasi dicatat lewat aksi{" "}
+            <span className="text-xs font-medium">Update Progress</span>.
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p className="text-xs leading-relaxed text-amber-700">
+            Realisasi dampak belum dicatat. Isi realisasi terlebih dahulu lewat aksi{" "}
+            <span className="text-xs font-medium">Update Progress</span> di tab Pelaksanaan, lalu tandai kontribusi ini
+            Terlaksana.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-x-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-600">Siswa Terdampak</label>
+          <input type="text" disabled value={angka(total?.siswa)} placeholder="Belum ada realisasi" className={boxClass} />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-600">Guru Terdampak</label>
+          <input type="text" disabled value={angka(total?.guru)} placeholder="Belum ada realisasi" className={boxClass} />
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-600">Satuan Pendidikan Terdampak</label>
+        <input
+          type="text"
+          disabled
+          value={angka(total?.satuanPendidikan)}
+          placeholder="Belum ada realisasi"
+          className={boxClass}
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-600">Kabupaten/Kota yang Dibantu</label>
+        {totalKabupaten === 0 ? (
+          <div className={boxClass}>
+            <span className="text-sm text-gray-400">Belum ada realisasi</span>
+          </div>
+        ) : (
+          <div className="rounded-md border border-gray-200 bg-gray-100">
+            <button
+              type="button"
+              onClick={() => setWilayahTerbuka((prev) => !prev)}
+              aria-expanded={wilayahTerbuka}
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-gray-600 hover:text-gray-800"
+            >
+              <span className="text-sm">
+                {totalKabupaten.toLocaleString("id-ID")} kabupaten/kota
+                {groups.length > 0 && ` di ${groups.length.toLocaleString("id-ID")} provinsi`}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${wilayahTerbuka ? "rotate-180" : ""}`}
+              />
+            </button>
+            {wilayahTerbuka && (
+              <div className="space-y-2 border-t border-gray-200 px-3 py-2">
+                {groups.map((g) => (
+                  <div key={g.provinsi}>
+                    <p className="text-sm font-medium text-gray-600">
+                      {g.provinsi}
+                      <span className="ml-1.5 text-sm font-normal text-gray-400">({g.kabupaten.length})</span>
+                    </p>
+                    <p className="text-sm leading-relaxed text-gray-500">{g.kabupaten.join(", ")}</p>
+                  </div>
+                ))}
+                {lainnya.length > 0 && <p className="text-sm text-gray-500">{lainnya.join(", ")}</p>}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
   const config = MODAL_CONFIGS[action];
@@ -302,6 +403,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   };
 
   if (!config) return null;
+
+  // Terlaksana wajib punya realisasi dampak yang sudah tercatat lewat Update Progress
+  const realisasiSiap = action !== "terlaksana" || !!(contribution.pelaksanaan && realisasiTerkini(contribution.pelaksanaan));
 
   const set = (key: string, value: string | boolean) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -385,7 +489,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   };
 
   const handleSubmit = () => {
-    if (!validate()) return;
+    if (!realisasiSiap || !validate()) return;
     setLoading(true);
 
     setTimeout(() => {
@@ -493,13 +597,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             ...(realisasi ? { realisasi } : {}),
           };
           const updates = [...(base.progressUpdates || []), entry];
+          const total = akumulasiRealisasi(updates);
           updated.pelaksanaan = {
             ...base,
             progressUpdates: updates,
             latestUpdate: entry.judul,
             dokumentasi: [...base.dokumentasi, ...newDocs],
-            // Realisasi terbaru menimpa akumulasi sebelumnya
-            ...(realisasi ? { realisasiDampak: realisasi } : {}),
+            // Realisasi = akumulasi seluruh log, bukan hanya log terakhir
+            ...(total ? { realisasiDampak: total } : {}),
           };
         } else if (config.toState === "pelaksanaan-dalam-proses") {
           updated.pelaksanaan = {
@@ -508,8 +613,13 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             startDate: base.startDate || now,
           };
         } else {
-          // Terlaksana: realisasi sudah terkumpul dari Update Progress
-          updated.pelaksanaan = { ...base, completionDate: now };
+          // Terlaksana: realisasi = akumulasi seluruh log penyaluran
+          const total = akumulasiRealisasi(base.progressUpdates);
+          updated.pelaksanaan = {
+            ...base,
+            completionDate: now,
+            ...(total ? { realisasiDampak: total } : {}),
+          };
         }
       }
 
@@ -544,6 +654,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         <div className="overflow-y-auto px-4 py-3 space-y-5 flex-1 min-h-0">
           {(() => {
             const renderedFields: React.ReactNode[] = [];
+            // Ringkasan realisasi tampil tepat di bawah tombol unduh template
+            let realisasiSummaryRendered = false;
             for (let i = 0; i < config.fields.length; i++) {
               const field = config.fields[i];
               const nextField = config.fields[i + 1];
@@ -553,7 +665,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 renderedFields.push(
                   <div key={field.key} className="-mx-4 px-4 py-3 bg-gray-50 border-b border-gray-200 -mt-3">
                     <div className="flex gap-2">
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -562,10 +674,10 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                             link.download = `${field.label.replace(/^Download /, "").replace(/\s+/g, "_")}.docx`;
                             link.click();
                           }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
+                          className="flex w-full min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
                           <Download className="h-3.5 w-3.5 shrink-0" />
-                          {field.label.replace("Download", "Unduh")}
+                          <span className="truncate text-xs">{field.label.replace("Download", "Unduh")}</span>
                         </button>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -577,15 +689,19 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                             link.download = `${nextField.label.replace(/^Download /, "").replace(/\s+/g, "_")}.docx`;
                             link.click();
                           }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 truncate"
+                          className="flex w-full min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
                           <Download className="h-3.5 w-3.5 shrink-0" />
-                          {nextField.label.replace("Download", "Unduh")}
+                          <span className="truncate text-xs">{nextField.label.replace("Download", "Unduh")}</span>
                         </button>
                       </div>
                     </div>
                   </div>
                 );
+                if (action === "terlaksana") {
+                  renderedFields.push(<RealisasiSummary key="realisasi-dampak" contribution={contribution} />);
+                  realisasiSummaryRendered = true;
+                }
                 i++;
                 continue;
               }
@@ -659,7 +775,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
               renderedFields.push(
                 <div
                   key={field.key}
-                  className={field.type === "download-template" ? "-mx-4 px-4 py-3 bg-gray-50 border-b border-gray-200 -mt-3" : undefined}
+                  className={
+                    field.type === "download-template"
+                      ? "-mx-4 px-4 py-3 bg-gray-50 border-b border-gray-200 -mt-3"
+                      : field.type === "section-header"
+                        // Pemisah antar segmen isian
+                        ? "-mx-4 border-t border-gray-200 px-4 pt-5"
+                        : undefined
+                  }
                 >
                   {field.type !== "download-template" && field.type !== "section-header" && (
                     <label className="mb-1 block text-sm font-medium text-gray-600">
@@ -685,17 +808,15 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                           : "Template_Rencana_Kerjasama.docx";
                         link.click();
                       }}
-                      className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 truncate"
+                      className="flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
                     >
                       <Download className="h-4 w-4 shrink-0" />
-                      {field.label.replace("Download", "Unduh")}
+                      <span className="truncate text-sm">{field.label.replace("Download", "Unduh")}</span>
                     </button>
                   )}
 
                   {field.type === "section-header" && (
-                    <div className="-mx-4 px-4 py-2 bg-gray-50 border-y border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-700">{field.label}</h4>
-                    </div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{field.label}</h4>
                   )}
 
                   {field.type === "textarea" && (
@@ -1040,6 +1161,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                 </div>
               );
             }
+            if (action === "terlaksana" && !realisasiSummaryRendered) {
+              renderedFields.unshift(<RealisasiSummary key="realisasi-dampak" contribution={contribution} />);
+            }
             return renderedFields;
           })()}
         </div>
@@ -1053,8 +1177,9 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            disabled={loading || !realisasiSiap}
+            title={realisasiSiap ? undefined : "Catat realisasi dampak lewat Update Progress terlebih dahulu"}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Menyimpan..." : "Simpan"}
           </button>

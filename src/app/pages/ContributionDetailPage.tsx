@@ -10,6 +10,7 @@ import { getAvailableActions, ACTION_LABELS, WORKFLOW_STATE_LABELS, WORKFLOW_STA
 import type { SessionUser } from "../lib/auth";
 import type { Contribution, DampakPelaksanaan, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
+import { groupWilayah, realisasiTerkini } from "../lib/dampak";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
@@ -615,40 +616,42 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Target Penerima</h3>
           </div>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-gray-400">Siswa</dt>
-              <dd className="text-gray-900">{targetPenerima["Siswa Terdampak"] || targetPenerima["Siswa"]}</dd>
+              <dd className="text-gray-900">{targetPenerima["Siswa Terdampak"] || targetPenerima["Siswa"] || "-"}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Guru</dt>
-              <dd className="text-gray-900">{targetPenerima["Guru Terdampak"] || targetPenerima["Guru"]}</dd>
+              <dd className="text-gray-900">{targetPenerima["Guru Terdampak"] || targetPenerima["Guru"] || "-"}</dd>
             </div>
             <div>
               <dt className="text-gray-400">Satuan Pendidikan</dt>
-              <dd className="text-gray-900">{targetPenerima["Satuan Pendidikan"]}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Wilayah</dt>
               <dd className="text-gray-900">
-                {(() => {
-                  // Sejak PRD Tahapan Pelaksanaan, wilayah dicatat sebagai daftar kabupaten/kota
-                  const multi = targetPenerima["Kabupaten/Kota yang Dibantu"];
-                  if (multi) return multi;
-                  const provLabel = getLabelByValue(PROVINSI_OPTIONS, targetPenerima["Provinsi"] || "");
-                  const kabLabel = getLabelByValue(
-                    KABUPATEN_BY_PROVINSI[targetPenerima["Provinsi"] || ""] || [],
-                    targetPenerima["Kota/Kabupaten"] || ""
-                  );
-                  const parts: string[] = [];
-                  if (kabLabel) parts.push(`Kab. ${kabLabel}`);
-                  if (targetPenerima["Kecamatan"]) parts.push(`Kec. ${targetPenerima["Kecamatan"]}`);
-                  if (targetPenerima["Kelurahan"]) parts.push(`Kel. ${targetPenerima["Kelurahan"]}`);
-                  return parts.length > 0 ? `${provLabel}, ${parts.join(", ")}` : provLabel;
-                })()}
+                {targetPenerima["Satuan Pendidikan Terdampak"] || targetPenerima["Satuan Pendidikan"] || "-"}
               </dd>
             </div>
           </dl>
+          <div className="mt-3 border-t border-gray-200 pt-3 text-sm">
+            <p className="mb-1.5 text-sm text-gray-400">Wilayah</p>
+            <WilayahBreakdown
+              wilayah={(() => {
+                // Sejak PRD Tahapan Pelaksanaan, wilayah dicatat sebagai daftar kabupaten/kota
+                const multi = targetPenerima["Kabupaten/Kota yang Dibantu"];
+                if (multi) return multi;
+                const provLabel = getLabelByValue(PROVINSI_OPTIONS, targetPenerima["Provinsi"] || "");
+                const kabLabel = getLabelByValue(
+                  KABUPATEN_BY_PROVINSI[targetPenerima["Provinsi"] || ""] || [],
+                  targetPenerima["Kota/Kabupaten"] || ""
+                );
+                const parts: string[] = [];
+                if (kabLabel) parts.push(`Kab. ${kabLabel}`);
+                if (targetPenerima["Kecamatan"]) parts.push(`Kec. ${targetPenerima["Kecamatan"]}`);
+                if (targetPenerima["Kelurahan"]) parts.push(`Kel. ${targetPenerima["Kelurahan"]}`);
+                return parts.length > 0 ? `${provLabel}, ${parts.join(", ")}` : provLabel;
+              })()}
+            />
+          </div>
         </div>
       )}
 
@@ -1083,26 +1086,84 @@ function formatTanggal(d: Date | string) {
   return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 }
 
+const WILAYAH_PREVIEW = 4;
+
+function WilayahBreakdown({ wilayah }: { wilayah: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { groups, lainnya, totalKabupaten } = useMemo(() => groupWilayah(wilayah), [wilayah]);
+
+  if (totalKabupaten === 0) return <p className="text-sm text-gray-900">-</p>;
+
+  if (groups.length === 0) {
+    return <p className="text-sm text-gray-900">{lainnya.join(", ")}</p>;
+  }
+
+  const shown = expanded ? groups : groups.slice(0, WILAYAH_PREVIEW);
+  const sisa = groups.length - shown.length;
+
+  return (
+    <div>
+      <p className="mb-2 text-xs text-gray-500">
+        {totalKabupaten.toLocaleString("id-ID")} kabupaten/kota di {groups.length.toLocaleString("id-ID")} provinsi
+      </p>
+      <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+        {shown.map((g) => (
+          <div key={g.provinsi} className="min-w-0">
+            <p className="text-sm font-medium text-gray-700">
+              {g.provinsi}
+              <span className="ml-1.5 text-sm font-normal text-gray-400">({g.kabupaten.length})</span>
+            </p>
+            <p className="text-sm leading-relaxed text-gray-500">{g.kabupaten.join(", ")}</p>
+          </div>
+        ))}
+      </div>
+      {lainnya.length > 0 && (
+        <p className="mt-2 text-sm text-gray-600">{lainnya.join(", ")}</p>
+      )}
+      {sisa > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+        >
+          Lihat {sisa.toLocaleString("id-ID")} provinsi lainnya
+        </button>
+      )}
+      {expanded && groups.length > WILAYAH_PREVIEW && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+        >
+          Tampilkan lebih sedikit
+        </button>
+      )}
+    </div>
+  );
+}
+
 function DampakGrid({ dampak }: { dampak: DampakPelaksanaan }) {
   return (
-    <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
-      <div>
-        <dt className="text-gray-400">Siswa Terdampak</dt>
-        <dd className="text-gray-900">{dampak.siswa.toLocaleString("id-ID")}</dd>
+    <div className="space-y-3">
+      <dl className="grid grid-cols-3 gap-x-8 gap-y-3 text-sm">
+        <div>
+          <dt className="text-gray-400">Siswa Terdampak</dt>
+          <dd className="text-gray-900">{dampak.siswa.toLocaleString("id-ID")}</dd>
+        </div>
+        <div>
+          <dt className="text-gray-400">Guru Terdampak</dt>
+          <dd className="text-gray-900">{dampak.guru.toLocaleString("id-ID")}</dd>
+        </div>
+        <div>
+          <dt className="text-gray-400">Satuan Pendidikan</dt>
+          <dd className="text-gray-900">{dampak.satuanPendidikan.toLocaleString("id-ID")}</dd>
+        </div>
+      </dl>
+      <div className="border-t border-gray-200 pt-3 text-sm">
+        <p className="mb-1.5 text-sm text-gray-400">Kabupaten/Kota</p>
+        <WilayahBreakdown wilayah={dampak.wilayah || ""} />
       </div>
-      <div>
-        <dt className="text-gray-400">Guru Terdampak</dt>
-        <dd className="text-gray-900">{dampak.guru.toLocaleString("id-ID")}</dd>
-      </div>
-      <div>
-        <dt className="text-gray-400">Satuan Pendidikan</dt>
-        <dd className="text-gray-900">{dampak.satuanPendidikan.toLocaleString("id-ID")}</dd>
-      </div>
-      <div className="col-span-2 sm:col-span-1">
-        <dt className="text-gray-400">Kabupaten/Kota</dt>
-        <dd className="text-gray-900">{dampak.wilayah || "-"}</dd>
-      </div>
-    </dl>
+    </div>
   );
 }
 
@@ -1123,6 +1184,9 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
   const timeline = [...(p.progressUpdates || [])].sort(
     (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
   );
+
+  // Realisasi terkini = total seluruh log penyaluran (fallback: realisasi tersimpan)
+  const realisasi = realisasiTerkini(p);
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -1147,10 +1211,11 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
           </div>
         )}
 
-        {p.realisasiDampak && (
+        {realisasi && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak Terkini</p>
-            <DampakGrid dampak={p.realisasiDampak} />
+            <p className="mb-2 text-xs text-green-700/80">Akumulasi seluruh log penyaluran bantuan</p>
+            <DampakGrid dampak={realisasi} />
           </div>
         )}
       </div>
