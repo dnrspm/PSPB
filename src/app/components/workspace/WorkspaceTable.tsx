@@ -144,9 +144,6 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-sm text-gray-800 leading-snug">{c.program}</div>
-                    {c.paketBantuan && c.paketBantuan !== c.program && (
-                      <div className="mt-0.5 text-xs text-gray-500 leading-snug">{c.paketBantuan}</div>
-                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{getUnitKerja(c)}</td>
                   <td className="px-4 py-3">

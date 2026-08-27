@@ -153,9 +153,6 @@ export default function MitraDashboardPage() {
               <thead>
                 <tr className="border-b border-[var(--gray-10)] bg-[var(--gray-0)]">
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-subdued)]">
-                    Program
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-subdued)]">
                     Paket Dukungan
                   </th>
                   <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-subdued)] md:table-cell">
@@ -180,9 +177,6 @@ export default function MitraDashboardPage() {
                         <p className="text-sm font-medium text-[var(--text-default)]">
                           {c.program}
                         </p>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-[var(--text-default)]">
-                        {c.paketBantuan}
                       </td>
                       <td className="hidden px-5 py-3 text-sm text-[var(--text-subdued)] md:table-cell">
                         {formatDate(c.submissionDate)}

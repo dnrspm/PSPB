@@ -5,7 +5,6 @@ import type { WorkflowState } from "../../types/contribution";
 export interface FilterState {
   search: string;
   program: string;
-  paket: string;
   status: WorkflowState | "";
 }
 
@@ -13,8 +12,6 @@ interface FilterBarProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   programs: string[];
-  /** Paket dukungan yang tersedia; ikut menyempit saat program dipilih */
-  pakets: string[];
 }
 
 const ALL_STATES: WorkflowState[] = [
@@ -25,15 +22,15 @@ const ALL_STATES: WorkflowState[] = [
   "selesai", "tidak-dilanjutkan",
 ];
 
-export function FilterBar({ filters, onChange, programs, pakets }: FilterBarProps) {
+export function FilterBar({ filters, onChange, programs }: FilterBarProps) {
   const set = (key: keyof FilterState, value: string) =>
     onChange({ ...filters, [key]: value });
 
   const hasActiveFilters =
-    filters.search || filters.program || filters.paket || filters.status;
+    filters.search || filters.program || filters.status;
 
   const reset = () =>
-    onChange({ search: "", program: "", paket: "", status: "" });
+    onChange({ search: "", program: "", status: "" });
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -50,22 +47,11 @@ export function FilterBar({ filters, onChange, programs, pakets }: FilterBarProp
 
       <select
         value={filters.program}
-        onChange={(e) => onChange({ ...filters, program: e.target.value, paket: "" })}
-        className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
-      >
-        <option value="">Semua Program</option>
-        {programs.map((p) => (
-          <option key={p} value={p}>{p}</option>
-        ))}
-      </select>
-
-      <select
-        value={filters.paket}
-        onChange={(e) => set("paket", e.target.value)}
+        onChange={(e) => set("program", e.target.value)}
         className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
       >
         <option value="">Semua Paket Dukungan</option>
-        {pakets.map((p) => (
+        {programs.map((p) => (
           <option key={p} value={p}>{p}</option>
         ))}
       </select>
