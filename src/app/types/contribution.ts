@@ -18,7 +18,8 @@ export type UserRole =
   | "biro-hukum"
   | "pusdatin"
   | "bidang-kemitraan"
-  | "sekjen";
+  | "sekjen"
+  | "mitra";
 
 export interface Document {
   id: string;

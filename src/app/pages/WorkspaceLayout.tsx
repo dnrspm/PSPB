@@ -4,10 +4,12 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
 import { getSession } from "../lib/auth";
 import { resetContributions } from "../data/mockWorkspace";
+import { useContributionsSync } from "../lib/useContributions";
 import type { SessionUser } from "../lib/auth";
 
 export default function WorkspaceLayout() {
   const navigate = useNavigate();
+  useContributionsSync();
   const [user] = useState<SessionUser | null>(getSession);
   const [resetKey, setResetKey] = useState(0);
 

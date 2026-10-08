@@ -89,10 +89,17 @@ function seedAccounts(): MitraProfile[] {
 
 export function getMitraAccounts(): MitraProfile[] {
   const accounts = readJson<MitraProfile[]>(ACCOUNTS_KEY, []);
-  if (accounts.length > 0) return accounts;
+  // Merge: pastikan semua akun seed dari mockContributions selalu ada,
+  // meski localStorage sudah terisi dari versi data sebelumnya (mis. kontribusi baru c022).
   const seeded = seedAccounts();
-  writeJson(ACCOUNTS_KEY, seeded);
-  return seeded;
+  const existingEmails = new Set(accounts.map((a) => a.email.toLowerCase()));
+  const missing = seeded.filter((s) => !existingEmails.has(s.email.toLowerCase()));
+  if (missing.length > 0) {
+    const merged = [...accounts, ...missing];
+    writeJson(ACCOUNTS_KEY, merged);
+    return merged;
+  }
+  return accounts;
 }
 
 function saveAccounts(accounts: MitraProfile[]): void {

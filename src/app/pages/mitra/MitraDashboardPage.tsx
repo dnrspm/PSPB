@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getMitraContributions, getMitraProfile, getMitraSession } from "../../lib/mitra";
+import { useContributionsSync } from "../../lib/useContributions";
 import { WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../../lib/workflow";
 import type { WorkflowState } from "../../types/contribution";
 import { Button } from "../../components/Button";
@@ -24,6 +25,7 @@ function formatDate(date: Date) {
 
 export default function MitraDashboardPage() {
   const navigate = useNavigate();
+  useContributionsSync();
   const session = getMitraSession();
   const profile = session ? getMitraProfile(session.email) : null;
   const contributions = useMemo(

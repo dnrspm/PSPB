@@ -792,9 +792,141 @@ export const mockContributions: Contribution[] = [
       ],
     },
   },
+  {
+    id: "c022",
+    namaMitra: "PT Schneider Electric Indonesia",
+    instansi: "PT Schneider Electric Indonesia",
+    narahubung: "Maya Anggraini",
+    kontak: "081277889901",
+    email: "maya.anggraini@se.com",
+    program: "Infrastruktur Digital",
+    paketBantuan: "Instalasi Listrik",
+    workflowStatus: "audiensi-konfirmasi-lanjut-pks",
+    pic: "Budi Santoso",
+    lastUpdate: d(1),
+    submissionDate: d(21),
+    audiensiDate: d(3),
+    audiensiResult: "Schneider Electric menyetujui konsep kerjasama instalasi listrik hemat energi. Menunggu penyusunan draft PKS.",
+    targetPenerima: "Siswa SMP dan SMA",
+    wilayah: "Sumatera Utara",
+    sekolah: ["SMA Negeri 1 Medan", "SMP Negeri 5 Medan", "SMA Negeri 3 Medan"],
+    jumlahPenerima: 3200,
+    nilaiKontribusi: "Rp 2.400.000.000",
+    badanHukum: "PT",
+    statusMitra: "Aktif",
+    jabatan: "Head of Sustainability",
+    unitKerja: "Ditjen PDM",
+    sekolahDetail: [
+      { name: "SMA Negeri 1 Medan", npsn: "20400001", lokasi: "Jl. Iskandar Muda No. 1, Medan", linkLokasi: "https://maps.google.com/?q=SMA+Negeri+1+Medan", kontribusi: "Instalasi Listrik", estimasiDana: "Rp 800.000.000", catatan: "Instalasi panel surya 3 kWp dan LED lighting seluruh ruang kelas" },
+      { name: "SMP Negeri 5 Medan", npsn: "20400002", lokasi: "Jl. Sei Batang Hari No. 7, Medan", linkLokasi: "https://maps.google.com/?q=SMP+Negeri+5+Medan", kontribusi: "Instalasi Listrik", estimasiDana: "Rp 800.000.000", catatan: "Perbaikan instalasi kabel dan penambahan stop kontak laboratorium" },
+      { name: "SMA Negeri 3 Medan", npsn: "20400003", lokasi: "Jl. Dr. Mansyur No. 30, Medan", linkLokasi: "https://maps.google.com/?q=SMA+Negeri+3+Medan", kontribusi: "Instalasi Listrik", estimasiDana: "Rp 800.000.000", catatan: "Pemasangan panel listrik baru dan sistem pemutus daya otomatis" },
+    ],
+    dokumen: [
+      { id: "d036", name: "Proposal Schneider Electric.pdf", type: "proposal", uploadedAt: d(21), uploadedBy: "Maya Anggraini" },
+      { id: "d037", name: "Notulen Audiensi Schneider Electric.pdf", type: "notulen", uploadedAt: d(3), uploadedBy: "Budi Santoso" },
+    ],
+    aktivitas: [
+      { id: "a042", timestamp: d(21), actor: "Maya Anggraini", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
+      { id: "a043", timestamp: d(18), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Lanjutkan Kontribusi", notes: "Dilanjutkan ke verifikasi", fromState: "kontribusi-masuk", toState: "kontribusi-masuk", fields: { "Email PIC Biro Kerjasama": "budi@birokerjasama.go.id" } },
+      { id: "a044", timestamp: d(15), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Verifikasi dan Validasi", notes: "Form verifikasi dan validasi telah diisi", fromState: "verifikasi-dan-validasi", fields: {
+        "1. Status Kerjasama Mitra": "TRUE",
+        "2. Legalitas dan Bentuk Kelembagaan Mitra": "TRUE",
+        "3. Jenis Kontribusi": "TRUE",
+        "4. Target Sasaran": "TRUE",
+        "5. Bentuk Kerjasama": "TRUE",
+      } },
+      { id: "a045", timestamp: d(12), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Lanjutkan Audiensi", fromState: "verifikasi-dan-validasi", toState: "verifikasi-dan-validasi", fields: { "Unit Kerja dan PIC": "Ditjen PDM (budi@ditjenpdm.go.id)" } },
+      { id: "a046", timestamp: d(6), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Jadwalkan Audiensi", fromState: "audiensi-menunggu-jadwal", toState: "audiensi-menunggu-jadwal", fields: { "Tanggal Audiensi": "5 Oktober 2026", "Surat Undangan & Dokumen": "Surat Undangan Audiensi Schneider Electric.pdf" } },
+      { id: "a047", timestamp: d(3), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Audiensi Terlaksana", notes: "Audiensi terlaksana. Mitra menyetujui lanjut ke tahap PKS.", fromState: "audiensi-terjadwal", toState: "audiensi-terjadwal", fields: { "Notulen & Dokumen Audiensi": "Notulen Audiensi Schneider Electric.pdf" } },
+    ],
+  },
 ];
 
-let store = [...mockContributions];
+const PERSIST_KEY = "pspb_contributions_store_v1";
+
+function reviveContribution(raw: Contribution): Contribution {
+  const c: Contribution = { ...raw };
+  c.lastUpdate = new Date(c.lastUpdate);
+  c.submissionDate = new Date(c.submissionDate);
+  if (c.audiensiDate) c.audiensiDate = new Date(c.audiensiDate);
+  c.dokumen = (c.dokumen || []).map((d) => ({ ...d, uploadedAt: new Date(d.uploadedAt) }));
+  c.aktivitas = (c.aktivitas || []).map((a) => ({ ...a, timestamp: new Date(a.timestamp) }));
+  if (c.pelaksanaan) {
+    const p = { ...c.pelaksanaan };
+    if (p.startDate) p.startDate = new Date(p.startDate);
+    if (p.completionDate) p.completionDate = new Date(p.completionDate);
+    p.dokumentasi = (p.dokumentasi || []).map((d) => ({ ...d, uploadedAt: new Date(d.uploadedAt) }));
+    if (p.progressUpdates) {
+      p.progressUpdates = p.progressUpdates.map((u) => ({
+        ...u,
+        tanggal: new Date(u.tanggal),
+        dokumen: (u.dokumen || []).map((d) => ({ ...d, uploadedAt: new Date(d.uploadedAt) })),
+      }));
+    }
+    c.pelaksanaan = p;
+  }
+  return c;
+}
+
+function loadStore(): Contribution[] {
+  try {
+    const raw = localStorage.getItem(PERSIST_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Contribution[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const revived = parsed.map(reviveContribution);
+        const ids = new Set(revived.map((c) => c.id));
+        const extras = mockContributions.filter((m) => !ids.has(m.id)).map((m) => ({ ...m }));
+        return [...revived, ...extras];
+      }
+    }
+  } catch {
+    return [...mockContributions];
+  }
+  return [...mockContributions];
+}
+
+let store: Contribution[] = loadStore();
+
+const listeners = new Set<() => void>();
+let version = 0;
+
+export function subscribeContributions(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function getContributionsVersion(): number {
+  return version;
+}
+
+function persistAndNotify(): void {
+  version++;
+  listeners.forEach((fn) => fn());
+  try {
+    localStorage.setItem(PERSIST_KEY, JSON.stringify(store));
+  } catch {
+    return;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== PERSIST_KEY || !e.newValue) return;
+    try {
+      const parsed = JSON.parse(e.newValue) as Contribution[];
+      if (Array.isArray(parsed)) {
+        store = parsed.map(reviveContribution);
+        version++;
+        listeners.forEach((fn) => fn());
+      }
+    } catch {
+      return;
+    }
+  });
+}
 
 export function getContributions(): Contribution[] {
   return [...store];
@@ -806,12 +938,15 @@ export function getContributionById(id: string): Contribution | undefined {
 
 export function updateContribution(updated: Contribution): void {
   store = store.map((c) => (c.id === updated.id ? updated : c));
+  persistAndNotify();
 }
 
 export function addContribution(contribution: Contribution): void {
   store = [contribution, ...store];
+  persistAndNotify();
 }
 
 export function resetContributions(): void {
   store = [...mockContributions];
+  persistAndNotify();
 }

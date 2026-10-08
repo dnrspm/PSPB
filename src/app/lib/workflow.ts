@@ -112,6 +112,7 @@ const ROLE_ALLOWED_ACTIONS: Record<UserRole, WorkflowAction[] | "all"> = {
   "pusdatin": ["view-detail"],
   "bidang-kemitraan": ["view-detail"],
   "sekjen": ["view-detail"],
+  "mitra": ["view-detail"],
 };
 
 export function getAvailableActions(state: WorkflowState, role: UserRole): WorkflowAction[] {
@@ -153,6 +154,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   "pusdatin": "Pusdatin",
   "bidang-kemitraan": "Bidang Kemitraan pada Pusat / Setditjen",
   "sekjen": "Sekretaris Jenderal",
+  "mitra": "Mitra",
 };
 
 export const ROLE_UNITS: Record<UserRole, string> = {
@@ -162,6 +164,7 @@ export const ROLE_UNITS: Record<UserRole, string> = {
   "pusdatin": "Pusdatin",
   "bidang-kemitraan": "Bidang Kemitraan pada Pusat / Setditjen",
   "sekjen": "Sekretaris Jenderal",
+  "mitra": "Mitra",
 };
 
 export const ROLE_FUNCTIONS: Record<UserRole, string> = {
@@ -171,6 +174,7 @@ export const ROLE_FUNCTIONS: Record<UserRole, string> = {
   "pusdatin": "Persetujuan Akhir",
   "bidang-kemitraan": "Pengusulan Kebutuhan dan Mendapat Informasi Perkembangan",
   "sekjen": "Inisiasi dan Persetujuan Akhir",
+  "mitra": "Pengisian data PKS dan unggah dokumen kontribusi",
 };
 
 export const INTERNAL_TEAM: { id: string; name: string; role: UserRole }[] = [

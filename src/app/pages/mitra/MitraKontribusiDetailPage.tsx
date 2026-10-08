@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Package, Upload } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Info, Package, Upload } from "lucide-react";
 import { getMitraContributionById, getMitraSession } from "../../lib/mitra";
+import { useContributionsSync } from "../../lib/useContributions";
 import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { StatusBadge } from "../../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar, formatDate } from "../../components/detail/WorkflowStepsSidebar";
+import { DataPksMitraModal } from "../../components/modals/DataPksMitraModal";
 import type { Contribution, Document } from "../../types/contribution";
 
 export default function MitraKontribusiDetailPage() {
   const navigate = useNavigate();
+  useContributionsSync();
   const { id } = useParams<{ id: string }>();
   const session = getMitraSession();
   // Dipakai untuk merender ulang setelah dokumen diunggah/dihapus
   const [dokumenVersion, setDokumenVersion] = useState(0);
+  const [showPksForm, setShowPksForm] = useState(false);
   const contribution =
     session && id ? getMitraContributionById(session.email, id) : null;
 
@@ -52,11 +56,32 @@ export default function MitraKontribusiDetailPage() {
   }
 
   const c = contribution;
+  const pksFilled = c.aktivitas.some((a) => a.action === "Isi Data PKS Mitra");
 
   return (
     <div>
       {/* Konten */}
       <div className="pr-0">
+        {c.workflowStatus === "perjanjian-draft-pks" && !pksFilled && (
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3.5 sm:flex-row sm:items-start">
+            <Info className="mt-0.5 hidden h-5 w-5 shrink-0 text-blue-600 sm:block" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800">
+                Lengkapi Data PKS Mitra
+              </p>
+              <p className="mt-0.5 text-xs text-blue-700">
+                Mohon isi data PKS untuk melanjutkan proses penyusunan Perjanjian Kerja Sama (PKS).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPksForm(true)}
+              className="shrink-0 self-start rounded-md bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 sm:self-center"
+            >
+              Isi Data PKS Mitra
+            </button>
+          </div>
+        )}
         <div className="flex gap-6">
           <div className="flex-1 min-w-0 space-y-6">
             {/* Header Summary — selebar kolom kiri agar alur status sejajar di atas */}
@@ -74,6 +99,9 @@ export default function MitraKontribusiDetailPage() {
             </div>
 
             <InformasiBantuan c={c} />
+            {["perjanjian-draft-pks", "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses", "selesai"].includes(c.workflowStatus) && (
+              <DokumenPKSSection c={c} />
+            )}
             <DokumenSection
               key={dokumenVersion}
               c={c}
@@ -85,6 +113,13 @@ export default function MitraKontribusiDetailPage() {
           </div>
         </div>
       </div>
+      {showPksForm && (
+        <DataPksMitraModal
+          contribution={c}
+          actorName={session.nama}
+          onClose={() => setShowPksForm(false)}
+        />
+      )}
     </div>
   );
 }
@@ -92,17 +127,22 @@ export default function MitraKontribusiDetailPage() {
 function SectionCard({
   icon,
   title,
+  actions,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-6">
-      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-        {icon} {title}
-      </h3>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          {icon} {title}
+        </h3>
+        {actions}
+      </div>
       {children}
     </div>
   );
@@ -224,6 +264,250 @@ function InformasiBantuan({ c }: { c: Contribution }) {
           </div>
         </div>
       )}
+    </SectionCard>
+  );
+}
+
+function DokumenPKSSection({ c }: { c: Contribution }) {
+  const draftLog =
+    [...c.aktivitas].reverse().find((a) => a.action === "Setuju Hasil Audiensi") ||
+    c.aktivitas[c.aktivitas.length - 1];
+  const generatedAt = new Date(draftLog ? draftLog.timestamp : c.lastUpdate);
+  const tanggal = generatedAt.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const waktu = generatedAt.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const namaDokumen = `Draf PKS ${c.paketBantuan} (Biro KS).pdf`;
+  const pksLog = [...c.aktivitas]
+    .reverse()
+    .find((a) => a.action === "Isi Data PKS Mitra");
+  const pksFilled = !!pksLog;
+  const mitraAt = pksLog ? new Date(pksLog.timestamp) : null;
+  const mitraTanggal = mitraAt?.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const mitraWaktu = mitraAt?.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const namaDokumenMitra = `Draf PKS ${c.paketBantuan} (Mitra).pdf`;
+  const isPembahasan = c.workflowStatus === "perjanjian-pembahasan-pks";
+  const isFinalisasi = c.workflowStatus === "perjanjian-finalisasi-pks";
+  const isPelaksanaanPersiapan = c.workflowStatus === "pelaksanaan-persiapan";
+  const isDalamProses = c.workflowStatus === "pelaksanaan-dalam-proses";
+  const isSelesai = c.workflowStatus === "selesai";
+  const isAfterBiroHukum = [
+    "perjanjian-pembahasan-pks",
+    "perjanjian-finalisasi-pks",
+    "pelaksanaan-persiapan",
+    "pelaksanaan-dalam-proses",
+    "selesai",
+  ].includes(c.workflowStatus);
+  const biroHukumLog = [...c.aktivitas]
+    .reverse()
+    .find((a) => a.action === "Ajukan Perjanjian");
+  const biroHukumAt = new Date(biroHukumLog ? biroHukumLog.timestamp : c.lastUpdate);
+  const biroHukumTanggal = biroHukumAt.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const biroHukumWaktu = biroHukumAt.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const namaDokumenBiroHukum = `Draf PKS ${c.paketBantuan} (Biro Hukum).pdf`;
+  const signLog = [...c.aktivitas]
+    .reverse()
+    .find((a) => a.action === "Perjanjian Telah Disetujui");
+  const signAt = new Date(signLog ? signLog.timestamp : c.lastUpdate);
+  const signTanggal = signAt.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const signWaktu = signAt.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const namaDokumenTtd = "PKS yang menunggu ditandatangani.pdf";
+  const signedLog = [...c.aktivitas]
+    .reverse()
+    .find((a) => a.action === "Lanjut Pelaksanaan");
+  const signedAt = new Date(signedLog ? signedLog.timestamp : c.lastUpdate);
+  const signedTanggal = signedAt.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const signedWaktu = signedAt.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const namaDokumenSigned = "PKS yang sudah ditandatangani.pdf";
+
+  return (
+    <SectionCard
+      icon={<FileText className="h-4 w-4" />}
+      title="Dokumen PKS"
+      actions={
+        <span
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+            isPelaksanaanPersiapan || isDalamProses || isSelesai
+              ? "border-green-200 bg-green-50 text-green-700"
+              : isPembahasan || isFinalisasi
+              ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+              : pksFilled
+              ? "border-blue-200 bg-blue-50 text-blue-700"
+              : "border-amber-200 bg-amber-50 text-amber-700"
+          }`}
+        >
+          {isPelaksanaanPersiapan
+            ? "Menunggu Ditandatangani"
+            : isDalamProses || isSelesai
+            ? "Sudah Ditandatangani"
+            : isPembahasan
+            ? "Menunggu Pembahasan"
+            : isFinalisasi
+            ? "Menunggu Finalisasi"
+            : pksFilled
+            ? "Menunggu draft dari Biro Hukum"
+            : "Menunggu data mitra"}
+        </span>
+      }
+    >
+      <div className="divide-y divide-gray-100">
+        <div className="flex items-start gap-3 py-2">
+          <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="text-gray-900 text-sm truncate block">{namaDokumen}</span>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Digenerate oleh Biro Kerjasama · {tanggal} pukul {waktu}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 mt-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = "#";
+                link.download = namaDokumen;
+                link.click();
+              }}
+              className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Lihat
+            </button>
+          </div>
+        </div>
+        {pksLog && (
+          <div className="flex items-start gap-3 py-2">
+            <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 text-sm truncate block">{namaDokumenMitra}</span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Digenerate oleh {pksLog.actor} · {mitraTanggal} pukul {mitraWaktu}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 mt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "#";
+                  link.download = namaDokumenMitra;
+                  link.click();
+                }}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Lihat
+              </button>
+            </div>
+          </div>
+        )}
+        {isAfterBiroHukum && (
+          <div className="flex items-start gap-3 py-2">
+            <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 text-sm truncate block">{namaDokumenBiroHukum}</span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Digenerate oleh Biro Hukum · {biroHukumTanggal} pukul {biroHukumWaktu}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 mt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "#";
+                  link.download = namaDokumenBiroHukum;
+                  link.click();
+                }}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Lihat
+              </button>
+            </div>
+          </div>
+        )}
+        {(isPelaksanaanPersiapan || isDalamProses || isSelesai) && (
+          <div className="flex items-start gap-3 py-2">
+            <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 text-sm truncate block">{namaDokumenTtd}</span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Digenerate oleh {signLog ? signLog.actor : "Biro Kerjasama"} · {signTanggal} pukul {signWaktu}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 mt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "#";
+                  link.download = namaDokumenTtd;
+                  link.click();
+                }}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Lihat
+              </button>
+            </div>
+          </div>
+        )}
+        {(isDalamProses || isSelesai) && (
+          <div className="flex items-start gap-3 py-2">
+            <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 text-sm truncate block">{namaDokumenSigned}</span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Digenerate oleh {signedLog ? signedLog.actor : "Biro Kerjasama"} · {signedTanggal} pukul {signedWaktu}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 mt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "#";
+                  link.download = namaDokumenSigned;
+                  link.click();
+                }}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Lihat
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </SectionCard>
   );
 }

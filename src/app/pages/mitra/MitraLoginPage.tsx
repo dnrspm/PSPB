@@ -31,6 +31,7 @@ function DemoAccountList() {
       </button>
       {open && (
         <ul className="mt-2 space-y-1 text-xs text-[var(--text-subdued)]">
+          <li>maya.anggraini@se.com</li>
           <li>reza.firmansyah@telkom.co.id</li>
           <li>sri.wahyuni@ypn.or.id</li>
           <li>hendra.kusuma@bri.co.id</li>

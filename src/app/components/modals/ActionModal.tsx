@@ -119,9 +119,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Setuju Hasil Audiensi",
     toState: "perjanjian-draft-pks",
     fields: [
-      { key: "template", label: "Unduh Template Rencana Kerjasama", type: "download-template" },
-      { key: "fileRencana", label: "Upload Rencana Kerja Sama", type: "file", required: true },
-      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
+      { key: "fileLainnya", label: "Upload Dokumen Pendukung", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persetujuan hasil audiensi..." },
     ],
   },
@@ -824,29 +822,37 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                     </label>
                   )}
 
-                  {field.type === "download-template" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.download = field.key === "templatePKS"
-                          ? "Template_PKS.docx"
-                          : field.key === "templateSuratKuasa"
-                          ? "Template_Surat_Kuasa.docx"
-                          : field.key === "templateBAST"
-                          ? "Template_BAST.docx"
-                          : field.key === "templateLaporan"
-                          ? "Template_Laporan_Penyaluran.docx"
-                          : "Template_Rencana_Kerjasama.docx";
-                        link.click();
-                      }}
-                      className="flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                    >
-                      <Download className="h-4 w-4 shrink-0" />
-                      <span className="truncate text-sm">{field.label.replace("Download", "Unduh")}</span>
-                    </button>
-                  )}
+                  {field.type === "download-template" && (() => {
+                    const mitraDraftName = `Draf PKS ${contribution.paketBantuan} (Mitra).pdf`;
+                    const isMitraDraft = field.key === "templatePKS";
+                    const downloadName = isMitraDraft
+                      ? mitraDraftName
+                      : field.key === "templateSuratKuasa"
+                      ? "Template_Surat_Kuasa.docx"
+                      : field.key === "templateBAST"
+                      ? "Template_BAST.docx"
+                      : field.key === "templateLaporan"
+                      ? "Template_Laporan_Penyaluran.docx"
+                      : "Template_Rencana_Kerjasama.docx";
+                    const label = isMitraDraft
+                      ? `Unduh ${mitraDraftName}`
+                      : field.label.replace("Download", "Unduh");
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = "#";
+                          link.download = downloadName;
+                          link.click();
+                        }}
+                        className="flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                      >
+                        <Download className="h-4 w-4 shrink-0" />
+                        <span className="truncate text-sm">{label}</span>
+                      </button>
+                    );
+                  })()}
 
                   {field.type === "section-header" && (
                     <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{field.label}</h4>
@@ -1202,6 +1208,16 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
+          {action === "setuju-hasil-audiensi" && (
+            <p className="mr-auto flex items-start gap-1.5 self-center text-xs leading-relaxed text-gray-500">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <span>
+                Dengan klik tombol simpan maka Anda akan
+                <br />
+                mengenerate Draf PKS
+              </span>
+            </p>
+          )}
           <button
             onClick={handleClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
