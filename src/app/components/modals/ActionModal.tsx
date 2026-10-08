@@ -683,6 +683,12 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         </div>
 
         <div className="overflow-y-auto px-4 py-3 space-y-5 flex-1 min-h-0">
+          {action === "setuju-hasil-audiensi" && (
+            <p className="flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>Dengan klik tombol simpan maka Anda akan mengenerate Draf PKS</span>
+            </p>
+          )}
           {(() => {
             const renderedFields: React.ReactNode[] = [];
             // Ringkasan realisasi tampil tepat di bawah tombol unduh template
@@ -1208,16 +1214,6 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-4 shrink-0">
-          {action === "setuju-hasil-audiensi" && (
-            <p className="mr-auto flex items-start gap-1.5 self-center text-xs leading-relaxed text-gray-500">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-              <span>
-                Dengan klik tombol simpan maka Anda akan
-                <br />
-                mengenerate Draf PKS
-              </span>
-            </p>
-          )}
           <button
             onClick={handleClose}
             className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
