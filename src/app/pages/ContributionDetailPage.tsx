@@ -853,12 +853,8 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
               </h3>
               <span
                 className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                  isPelaksanaanPersiapan || isDalamProses || isSelesai
+                  isDalamProses || isSelesai
                     ? "border-green-200 bg-green-50 text-green-700"
-                    : isPembahasan || isFinalisasi
-                    ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                    : pksLog
-                    ? "border-blue-200 bg-blue-50 text-blue-700"
                     : "border-amber-200 bg-amber-50 text-amber-700"
                 }`}
               >

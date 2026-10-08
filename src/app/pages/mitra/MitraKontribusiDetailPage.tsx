@@ -360,12 +360,8 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
       actions={
         <span
           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-            isPelaksanaanPersiapan || isDalamProses || isSelesai
+            isDalamProses || isSelesai
               ? "border-green-200 bg-green-50 text-green-700"
-              : isPembahasan || isFinalisasi
-              ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-              : pksFilled
-              ? "border-blue-200 bg-blue-50 text-blue-700"
               : "border-amber-200 bg-amber-50 text-amber-700"
           }`}
         >
@@ -555,6 +551,10 @@ function DokumenSection({
     }
   };
 
+  const dokumenPendukung = c.dokumen.filter(
+    (d) => d.type !== "pks-draft" && d.type !== "pks-final"
+  );
+
   return (
     <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -583,7 +583,7 @@ function DokumenSection({
       </div>
 
       <div className="divide-y divide-gray-100">
-        {c.dokumen.map((doc) => (
+        {dokumenPendukung.map((doc) => (
             <div key={doc.id} className="flex items-start gap-3 py-2">
               <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -610,7 +610,7 @@ function DokumenSection({
             </div>
           ))}
 
-        {c.dokumen.length === 0 && (
+        {dokumenPendukung.length === 0 && (
           <p className="py-2 text-sm text-gray-400">Belum ada dokumen pendukung.</p>
         )}
       </div>
