@@ -85,6 +85,8 @@ export interface SekolahDetail {
 
 export interface Contribution {
   id: string;
+  /** ID pengajuan. Semua program yang diinput dalam satu kali submit berbagi nilai ini. */
+  submissionId?: string;
   namaMitra: string;
   program: string;
   paketBantuan: string;

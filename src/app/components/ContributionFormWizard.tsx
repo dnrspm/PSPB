@@ -210,6 +210,7 @@ export function ContributionFormWizard({
 
         const newContribution: Contribution = {
           id: `${baseId}-${idx}`,
+          submissionId: baseId,
           namaMitra,
           instansi: namaMitra,
           narahubung: profile?.nama || formData.fullName || "",

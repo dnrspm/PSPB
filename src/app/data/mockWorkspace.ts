@@ -3,6 +3,9 @@ import type { Contribution } from "../types/contribution";
 const now = new Date();
 const d = (daysAgo: number) => new Date(now.getTime() - daysAgo * 86400000);
 
+// Satu pengajuan berisi beberapa program (jenis dukungan) untuk contoh multi-dukungan.
+const SCHNEIDER_SUBMISSION_ID = "sub-schneider-electric";
+
 export const mockContributions: Contribution[] = [
   {
     id: "c001",
@@ -794,6 +797,7 @@ export const mockContributions: Contribution[] = [
   },
   {
     id: "c022",
+    submissionId: SCHNEIDER_SUBMISSION_ID,
     namaMitra: "PT Schneider Electric Indonesia",
     instansi: "PT Schneider Electric Indonesia",
     narahubung: "Maya Anggraini",
@@ -840,6 +844,72 @@ export const mockContributions: Contribution[] = [
       { id: "a047", timestamp: d(3), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Audiensi Terlaksana", notes: "Audiensi terlaksana. Mitra menyetujui lanjut ke tahap PKS.", fromState: "audiensi-terjadwal", toState: "audiensi-terjadwal", fields: { "Notulen & Dokumen Audiensi": "Notulen Audiensi Schneider Electric.pdf" } },
     ],
   },
+  {
+    id: "c023",
+    submissionId: SCHNEIDER_SUBMISSION_ID,
+    namaMitra: "PT Schneider Electric Indonesia",
+    instansi: "PT Schneider Electric Indonesia",
+    narahubung: "Maya Anggraini",
+    kontak: "081277889901",
+    email: "maya.anggraini@se.com",
+    program: "Revitalisasi Sekolah",
+    paketBantuan: "Laboratorium Komputer",
+    workflowStatus: "kontribusi-masuk",
+    pic: null,
+    lastUpdate: d(21),
+    submissionDate: d(21),
+    targetPenerima: "Siswa SMP dan SMA",
+    wilayah: "Sumatera Utara",
+    sekolah: ["SMA Negeri 1 Medan", "SMP Negeri 5 Medan"],
+    jumlahPenerima: 2100,
+    nilaiKontribusi: "Rp 1.600.000.000",
+    badanHukum: "PT",
+    statusMitra: "Aktif",
+    jabatan: "Head of Sustainability",
+    unitKerja: "Ditjen PDM",
+    sekolahDetail: [
+      { name: "SMA Negeri 1 Medan", npsn: "20400001", lokasi: "Jl. Iskandar Muda No. 1, Medan", linkLokasi: "https://maps.google.com/?q=SMA+Negeri+1+Medan", kontribusi: "Laboratorium Komputer", estimasiDana: "Rp 800.000.000", catatan: "Revitalisasi 30 unit komputer dan jaringan laboratorium" },
+      { name: "SMP Negeri 5 Medan", npsn: "20400002", lokasi: "Jl. Sei Batang Hari No. 7, Medan", linkLokasi: "https://maps.google.com/?q=SMP+Negeri+5+Medan", kontribusi: "Laboratorium Komputer", estimasiDana: "Rp 800.000.000", catatan: "Renovasi ruang laboratorium dan pengadaan meja komputer" },
+    ],
+    dokumen: [
+      { id: "d038", name: "Proposal Revitalisasi Schneider Electric.pdf", type: "proposal", uploadedAt: d(21), uploadedBy: "Maya Anggraini" },
+    ],
+    aktivitas: [
+      { id: "a048", timestamp: d(21), actor: "Maya Anggraini", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
+    ],
+  },
+  {
+    id: "c024",
+    submissionId: SCHNEIDER_SUBMISSION_ID,
+    namaMitra: "PT Schneider Electric Indonesia",
+    instansi: "PT Schneider Electric Indonesia",
+    narahubung: "Maya Anggraini",
+    kontak: "081277889901",
+    email: "maya.anggraini@se.com",
+    program: "Pendampingan Pelatihan GTK",
+    paketBantuan: "Literasi Numerasi",
+    workflowStatus: "kontribusi-masuk",
+    pic: null,
+    lastUpdate: d(21),
+    submissionDate: d(21),
+    targetPenerima: "Guru SD & SMP",
+    wilayah: "Sumatera Utara",
+    sekolah: [],
+    jumlahPenerima: 500,
+    nilaiKontribusi: "Rp 750.000.000",
+    badanHukum: "PT",
+    statusMitra: "Aktif",
+    jabatan: "Head of Sustainability",
+    unitKerja: "Ditjen GTK",
+    topik: "Pemanfaatan Energi Terbarukan dalam Pembelajaran",
+    infoTambahan: "Pelatihan dan pendampingan untuk 500 guru terkait integrasi energi terbarukan dalam pembelajaran",
+    dokumen: [
+      { id: "d039", name: "Proposal Pelatihan GTK Schneider Electric.pdf", type: "proposal", uploadedAt: d(21), uploadedBy: "Maya Anggraini" },
+    ],
+    aktivitas: [
+      { id: "a049", timestamp: d(21), actor: "Maya Anggraini", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
+    ],
+  },
 ];
 
 const PERSIST_KEY = "pspb_contributions_store_v1";
@@ -877,7 +947,14 @@ function loadStore(): Contribution[] {
         const revived = parsed.map(reviveContribution);
         const ids = new Set(revived.map((c) => c.id));
         const extras = mockContributions.filter((m) => !ids.has(m.id)).map((m) => ({ ...m }));
-        return [...revived, ...extras];
+        const mockById = new Map(mockContributions.map((m) => [m.id, m]));
+        // Backfill submissionId dari data contoh agar record lama tetap tergabung.
+        return [...revived, ...extras].map((c) => {
+          const m = mockById.get(c.id);
+          return m?.submissionId && !c.submissionId
+            ? { ...c, submissionId: m.submissionId }
+            : c;
+        });
       }
     }
   } catch {

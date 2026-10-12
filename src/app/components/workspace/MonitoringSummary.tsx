@@ -1,4 +1,5 @@
 import type { Contribution } from "../../types/contribution";
+import { groupContributions } from "../../lib/contributionGroups";
 import { WORKFLOW_PHASES } from "../../lib/workflow";
 
 interface MonitoringSummaryProps {
@@ -12,8 +13,9 @@ interface SummaryCard {
 }
 
 export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
+  const groups = groupContributions(contributions);
   const byPhase = (states: string[]) =>
-    contributions.filter((c) => states.includes(c.workflowStatus)).length;
+    groups.filter((g) => states.includes(g.workflowStatus)).length;
 
   const cards: SummaryCard[] = WORKFLOW_PHASES
     .filter((p) => p.label !== "Tidak Dilanjutkan")
@@ -27,7 +29,7 @@ export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-[24px] font-semibold text-black">Ringkasan Operasional</h2>
-        <span className="text-sm text-gray-400">{contributions.length} total kontribusi</span>
+        <span className="text-sm text-gray-400">{groups.length} total kontribusi</span>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (

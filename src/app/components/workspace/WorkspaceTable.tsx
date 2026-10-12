@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } fro
 import { useNavigate } from "react-router";
 import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
+import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
@@ -52,15 +53,15 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
     setPage(1);
   };
 
-  const sorted = [...contributions]
-    .filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
-    .sort((a, b) => {
+  const sorted = groupContributions(
+    contributions.filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
+  ).sort((a, b) => {
     const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     if (aMasuk !== bMasuk) return bMasuk - aMasuk;
 
     if (sortKey === "lastUpdate") {
-      const diff = new Date(a.lastUpdate).getTime() - new Date(b.lastUpdate).getTime();
+      const diff = a.lastUpdate.getTime() - b.lastUpdate.getTime();
       return sortDir === "asc" ? diff : -diff;
     }
     const va = (a[sortKey] as string | null) ?? "";
@@ -86,6 +87,16 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
       return SUB_TYPE_UNIT_KERJA_MAP[c.paketBantuan] || "-";
     }
     return "-";
+  }
+
+  function getGroupUnitKerja(g: ContributionGroup): string {
+    const units = [...new Set(g.items.map(getUnitKerja).filter((u) => u && u !== "-"))];
+    return units.length > 0 ? units.join(", ") : "-";
+  }
+
+  function getGroupPicEmail(g: ContributionGroup): string {
+    const emails = [...new Set(g.items.map(getPicEmail).filter((e) => e && e !== "-"))];
+    return emails.length > 0 ? emails.join(", ") : "-";
   }
 
   const headers: { key: SortKey | null; label: string }[] = [
@@ -131,29 +142,31 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {paginated.map((c) => {
-              const isNew = c.workflowStatus === "kontribusi-masuk";
+            {paginated.map((g) => {
+              const isNew = g.workflowStatus === "kontribusi-masuk";
               return (
                 <tr
-                  key={c.id}
-                  onClick={() => navigate(`/workspace/${c.id}`)}
+                  key={g.key}
+                  onClick={() => navigate(`/workspace/${g.primary.id}`)}
                   className={`cursor-pointer transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-100" : "hover:bg-gray-100"}`}
                 >
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-800 leading-snug">{c.instansi}</div>
+                    <div className="text-sm font-medium text-gray-800 leading-snug">{g.instansi}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-gray-800 leading-snug">{c.program}</div>
+                    {g.items.map((c) => (
+                      <div key={c.id} className="text-sm text-gray-800 leading-snug">{c.program}</div>
+                    ))}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{getUnitKerja(c)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{getGroupUnitKerja(g)}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge state={c.workflowStatus} />
+                    <StatusBadge state={g.workflowStatus} />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
-                    {formatDate(c.lastUpdate)}
+                    {formatDate(g.lastUpdate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {getPicEmail(c)}
+                    {getGroupPicEmail(g)}
                   </td>
                   <td className="px-4 py-3 text-gray-400">
                     <ChevronRight className="h-4 w-4" />

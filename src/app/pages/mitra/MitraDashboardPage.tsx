@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getMitraContributions, getMitraProfile, getMitraSession } from "../../lib/mitra";
 import { useContributionsSync } from "../../lib/useContributions";
+import { groupContributions } from "../../lib/contributionGroups";
 import { WORKFLOW_STATE_LABELS, WORKFLOW_STATE_COLORS } from "../../lib/workflow";
 import type { WorkflowState } from "../../types/contribution";
 import { Button } from "../../components/Button";
@@ -28,8 +29,11 @@ export default function MitraDashboardPage() {
   useContributionsSync();
   const session = getMitraSession();
   const profile = session ? getMitraProfile(session.email) : null;
-  const contributions = useMemo(
-    () => (session ? getMitraContributions(session.email) : []),
+  const groups = useMemo(
+    () =>
+      session
+        ? groupContributions(getMitraContributions(session.email))
+        : [],
     [session]
   );
 
@@ -49,17 +53,17 @@ export default function MitraDashboardPage() {
     );
   }
 
-  const kontribusiMasuk = contributions.filter(
-    (c) => c.workflowStatus === "kontribusi-masuk"
+  const kontribusiMasuk = groups.filter(
+    (g) => g.workflowStatus === "kontribusi-masuk"
   ).length;
-  const kontribusiSelesai = contributions.filter(
-    (c) => c.workflowStatus === "selesai"
+  const kontribusiSelesai = groups.filter(
+    (g) => g.workflowStatus === "selesai"
   ).length;
-  const kontribusiProses = contributions.filter(
-    (c) =>
-      c.workflowStatus !== "kontribusi-masuk" &&
-      c.workflowStatus !== "selesai" &&
-      c.workflowStatus !== "tidak-dilanjutkan"
+  const kontribusiProses = groups.filter(
+    (g) =>
+      g.workflowStatus !== "kontribusi-masuk" &&
+      g.workflowStatus !== "selesai" &&
+      g.workflowStatus !== "tidak-dilanjutkan"
   ).length;
 
   const statCards = [
@@ -82,8 +86,12 @@ export default function MitraDashboardPage() {
       iconColor: "text-[var(--green-60)]",
     },
   ];
-  const recent = [...contributions]
-    .sort((a, b) => b.submissionDate.getTime() - a.submissionDate.getTime())
+  const recent = [...groups]
+    .sort(
+      (a, b) =>
+        new Date(b.submissionDate).getTime() -
+        new Date(a.submissionDate).getTime()
+    )
     .slice(0, 5);
 
   return (
@@ -167,27 +175,33 @@ export default function MitraDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--gray-10)]">
-                {recent.map((c) => {
-                  const colors = WORKFLOW_STATE_COLORS[c.workflowStatus as WorkflowState];
+                {recent.map((g) => {
+                  const state = g.workflowStatus as WorkflowState;
+                  const colors = WORKFLOW_STATE_COLORS[state];
                   return (
                     <tr
-                      key={c.id}
-                      onClick={() => navigate(`/mitra/kontribusi/${c.id}`)}
+                      key={g.key}
+                      onClick={() => navigate(`/mitra/kontribusi/${g.primary.id}`)}
                       className="cursor-pointer transition-colors hover:bg-[var(--surface-subdued)]"
                     >
                       <td className="px-5 py-3">
-                        <p className="text-sm font-medium text-[var(--text-default)]">
-                          {c.program}
-                        </p>
+                        {g.items.map((c) => (
+                          <p
+                            key={c.id}
+                            className="text-sm font-medium text-[var(--text-default)]"
+                          >
+                            {c.program}
+                          </p>
+                        ))}
                       </td>
                       <td className="hidden px-5 py-3 text-sm text-[var(--text-subdued)] md:table-cell">
-                        {formatDate(c.submissionDate)}
+                        {formatDate(g.submissionDate)}
                       </td>
                       <td className="px-5 py-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${colors.bg} ${colors.text} ${colors.border}`}
                         >
-                          {WORKFLOW_STATE_LABELS[c.workflowStatus as WorkflowState]}
+                          {WORKFLOW_STATE_LABELS[state]}
                         </span>
                       </td>
                       <td className="w-10 px-5 py-3 text-right">

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Info, Package, Upload } from "lucide-react";
-import { getMitraContributionById, getMitraSession } from "../../lib/mitra";
+import { getMitraContributionById, getMitraContributions, getMitraSession } from "../../lib/mitra";
 import { useContributionsSync } from "../../lib/useContributions";
+import { getSubmissionSiblings } from "../../lib/contributionGroups";
 import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { StatusBadge } from "../../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar, formatDate } from "../../components/detail/WorkflowStepsSidebar";
@@ -57,6 +58,10 @@ export default function MitraKontribusiDetailPage() {
 
   const c = contribution;
   const pksFilled = c.aktivitas.some((a) => a.action === "Isi Data PKS Mitra");
+  const bantuanList = getSubmissionSiblings(
+    getMitraContributions(session.email),
+    c
+  );
 
   return (
     <div>
@@ -87,7 +92,9 @@ export default function MitraKontribusiDetailPage() {
             {/* Header Summary — selebar kolom kiri agar alur status sejajar di atas */}
             <div className="rounded-lg border border-gray-100 bg-white shadow-sm px-6 py-4">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[24px] font-semibold text-black">{c.program}</h1>
+                <h1 className="text-[24px] font-semibold text-black">
+                  {bantuanList.map((b) => b.program).join(", ")}
+                </h1>
                 <StatusBadge state={c.workflowStatus} />
               </div>
               <p className="mt-2 text-sm text-gray-400">
@@ -98,7 +105,9 @@ export default function MitraKontribusiDetailPage() {
               </p>
             </div>
 
-            <InformasiBantuan c={c} />
+            {bantuanList.map((bantuan) => (
+              <InformasiBantuan key={bantuan.id} c={bantuan} />
+            ))}
             {["perjanjian-draft-pks", "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses", "selesai"].includes(c.workflowStatus) && (
               <DokumenPKSSection c={c} />
             )}
@@ -168,7 +177,10 @@ function InformasiBantuan({ c }: { c: Contribution }) {
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
 
   return (
-    <SectionCard icon={<Package className="h-4 w-4" />} title="Informasi Bantuan">
+    <SectionCard
+      icon={<Package className="h-4 w-4" />}
+      title={`Informasi Bantuan: ${c.program}`}
+    >
       {isSchoolProgram ? (
         <Dl
           fields={[

@@ -72,9 +72,16 @@ const SECTIONS: SectionDef[] = [
         prefill: (c) => c.email || "",
       },
       {
-        key: "Nama & jabatan penandatangan PKS",
-        label: "Nama & jabatan penandatangan PKS",
-        prefill: (c) => join([c.narahubung, c.jabatan]),
+        key: "Nama penandatangan PKS",
+        label: "Nama penandatangan PKS",
+        placeholder: "Ketik nama penandatangan",
+        prefill: (c) => c.narahubung || "",
+      },
+      {
+        key: "Jabatan penandatangan PKS",
+        label: "Jabatan penandatangan PKS",
+        placeholder: "Ketik jabatan penandatangan",
+        prefill: (c) => c.jabatan || "",
       },
       {
         key: "Dasar kewenangan penandatangan",
