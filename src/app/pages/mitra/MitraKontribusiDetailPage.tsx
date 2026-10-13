@@ -92,7 +92,7 @@ export default function MitraKontribusiDetailPage() {
             {/* Header Summary — selebar kolom kiri agar alur status sejajar di atas */}
             <div className="rounded-lg border border-gray-100 bg-white shadow-sm px-6 py-4">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[24px] font-semibold text-black">
+                <h1 className="text-[24px] font-semibold leading-tight text-black">
                   {bantuanList.map((b) => b.program).join(", ")}
                 </h1>
                 <StatusBadge state={c.workflowStatus} />
