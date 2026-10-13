@@ -137,7 +137,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "templatePKS", label: "Download Template PKS", type: "download-template" },
       { key: "file", label: "Draf PKS", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file", multiple: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pengajuan PKS..." },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Masukkan catatan pengajuan dokumen PKS jika ada" },
     ],
   },
   "lanjutkan-pembahasan": {
