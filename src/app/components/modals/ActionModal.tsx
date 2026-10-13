@@ -1230,6 +1230,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
               ? "Menyimpan..."
               : action === "setuju-hasil-audiensi"
               ? "Ya, Setujui"
+              : action === "ajukan-perjanjian"
+              ? "Ajukan"
               : "Simpan"}
           </button>
         </div>
