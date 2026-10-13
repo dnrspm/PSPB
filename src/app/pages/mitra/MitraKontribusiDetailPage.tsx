@@ -72,10 +72,10 @@ export default function MitraKontribusiDetailPage() {
             <Info className="mt-0.5 hidden h-5 w-5 shrink-0 text-blue-600 sm:block" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-blue-800">
-                Lengkapi Data PKS Mitra
+                Perlu Mengisi Data
               </p>
               <p className="mt-0.5 text-xs text-blue-700">
-                Mohon isi data PKS untuk melanjutkan proses penyusunan Perjanjian Kerja Sama (PKS).
+                Mohon isi dan lengkapi data yang diperlukan untuk pembuatan draf dokumen Perjanjian Kerja Sama (PKS).
               </p>
             </div>
             <button
@@ -83,7 +83,7 @@ export default function MitraKontribusiDetailPage() {
               onClick={() => setShowPksForm(true)}
               className="shrink-0 self-start rounded-md bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 sm:self-center"
             >
-              Isi Data PKS Mitra
+              Isi Data
             </button>
           </div>
         )}
@@ -387,8 +387,8 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
             : isFinalisasi
             ? "Menunggu Finalisasi"
             : pksFilled
-            ? "Menunggu draft dari Biro Hukum"
-            : "Menunggu data mitra"}
+            ? "Menunggu Draf Biro Hukum"
+            : "Menunggu Data Mitra"}
         </span>
       }
     >
@@ -590,7 +590,7 @@ function DokumenSection({
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
             <Upload className="h-3.5 w-3.5" />
-            {uploading ? "Mengunggah..." : "Upload Dokumen"}
+            {uploading ? "Mengunggah..." : "Unggah Dokumen"}
           </button>
         </div>
       </div>

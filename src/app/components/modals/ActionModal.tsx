@@ -119,8 +119,8 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Setuju Hasil Audiensi",
     toState: "perjanjian-draft-pks",
     fields: [
-      { key: "fileLainnya", label: "Upload Dokumen Pendukung", type: "file", multiple: true },
-      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan persetujuan hasil audiensi..." },
+      { key: "fileLainnya", label: "Unggah Dokumen Pendukung", type: "file", multiple: true },
+      { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Masukkan catatan hasil audiensi jika ada" },
     ],
   },
   "audiensi-ulang": {
@@ -135,7 +135,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     toState: "perjanjian-pembahasan-pks",
     fields: [
       { key: "templatePKS", label: "Download Template PKS", type: "download-template" },
-      { key: "file", label: "Draft PKS", type: "file", required: true },
+      { key: "file", label: "Draf PKS", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan pengajuan PKS..." },
     ],
@@ -154,9 +154,9 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     toState: "pelaksanaan-persiapan",
     fields: [
       { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
-      { key: "file", label: "Upload Draf Final PKS yang siap ditandatangani", type: "file", required: true },
-      { key: "fileRencana", label: "Upload rencana kerja final yang siap ditandatangani", type: "file", required: true },
-      { key: "fileSuratKuasa", label: "Upload Surat Kuasa", type: "file", required: true },
+      { key: "file", label: "Unggah Draf Final PKS yang siap ditandatangani", type: "file", required: true },
+      { key: "fileRencana", label: "Unggah rencana kerja final yang siap ditandatangani", type: "file", required: true },
+      { key: "fileSuratKuasa", label: "Unggah Surat Kuasa", type: "file", required: true },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],
@@ -165,9 +165,9 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Lanjut Pelaksanaan",
     toState: "pelaksanaan-dalam-proses",
     fields: [
-      { key: "filePKS", label: "Upload PKS yang Sudah Ditandatangani", type: "file", required: true },
-      { key: "fileRencana", label: "Upload Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
-      { key: "fileLainnya", label: "Upload Dokumen Lainnya", type: "file", multiple: true },
+      { key: "filePKS", label: "Unggah PKS yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileRencana", label: "Unggah Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
+      { key: "fileLainnya", label: "Unggah Dokumen Lainnya", type: "file", multiple: true },
       { key: "targetHeader", label: "Target Dampak", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
@@ -197,9 +197,9 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "templateBAST", label: "Download Template BAST", type: "download-template" },
       { key: "templateLaporan", label: "Download Template Laporan Penyaluran", type: "download-template" },
       { key: "dokumenHeader", label: "Dokumen Penyelesaian", type: "section-header" },
-      { key: "file", label: "Upload BAST", type: "file", required: true },
-      { key: "fileLaporan", label: "Upload Laporan Penyaluran Bantuan", type: "file", required: true },
-      { key: "fileDistribusi", label: "Upload Dokumen Pendukung Distribusi (foto, video, faktur, dll)", type: "file", multiple: true },
+      { key: "file", label: "Unggah BAST", type: "file", required: true },
+      { key: "fileLaporan", label: "Unggah Laporan Penyaluran Bantuan", type: "file", required: true },
+      { key: "fileDistribusi", label: "Unggah Dokumen Pendukung Distribusi (foto, video, faktur, dll)", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Ringkasan hasil pelaksanaan..." },
     ],
   },
@@ -686,7 +686,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           {action === "setuju-hasil-audiensi" && (
             <p className="flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>Dengan klik tombol simpan maka Anda akan mengenerate Draf PKS</span>
+              <span>Dengan menyetujui, draf dokumen Perjanjian Kerja Sama (PKS) akan terunduh secara otomatis ke perangkat Anda.</span>
             </p>
           )}
           {(() => {
@@ -964,7 +964,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                          {values[field.key] ? (
                            <span className="text-sm text-gray-900">{values[field.key] as string}</span>
                          ) : (
-                           "Format file PDF ukuran max 200kb"
+                           "Format PDF maks. 200KB"
                          )}
                        </span>
                        <button
@@ -1001,7 +1001,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                       )}
                     <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 bg-white px-3 py-2.5">
                         <FileText className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-400">Format file PDF ukuran max 200kb</span>
+                        <span className="text-sm text-gray-400">Format PDF maks. 200KB</span>
                         <input
                           type="file"
                           multiple
@@ -1226,7 +1226,11 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             title={realisasiSiap ? undefined : "Catat realisasi dampak lewat Update Progress terlebih dahulu"}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Menyimpan..." : "Simpan"}
+            {loading
+              ? "Menyimpan..."
+              : action === "setuju-hasil-audiensi"
+              ? "Ya, Setujui"
+              : "Simpan"}
           </button>
         </div>
         </>

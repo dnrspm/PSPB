@@ -225,7 +225,7 @@ function VerifikasiBlock({ picEmails, contribution, currentUser, onRefresh }: {
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
               {vervalDone && vervalLog
-                ? `Diperbaharui ${vervalLog.actor} pada ${(vervalLog.timestamp as Date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} pukul ${(vervalLog.timestamp as Date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+                ? `Diperbaharui ${vervalLog.actor} pada ${(vervalLog.timestamp as Date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} pukul ${(vervalLog.timestamp as Date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
                 : 'Isi form verval sesuai hasil diskusi dengan calon mitra'}
             </p>
           </div>
@@ -598,10 +598,10 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
             <div>
               <p className="text-sm font-semibold text-amber-800">
-                Menunggu Data PKS dari Mitra
+                Menunggu Data Mitra
               </p>
               <p className="mt-0.5 text-xs text-amber-700">
-                Draf PKS belum dapat dibuat karena data PKS mitra belum diisi. Pembuatan draf dapat dilanjutkan setelah mitra melengkapi datanya.
+                Draf dokumen PKS dapat dibuat setelah Mitra mengisi data secara lengkap.
               </p>
             </div>
           </div>
@@ -834,7 +834,7 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
         />
       )}
 
-      {/* Dokumen PKS – tampil pada status Perjanjian (Draft/Pembahasan/Finalisasi) dan Pelaksanaan */}
+      {/* Dokumen PKS – tampil pada status Perjanjian (Draf/Pembahasan/Finalisasi) dan Pelaksanaan */}
       {["perjanjian-draft-pks", "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses", "selesai"].includes(c.workflowStatus) && (() => {
         const draftLog =
           [...c.aktivitas].reverse().find(a => a.action === "Setuju Hasil Audiensi") ||
@@ -891,8 +891,8 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
                   : isFinalisasi
                   ? "Menunggu Finalisasi"
                   : pksLog
-                  ? "Menunggu draft dari Biro Hukum"
-                  : "Menunggu data mitra"}
+                  ? "Menunggu Draf Biro Hukum"
+                  : "Menunggu Data Mitra"}
               </span>
             </div>
             <div className="divide-y divide-gray-100">
@@ -1298,7 +1298,7 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
         className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
       >
         <Upload className="h-3.5 w-3.5" />
-        {uploading ? "Mengunggah..." : "Upload Dokumen"}
+        {uploading ? "Mengunggah..." : "Unggah Dokumen"}
       </button>
     </div>
   );

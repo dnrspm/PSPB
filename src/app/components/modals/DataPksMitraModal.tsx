@@ -353,7 +353,7 @@ export function DataPksMitraModal({
       <div className="flex h-[760px] max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
         <div className="flex shrink-0 items-center justify-between gap-4 px-6 py-5">
           <h2 className="text-base font-semibold text-gray-800">
-            Isi Data PKS Mitra
+            Isi Data Dokumen PKS
           </h2>
           <button
             onClick={onClose}
@@ -409,7 +409,7 @@ export function DataPksMitraModal({
             <div className="space-y-4">
               <p className="flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>Dengan klik tombol simpan maka Anda akan mengenerate Draf PKS</span>
+                <span>Setelah data disimpan, draf dokumen Perjanjian Kerja Sama (PKS) akan terunduh secara otomatis ke perangkat Anda.</span>
               </p>
               <p className="text-sm text-gray-500">
                 Periksa kembali data berikut sebelum disimpan.

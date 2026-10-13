@@ -123,7 +123,7 @@ export const mockContributions: Contribution[] = [
     pic: "Andi Pratama",
     lastUpdate: d(4),
     submissionDate: d(30),
-    audiensiResult: "Gojek menyetujui konsep kerjasama. Perlu disusun draft PKS.",
+    audiensiResult: "Gojek menyetujui konsep kerjasama. Perlu disusun draf PKS.",
     targetPenerima: "Guru SD & SMP",
     wilayah: "Nasional",
     sekolah: ["SDN 01 Menteng", "SDN Cikini 1", "SMPN 1 Jakarta", "SMPN 2 Jakarta"],
@@ -209,7 +209,7 @@ export const mockContributions: Contribution[] = [
     infoTambahan: "Modul dan video pembelajaran e-commerce interaktif untuk siswa SMK jurusan Bisnis Daring",
     dokumen: [
       { id: "d008", name: "Proposal Tokopedia.pdf", type: "proposal", uploadedAt: d(60), uploadedBy: "Rizki Halim" },
-      { id: "d009", name: "Draft PKS Tokopedia v1.pdf", type: "pks-draft", uploadedAt: d(5), uploadedBy: "Eka Putri" },
+      { id: "d009", name: "Draf PKS Tokopedia v1.pdf", type: "pks-draft", uploadedAt: d(5), uploadedBy: "Eka Putri" },
     ],
     aktivitas: [
       { id: "a012", timestamp: d(60), actor: "Rizki Halim", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
@@ -244,7 +244,7 @@ export const mockContributions: Contribution[] = [
     ],
     dokumen: [
       { id: "d010", name: "Proposal Pertamina.pdf", type: "proposal", uploadedAt: d(75), uploadedBy: "Dewi Anggraeni" },
-      { id: "d011", name: "Draft PKS Pertamina v2.pdf", type: "pks-draft", uploadedAt: d(15), uploadedBy: "Eka Putri" },
+      { id: "d011", name: "Draf PKS Pertamina v2.pdf", type: "pks-draft", uploadedAt: d(15), uploadedBy: "Eka Putri" },
     ],
     aktivitas: [
       { id: "a014", timestamp: d(75), actor: "Dewi Anggraeni", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
@@ -810,7 +810,7 @@ export const mockContributions: Contribution[] = [
     lastUpdate: d(1),
     submissionDate: d(21),
     audiensiDate: d(3),
-    audiensiResult: "Schneider Electric menyetujui konsep kerjasama instalasi listrik hemat energi. Menunggu penyusunan draft PKS.",
+    audiensiResult: "Schneider Electric menyetujui konsep kerjasama instalasi listrik hemat energi. Menunggu penyusunan draf PKS.",
     targetPenerima: "Siswa SMP dan SMA",
     wilayah: "Sumatera Utara",
     sekolah: ["SMA Negeri 1 Medan", "SMP Negeri 5 Medan", "SMA Negeri 3 Medan"],

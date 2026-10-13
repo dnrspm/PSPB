@@ -6,7 +6,7 @@ export const WORKFLOW_STATE_LABELS: Record<WorkflowState, string> = {
   "audiensi-menunggu-jadwal": "Audiensi - Menunggu Jadwal",
   "audiensi-terjadwal": "Audiensi - Terjadwal",
   "audiensi-konfirmasi-lanjut-pks": "Audiensi - Konfirmasi Lanjut PKS",
-  "perjanjian-draft-pks": "Perjanjian - Draft PKS",
+  "perjanjian-draft-pks": "Perjanjian - Draf PKS",
   "perjanjian-pembahasan-pks": "Perjanjian - Pembahasan PKS",
   "perjanjian-finalisasi-pks": "Perjanjian - Finalisasi PKS",
   "pelaksanaan-persiapan": "Pelaksanaan - Persiapan",
@@ -168,7 +168,7 @@ export const ROLE_UNITS: Record<UserRole, string> = {
 };
 
 export const ROLE_FUNCTIONS: Record<UserRole, string> = {
-  "biro-perencanaan": "Pengelolaan Proses Kemitraan (Verifikasi administrasi, koordinasi, menyiapkan draft kerja sama)",
+  "biro-perencanaan": "Pengelolaan Proses Kemitraan (Verifikasi administrasi, koordinasi, menyiapkan draf kerja sama)",
   "pusat-dir-eselon": "Review dan Persetujuan Substansi",
   "biro-hukum": "Review hukum, legal drafting, dan penomoran perjanjian",
   "pusdatin": "Persetujuan Akhir",
