@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Check, Info, Pencil, X } from "lucide-react";
 import type { Contribution } from "../../types/contribution";
 import { updateContribution } from "../../data/mockWorkspace";
@@ -6,6 +6,8 @@ import { BADAN_HUKUM_OPTIONS } from "../../lib/mitra";
 
 interface DataPksMitraModalProps {
   contribution: Contribution;
+  /** Semua program dalam satu pengajuan; bila ada, step Kontribusi menampilkan tiap program. */
+  contributions?: Contribution[];
   actorName: string;
   onClose: () => void;
 }
@@ -23,6 +25,8 @@ interface FieldDef {
   full?: boolean;
   prefill?: (c: Contribution) => string;
   dependsOnPenyalur?: boolean;
+  /** Judul sub-bagian (dipakai saat satu seksi memuat banyak kontribusi). */
+  group?: string;
 }
 
 interface SectionDef {
@@ -34,7 +38,7 @@ interface SectionDef {
 const join = (parts: (string | undefined | null)[]) =>
   parts.filter((p) => p && String(p).trim()).join(" - ");
 
-const SECTIONS: SectionDef[] = [
+const BASE_SECTIONS: SectionDef[] = [
   {
     title: "Identitas Mitra",
     stepLabel: "Identitas",
@@ -196,14 +200,50 @@ const SECTIONS: SectionDef[] = [
   },
 ];
 
-const STEP_LABELS = [...SECTIONS.map((s) => s.stepLabel), "Review"];
-const REVIEW_STEP = SECTIONS.length;
+const KONTRIBUSI_STEP = 1;
 
-function buildInitial(c: Contribution): Record<string, string> {
+const STEP_LABELS = [...BASE_SECTIONS.map((s) => s.stepLabel), "Review"];
+
+/** Satu set field "Profil Kontribusi" untuk tiap program dalam pengajuan yang sama. */
+function buildKontribusiFields(contributions: Contribution[]): FieldDef[] {
+  const multiple = contributions.length > 1;
+  return contributions.flatMap((c, i): FieldDef[] => {
+    const group = multiple ? `Kontribusi ${i + 1} · ${c.program}` : undefined;
+    return [
+      {
+        key: `${c.id}__jenis`,
+        label: "Jenis Menu Paket Dukungan PSPB",
+        group,
+        prefill: () => join([c.program, c.paketBantuan]),
+      },
+      {
+        key: `${c.id}__deskripsi`,
+        label: "Deskripsi singkat bantuan",
+        type: "textarea",
+        full: true,
+        group,
+        prefill: () => c.infoTambahan || "",
+      },
+    ];
+  });
+}
+
+function buildSections(contributions: Contribution[]): SectionDef[] {
+  return BASE_SECTIONS.map((section, i) =>
+    i === KONTRIBUSI_STEP
+      ? { ...section, fields: buildKontribusiFields(contributions) }
+      : section
+  );
+}
+
+function buildInitial(
+  sections: SectionDef[],
+  c: Contribution
+): Record<string, string> {
   const saved =
     [...c.aktivitas].reverse().find((a) => a.action === AKSI)?.fields ?? {};
   const base: Record<string, string> = {};
-  for (const section of SECTIONS) {
+  for (const section of sections) {
     for (const f of section.fields) {
       base[f.key] = f.prefill ? f.prefill(c) : "";
     }
@@ -213,18 +253,28 @@ function buildInitial(c: Contribution): Record<string, string> {
 
 export function DataPksMitraModal({
   contribution,
+  contributions,
   actorName,
   onClose,
 }: DataPksMitraModalProps) {
+  const bantuanList = useMemo(
+    () =>
+      contributions && contributions.length > 0
+        ? contributions
+        : [contribution],
+    [contributions, contribution]
+  );
+  const sections = useMemo(() => buildSections(bantuanList), [bantuanList]);
+  const reviewStep = sections.length;
   const [values, setValues] = useState<Record<string, string>>(() =>
-    buildInitial(contribution)
+    buildInitial(sections, contribution)
   );
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
 
   const penyalurDisabled = values[KEY_PENYALUR] !== "Ya";
-  const isReview = step === REVIEW_STEP;
+  const isReview = step === reviewStep;
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -233,7 +283,7 @@ export function DataPksMitraModal({
 
   const handleNext = () => {
     const nextErrors: Record<string, boolean> = {};
-    for (const f of SECTIONS[step].fields) {
+    for (const f of sections[step].fields) {
       if (f.required && !(values[f.key] ?? "").trim()) nextErrors[f.key] = true;
     }
     if (Object.keys(nextErrors).length > 0) {
@@ -241,7 +291,7 @@ export function DataPksMitraModal({
       return;
     }
     setErrors({});
-    setStep((s) => Math.min(REVIEW_STEP, s + 1));
+    setStep((s) => Math.min(reviewStep, s + 1));
   };
 
   const handleBack = () => {
@@ -251,7 +301,7 @@ export function DataPksMitraModal({
 
   const handleSubmit = () => {
     const nextErrors: Record<string, boolean> = {};
-    for (const section of SECTIONS) {
+    for (const section of sections) {
       for (const f of section.fields) {
         if (!f.required) continue;
         if (!(values[f.key] ?? "").trim()) nextErrors[f.key] = true;
@@ -265,7 +315,7 @@ export function DataPksMitraModal({
     setLoading(true);
     setTimeout(() => {
       const fields: Record<string, string> = {};
-      for (const section of SECTIONS) {
+      for (const section of sections) {
         for (const f of section.fields) {
           if (f.dependsOnPenyalur && penyalurDisabled) continue;
           const value = (values[f.key] ?? "").trim();
@@ -364,7 +414,7 @@ export function DataPksMitraModal({
               <p className="text-sm text-gray-500">
                 Periksa kembali data berikut sebelum disimpan.
               </p>
-              {SECTIONS.map((section, idx) => (
+              {sections.map((section, idx) => (
                 <div
                   key={section.title}
                   className="overflow-hidden rounded-lg border border-gray-200/70"
@@ -390,14 +440,25 @@ export function DataPksMitraModal({
                       .filter(
                         (f) => !(f.dependsOnPenyalur && penyalurDisabled)
                       )
-                      .map((f) => (
-                        <div key={f.key}>
-                          <dt className="text-xs text-gray-400">{f.label}</dt>
-                          <dd className="mt-0.5 text-sm break-words text-gray-800">
-                            {(values[f.key] ?? "").trim() || "-"}
-                          </dd>
-                        </div>
-                      ))}
+                      .map((f, i, arr) => {
+                        const showGroup =
+                          !!f.group && f.group !== arr[i - 1]?.group;
+                        return (
+                          <Fragment key={f.key}>
+                            {showGroup && (
+                              <div className="border-b border-gray-100 pb-1 text-xs font-semibold uppercase tracking-wide text-blue-600 sm:col-span-2">
+                                {f.group}
+                              </div>
+                            )}
+                            <div>
+                              <dt className="text-xs text-gray-400">{f.label}</dt>
+                              <dd className="mt-0.5 text-sm break-words text-gray-800">
+                                {(values[f.key] ?? "").trim() || "-"}
+                              </dd>
+                            </div>
+                          </Fragment>
+                        );
+                      })}
                   </dl>
                 </div>
               ))}
@@ -405,15 +466,16 @@ export function DataPksMitraModal({
           ) : (
             <div>
               <h3 className="mb-4 text-sm font-semibold text-gray-700">
-                {step + 1}. {SECTIONS[step].title}
+                {step + 1}. {sections[step].title}
               </h3>
               <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                {SECTIONS[step].fields.map((f) => {
+                {sections[step].fields.map((f, i, arr) => {
                   const disabled = !!f.dependsOnPenyalur && penyalurDisabled;
                   const invalid = !!errors[f.key];
+                  const showGroup = !!f.group && f.group !== arr[i - 1]?.group;
                   const inputClass =
                     "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400";
-                  return (
+                  const fieldEl = (
                     <div
                       key={f.key}
                       className={f.full ? "sm:col-span-2" : undefined}
@@ -467,6 +529,15 @@ export function DataPksMitraModal({
                         </p>
                       )}
                     </div>
+                  );
+                  if (!showGroup) return fieldEl;
+                  return (
+                    <Fragment key={f.key}>
+                      <div className="border-b border-gray-100 pb-2 text-xs font-semibold uppercase tracking-wide text-blue-600 sm:col-span-2">
+                        {f.group}
+                      </div>
+                      {fieldEl}
+                    </Fragment>
                   );
                 })}
               </div>

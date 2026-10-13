@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock } from "lucide-react";
-import { getContributionById, updateContribution } from "../data/mockWorkspace";
+import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
+import { getSubmissionSiblings } from "../lib/contributionGroups";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar } from "../components/detail/WorkflowStepsSidebar";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -55,6 +56,10 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   }
 
   const c = getContributionById(id!)!;
+  // Satu pengajuan bisa memuat beberapa program (multi-dukungan); tampilkan semua.
+  const bantuanList = getSubmissionSiblings(getContributions(), c);
+  const unitKerjaList =
+    [...new Set(bantuanList.map((b) => b.unitKerja).filter(Boolean))].join(", ") || "-";
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Informasi" },
@@ -80,9 +85,16 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
               <StatusBadge state={c.workflowStatus} />
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
-              <span>{c.program}: <strong>{c.paketBantuan}</strong></span>
+              <span>
+                {bantuanList.map((b, i) => (
+                  <span key={b.id}>
+                    {i > 0 && ", "}
+                    {b.program}: <strong>{b.paketBantuan}</strong>
+                  </span>
+                ))}
+              </span>
               <span className="text-gray-300">|</span>
-              <span>Unit Kerja: <strong>{c.unitKerja || "-"}</strong></span>
+              <span>Unit Kerja: <strong>{unitKerjaList}</strong></span>
               <span className="text-gray-300">|</span>
               <span>Diperbarui: <strong>{formatDate(c.lastUpdate)}</strong></span>
             </div>
@@ -159,7 +171,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
             {activeTab === "info" && (
               <div className="flex gap-6">
                 <div className="flex-1 max-w-4xl">
-                  <InfoTab contribution={c} onDokumenChange={handleDokumenChange} currentUser={currentUser} />
+                  <InfoTab contribution={c} bantuanList={bantuanList} onDokumenChange={handleDokumenChange} currentUser={currentUser} />
                 </div>
                 <div className="w-84 shrink-0">
                   <WorkflowStepsSidebar contribution={c} />
@@ -297,14 +309,159 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
   return null;
 }
 
-function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contribution: Contribution; onDokumenChange?: () => void; currentUser: SessionUser }) {
-  const [tambahPICOpen, setTambahPICOpen] = useState(false);
-  const [picEditMode, setPicEditMode] = useState(false);
-  const [editingPICEmail, setEditingPICEmail] = useState<{ unitKerja: string; type: "sekretariat" | "satuan-kerja"; email: string } | null>(null);
+function InformasiBantuanCard({ c }: { c: Contribution }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
   const isLainnya = c.program === "Kebutuhan Pendidikan Lainnya";
+
+  return (
+    <>
+      {/* Informasi Bantuan – Sekolah (Infrastruktur Digital & Revitalisasi Sekolah) */}
+      {isSchoolProgram && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan: {c.program}</h3>
+          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
+            </div>
+            </dl>
+
+          {(c.sekolahDetail && c.sekolahDetail.length > 0) && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Nama Satuan Pendidikan</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">NPSN</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Lokasi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Link Lokasi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Pilihan Kontribusi</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Estimasi Dana</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Catatan Satuan Pendidikan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {c.sekolahDetail.map((s, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{s.npsn}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-40">{s.lokasi}</td>
+                      <td className="px-3 py-2">
+                        <a
+                          href={s.linkLokasi}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                        >
+                          Lihat <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </td>
+                      <td className="px-3 py-2 text-gray-700">{s.kontribusi}</td>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{s.estimasiDana}</td>
+                      <td className="px-3 py-2 text-gray-500 max-w-40">{s.catatan}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Informasi Bantuan – Platform Digital / Pelatihan GTK */}
+      {isPlatformGtk && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan: {c.program}</h3>
+          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Topik</dt>
+              <dd className="text-gray-900">{c.topik || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+
+      {/* Informasi Bantuan – Bahan Ajar Digital */}
+      {isBahanAjar && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan: {c.program}</h3>
+          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Untuk Siapa</dt>
+              <dd className="text-gray-900">{c.untukSiapa || "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Jenjang Sekolah</dt>
+              <dd className="text-gray-900">{c.jenjangSekolah || "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Topik / Materi</dt>
+              <dd className="text-gray-900">{c.topikMateri || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+
+      {/* Informasi Bantuan – Beragam Dukungan Pendidikan */}
+      {isLainnya && (
+        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan: {c.program}</h3>
+          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Paket Dukungan</dt>
+              <dd className="text-gray-900">{c.program}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Pilihan Kontribusi/Topik</dt>
+              <dd className="text-gray-900">{c.jenisDukungan || "-"}</dd>
+            </div>
+            {c.infoTambahan && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-400">Informasi Tambahan</dt>
+                <dd className="text-gray-900">{c.infoTambahan}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+    </>
+  );
+}
+
+function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }: { contribution: Contribution; bantuanList: Contribution[]; onDokumenChange?: () => void; currentUser: SessionUser }) {
+  const [tambahPICOpen, setTambahPICOpen] = useState(false);
+  const [picEditMode, setPicEditMode] = useState(false);
+  const [editingPICEmail, setEditingPICEmail] = useState<{ unitKerja: string; type: "sekretariat" | "satuan-kerja"; email: string } | null>(null);
   const targetPenerima = useMemo(() => findTargetPenerima(c.aktivitas), [c.aktivitas]);
   const removedUnitKerjaSet = useMemo(() => {
     const removed = new Set<string>();
@@ -492,143 +649,10 @@ function InfoTab({ contribution: c, onDokumenChange, currentUser }: { contributi
         </dl>
       </div>
 
-      {/* Informasi Bantuan – Sekolah (Infrastruktur Digital & Revitalisasi Sekolah) */}
-      {isSchoolProgram && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
-          </div>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
-            <div>
-              <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
-            </div>
-            </dl>
-
-          {(c.sekolahDetail && c.sekolahDetail.length > 0) && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Nama Satuan Pendidikan</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">NPSN</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Lokasi</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Link Lokasi</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Pilihan Kontribusi</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Estimasi Dana</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-500">Catatan Satuan Pendidikan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {c.sekolahDetail.map((s, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
-                      <td className="px-3 py-2 text-gray-600">{s.npsn}</td>
-                      <td className="px-3 py-2 text-gray-600 max-w-40">{s.lokasi}</td>
-                      <td className="px-3 py-2">
-                        <a
-                          href={s.linkLokasi}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                        >
-                          Lihat <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </td>
-                      <td className="px-3 py-2 text-gray-700">{s.kontribusi}</td>
-                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{s.estimasiDana}</td>
-                      <td className="px-3 py-2 text-gray-500 max-w-40">{s.catatan}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Informasi Bantuan – Platform Digital / Pelatihan GTK */}
-      {isPlatformGtk && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
-          </div>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Topik</dt>
-              <dd className="text-gray-900">{c.topik || "-"}</dd>
-            </div>
-            {c.infoTambahan && (
-              <div className="sm:col-span-2">
-                <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-900">{c.infoTambahan}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-      )}
-
-      {/* Informasi Bantuan – Bahan Ajar Digital */}
-      {isBahanAjar && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
-          </div>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Untuk Siapa</dt>
-              <dd className="text-gray-900">{c.untukSiapa || "-"}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Jenjang Sekolah</dt>
-              <dd className="text-gray-900">{c.jenjangSekolah || "-"}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Topik / Materi</dt>
-              <dd className="text-gray-900">{c.topikMateri || "-"}</dd>
-            </div>
-            {c.infoTambahan && (
-              <div className="sm:col-span-2">
-                <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-900">{c.infoTambahan}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-      )}
-
-      {/* Informasi Bantuan – Beragam Dukungan Pendidikan */}
-      {isLainnya && (
-        <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan</h3>
-          </div>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt className="text-gray-400">Paket Dukungan</dt>
-              <dd className="text-gray-900">{c.program}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-400">Pilihan Kontribusi/Topik</dt>
-              <dd className="text-gray-900">{c.jenisDukungan || "-"}</dd>
-            </div>
-            {c.infoTambahan && (
-              <div className="sm:col-span-2">
-                <dt className="text-gray-400">Informasi Tambahan</dt>
-                <dd className="text-gray-900">{c.infoTambahan}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-      )}
+      {/* Informasi Bantuan — satu kartu per program dalam pengajuan yang sama */}
+      {bantuanList.map((b) => (
+        <InformasiBantuanCard key={b.id} c={b} />
+      ))}
 
       {/* Target Penerima */}
       {targetPenerima && (

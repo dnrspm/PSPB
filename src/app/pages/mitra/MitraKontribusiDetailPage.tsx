@@ -125,6 +125,7 @@ export default function MitraKontribusiDetailPage() {
       {showPksForm && (
         <DataPksMitraModal
           contribution={c}
+          contributions={bantuanList}
           actorName={session.nama}
           onClose={() => setShowPksForm(false)}
         />
