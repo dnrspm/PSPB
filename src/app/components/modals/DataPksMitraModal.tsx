@@ -18,7 +18,7 @@ const KEY_PENYALUR = "Menggunakan lembaga penyalur?";
 interface FieldDef {
   key: string;
   label: string;
-  type?: "text" | "textarea" | "select";
+  type?: "text" | "textarea" | "select" | "checkboxes";
   options?: string[];
   required?: boolean;
   placeholder?: string;
@@ -27,16 +27,30 @@ interface FieldDef {
   dependsOnPenyalur?: boolean;
   /** Judul sub-bagian (dipakai saat satu seksi memuat banyak kontribusi). */
   group?: string;
+  /** Sub-judul segmen di dalam satu step (mis. "2b. Ruang Lingkup Lain"). */
+  subheading?: string;
 }
 
 interface SectionDef {
   title: string;
   stepLabel: string;
+  /** Judul khusus pada step (mis. "2a. Ruang Lingkup PSPB"); default "{nomor}. {title}". */
+  heading?: string;
   fields: FieldDef[];
 }
 
 const join = (parts: (string | undefined | null)[]) =>
   parts.filter((p) => p && String(p).trim()).join(" - ");
+
+/** Pilihan ruang lingkup lain yang disepakati para pihak. */
+const RUANG_LINGKUP_LAIN = [
+  "Pengembangan kurikulum, perangkat ajar, dan sumber belajar, termasuk inovasi dan pengembangan model pembelajaran.",
+  "Peningkatan kompetensi dan pengembangan talenta peserta didik, pendidik, dan tenaga kependidikan, termasuk pelatihan, pemagangan, dan sertifikasi.",
+  "Pertukaran, integrasi, dan pemanfaatan data dan/atau informasi, termasuk pengembangan dan pemanfaatan teknologi digital.",
+  "Penyediaan dan pemanfaatan sumber daya pendidikan, termasuk sarana, prasarana, teknologi, dan fasilitas pendukung.",
+  "Penguatan tata kelola dan kemitraan pendidikan, termasuk koordinasi, fasilitasi, pemantauan, evaluasi, dan pelaporan pelaksanaan kerja sama.",
+  "Pelaksanaan kegiatan lain yang disepakati PARA PIHAK dalam rangka mendukung peningkatan mutu dan kualitas pendidikan dasar dan menengah sesuai dengan tugas, fungsi, dan kewenangan masing-masing pihak.",
+];
 
 const BASE_SECTIONS: SectionDef[] = [
   {
@@ -95,13 +109,15 @@ const BASE_SECTIONS: SectionDef[] = [
     ],
   },
   {
-    title: "Profil Kontribusi PSPB",
-    stepLabel: "Kontribusi",
+    title: "Ruang Lingkup",
+    stepLabel: "Ruang Lingkup",
+    heading: "2a. Ruang Lingkup PSPB",
     fields: [
       {
         key: "Jenis Menu Paket Dukungan PSPB",
-        label: "Jenis Menu Paket Dukungan PSPB",
-        prefill: (c) => join([c.program, c.paketBantuan]),
+        label: "Paket Dukungan PSPB",
+        full: true,
+        prefill: (c) => c.program || "",
       },
       {
         key: "Deskripsi singkat bantuan",
@@ -207,25 +223,33 @@ const STEP_LABELS = [...BASE_SECTIONS.map((s) => s.stepLabel), "Review"];
 /** Satu set field "Profil Kontribusi" untuk tiap program dalam pengajuan yang sama. */
 function buildKontribusiFields(contributions: Contribution[]): FieldDef[] {
   const multiple = contributions.length > 1;
-  return contributions.flatMap((c, i): FieldDef[] => {
+  const fields = contributions.flatMap((c, i): FieldDef[] => {
     const group = multiple ? `Kontribusi ${i + 1} · ${c.program}` : undefined;
     return [
       {
         key: `${c.id}__jenis`,
-        label: "Jenis Menu Paket Dukungan PSPB",
+        label: "Paket Dukungan PSPB",
         group,
-        prefill: () => join([c.program, c.paketBantuan]),
+        prefill: () => c.program || "",
       },
       {
         key: `${c.id}__deskripsi`,
         label: "Deskripsi singkat bantuan",
         type: "textarea",
-        full: true,
         group,
         prefill: () => c.infoTambahan || "",
       },
     ];
   });
+  fields.push({
+    key: "ruangLingkupLain",
+    label: "",
+    type: "checkboxes",
+    full: true,
+    subheading: "2b. Ruang Lingkup Lain",
+    options: RUANG_LINGKUP_LAIN,
+  });
+  return fields;
 }
 
 function buildSections(contributions: Contribution[]): SectionDef[] {
@@ -278,6 +302,17 @@ export function DataPksMitraModal({
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
+  };
+
+  const toggleCheckbox = (key: string, option: string) => {
+    setValues((prev) => {
+      const items = (prev[key] ?? "").split(" || ").filter(Boolean);
+      const idx = items.indexOf(option);
+      if (idx >= 0) items.splice(idx, 1);
+      else items.push(option);
+      return { ...prev, [key]: items.join(" || ") };
+    });
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
   };
 
@@ -435,25 +470,55 @@ export function DataPksMitraModal({
                       Edit
                     </button>
                   </div>
-                  <dl className="grid grid-cols-1 gap-x-6 gap-y-5 p-4 sm:grid-cols-2">
+                  <dl className="grid grid-cols-1 gap-x-6 gap-y-4 p-4 sm:grid-cols-2">
+                    {section.heading && (
+                      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:col-span-2">
+                        {section.heading}
+                      </div>
+                    )}
                     {section.fields
                       .filter(
                         (f) => !(f.dependsOnPenyalur && penyalurDisabled)
                       )
-                      .map((f, i, arr) => {
-                        const showGroup =
-                          !!f.group && f.group !== arr[i - 1]?.group;
+                      .map((f) => {
+                        const value =
+                          f.type === "checkboxes" ? (
+                            (() => {
+                              const items = (values[f.key] ?? "")
+                                .split(" || ")
+                                .filter(Boolean);
+                              if (items.length === 0) return "-";
+                              return (
+                                <ul className="list-disc space-y-0.5 pl-4">
+                                  {items.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              );
+                            })()
+                          ) : (
+                            (values[f.key] ?? "").trim() || "-"
+                          );
+
+                        if (f.subheading) {
+                          return (
+                            <Fragment key={f.key}>
+                              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:col-span-2">
+                                {f.subheading}
+                              </div>
+                              <div className="text-sm break-words text-gray-800 sm:col-span-2">
+                                {value}
+                              </div>
+                            </Fragment>
+                          );
+                        }
+
                         return (
                           <Fragment key={f.key}>
-                            {showGroup && (
-                              <div className="border-b border-gray-100 pb-1 text-xs font-semibold uppercase tracking-wide text-blue-600 sm:col-span-2">
-                                {f.group}
-                              </div>
-                            )}
                             <div>
                               <dt className="text-xs text-gray-400">{f.label}</dt>
                               <dd className="mt-0.5 text-sm break-words text-gray-800">
-                                {(values[f.key] ?? "").trim() || "-"}
+                                {value}
                               </dd>
                             </div>
                           </Fragment>
@@ -463,16 +528,35 @@ export function DataPksMitraModal({
                 </div>
               ))}
             </div>
-          ) : (
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-gray-700">
-                {step + 1}. {sections[step].title}
-              </h3>
-              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                {sections[step].fields.map((f, i, arr) => {
-                  const disabled = !!f.dependsOnPenyalur && penyalurDisabled;
+          ) : (() => {
+            const stepFields = sections[step].fields;
+            const stepHeading =
+              sections[step].heading ?? `${step + 1}. ${sections[step].title}`;
+            const hasSubheadings = stepFields.some((f) => f.subheading);
+
+            const groupFields = (fields: FieldDef[]) => {
+              const blocks: { group?: string; fields: FieldDef[] }[] = [];
+              for (const f of fields) {
+                const last = blocks[blocks.length - 1];
+                if (last && last.group === f.group) last.fields.push(f);
+                else blocks.push({ group: f.group, fields: [f] });
+              }
+              return blocks;
+            };
+
+            const renderField = (
+              f: FieldDef,
+              i: number,
+              arr: FieldDef[],
+              showSubheading: boolean,
+              suppressGroup = false
+            ) => {
+              const disabled = !!f.dependsOnPenyalur && penyalurDisabled;
                   const invalid = !!errors[f.key];
-                  const showGroup = !!f.group && f.group !== arr[i - 1]?.group;
+                  const showGroup =
+                    !suppressGroup &&
+                    !!f.group &&
+                    f.group !== arr[i - 1]?.group;
                   const inputClass =
                     "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400";
                   const fieldEl = (
@@ -480,12 +564,19 @@ export function DataPksMitraModal({
                       key={f.key}
                       className={f.full ? "sm:col-span-2" : undefined}
                     >
-                      <label className="mb-2 block whitespace-nowrap text-sm font-medium text-gray-600">
-                        {f.label}
-                        {f.required && (
-                          <span className="ml-0.5 text-red-400">*</span>
-                        )}
-                      </label>
+                      {showSubheading && f.subheading && (
+                        <h4 className="mb-3 border-b border-gray-100 pb-2 text-sm font-semibold text-gray-700">
+                          {f.subheading}
+                        </h4>
+                      )}
+                      {f.label && (
+                        <label className="mb-1.5 block whitespace-nowrap text-sm font-medium text-gray-600">
+                          {f.label}
+                          {f.required && (
+                            <span className="ml-0.5 text-red-400">*</span>
+                          )}
+                        </label>
+                      )}
                       {f.type === "select" ? (
                         <select
                           value={values[f.key] ?? ""}
@@ -513,6 +604,30 @@ export function DataPksMitraModal({
                           placeholder={f.placeholder}
                           className={`${inputClass} focus:ring-1 focus:ring-blue-100`}
                         />
+                      ) : f.type === "checkboxes" ? (
+                        <div className="space-y-2.5">
+                          {f.options?.map((opt) => {
+                            const checked = (values[f.key] ?? "")
+                              .split(" || ")
+                              .includes(opt);
+                            return (
+                              <label
+                                key={opt}
+                                className="flex cursor-pointer items-start gap-2.5"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleCheckbox(f.key, opt)}
+                                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-blue-600"
+                                />
+                                <span className="text-sm leading-relaxed text-gray-700">
+                                  {opt}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       ) : (
                         <input
                           type="text"
@@ -539,10 +654,71 @@ export function DataPksMitraModal({
                       {fieldEl}
                     </Fragment>
                   );
-                })}
+            };
+
+            if (!hasSubheadings) {
+              return (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-gray-700">
+                    {stepHeading}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                    {stepFields.map((f, i, arr) => renderField(f, i, arr, true))}
+                  </div>
+                </div>
+              );
+            }
+
+            const segments: { heading: string; fields: FieldDef[] }[] = [];
+            let segment = { heading: stepHeading, fields: [] as FieldDef[] };
+            for (const f of stepFields) {
+              if (f.subheading) {
+                segments.push(segment);
+                segment = { heading: f.subheading, fields: [f] };
+              } else {
+                segment.fields.push(f);
+              }
+            }
+            segments.push(segment);
+
+            return (
+              <div className="space-y-5">
+                {segments.map((seg, segIdx) => (
+                  <div key={seg.heading}>
+                    <h3 className="mb-3 text-sm font-semibold text-gray-700">
+                      {seg.heading}
+                    </h3>
+                    {segIdx === 0 ? (
+                      <div>
+                        {groupFields(seg.fields).map((block, bi) => (
+                          <div
+                            key={block.group ?? `blok-${bi}`}
+                            className={
+                              bi > 0
+                                ? "mt-4 border-t border-gray-100 pt-4"
+                                : undefined
+                            }
+                          >
+                            <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                              {block.fields.map((f, i, arr) =>
+                                renderField(f, i, arr, false, true)
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                        {seg.fields.map((f, i, arr) =>
+                          renderField(f, i, arr, false, true)
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         <div className="flex shrink-0 items-center justify-between gap-4 border-t border-gray-100 px-6 py-4">

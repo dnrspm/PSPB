@@ -3,6 +3,7 @@ import { X, Upload, Calendar, Download, FileText, AlertTriangle, Info, ChevronDo
 import type { Contribution, Document, WorkflowAction, WorkflowState, UserRole } from "../../types/contribution";
 import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP, UNIT_KERJA_OPTIONS } from "../../lib/workflow";
 import { getContributionById, updateContribution } from "../../data/mockWorkspace";
+import { useStakeholders } from "../../lib/useStakeholders";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { akumulasiRealisasi, groupWilayah, realisasiTerkini } from "../../lib/dampak";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
@@ -24,7 +25,7 @@ interface ModalConfig {
 interface FieldConfig {
   key: string;
   label: string;
-  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template" | "section-header" | "multi-kabupaten" | "number";
+  type: "select-pic" | "textarea" | "text" | "file" | "checkbox" | "select-progress" | "select" | "multi-email" | "checkboxes" | "tags" | "date" | "unit-kerja-email" | "download-template" | "section-header" | "multi-kabupaten" | "number" | "select-stakeholder";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -47,6 +48,55 @@ function formatWilayahRows(rows: WilayahRow[]): string {
     if (!items.includes(item)) items.push(item);
   }
   return items.join(" || ");
+}
+
+/** Dropdown pemangku kepentingan (pihak kesatu). */
+function StakeholderSelect({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  hasError: boolean;
+}) {
+  const stakeholders = useStakeholders();
+  const selected = stakeholders.find((s) => s.nama === value);
+  return (
+    <div className="space-y-2">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 ${
+          value ? "text-gray-900" : "text-gray-400"
+        } [&_option]:text-gray-900 ${hasError ? "border-red-300" : ""}`}
+      >
+        <option value="" disabled>
+          Pilih Pihak Kesatu...
+        </option>
+        {stakeholders.map((s) => (
+          <option key={s.id} value={s.nama}>
+            {s.nama}
+          </option>
+        ))}
+      </select>
+
+      {selected && (
+        <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm">
+          <dl className="space-y-1">
+            <div className="flex gap-1.5">
+              <dt className="w-20 shrink-0 text-gray-500">Jabatan</dt>
+              <dd className="text-gray-800">{selected.jabatan}</dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt className="w-20 shrink-0 text-gray-500">Alamat</dt>
+              <dd className="text-gray-800">{selected.alamat}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function parseUnitKerjaFromActivity(aktivitas: Contribution["aktivitas"]): Array<{ unitKerja: string; emails: string[] }> {
@@ -119,6 +169,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
     title: "Setuju Hasil Audiensi",
     toState: "perjanjian-draft-pks",
     fields: [
+      { key: "pihakKesatu", label: "Pihak Kesatu", type: "select-stakeholder", required: true },
       { key: "fileLainnya", label: "Unggah Dokumen Pendukung", type: "file", multiple: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Masukkan catatan hasil audiensi jika ada" },
     ],
@@ -942,6 +993,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                         </option>
                       ))}
                     </select>
+                  )}
+
+                  {field.type === "select-stakeholder" && (
+                    <StakeholderSelect
+                      value={(values[field.key] as string) || ""}
+                      onChange={(v) => set(field.key, v)}
+                      hasError={!!errors[field.key]}
+                    />
                   )}
 
                   {field.type === "select-progress" && (
