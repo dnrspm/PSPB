@@ -231,6 +231,7 @@ const BASE_SECTIONS: SectionDef[] = [
         key: "Nama institusi",
         label: "Nama institusi",
         group: "Data Institusi",
+        required: true,
         full: true,
         prefill: (c) => c.instansi || c.namaMitra,
       },
@@ -238,36 +239,42 @@ const BASE_SECTIONS: SectionDef[] = [
         key: "Alamat",
         label: "Alamat",
         group: "Data Institusi",
+        required: true,
         full: true,
       },
       {
         key: "Nomor telepon",
         label: "Nomor telepon",
         group: "Data Institusi",
+        required: true,
         prefill: (c) => c.kontak || "",
       },
       {
         key: "Email resmi",
         label: "Email resmi",
         group: "Data Institusi",
+        required: true,
         prefill: (c) => c.email || "",
       },
       {
         key: "Nama PIC",
         label: "Nama PIC",
         group: "Narahubung (PIC)",
+        required: true,
         prefill: (c) => c.narahubung || "",
       },
       {
         key: "Jabatan",
         label: "Jabatan",
         group: "Narahubung (PIC)",
+        required: true,
         prefill: (c) => c.jabatan || "",
       },
       {
         key: "Email PIC",
         label: "Email PIC",
         group: "Narahubung (PIC)",
+        required: true,
         full: true,
         prefill: (c) => (c.pic && c.pic.includes("@") ? c.pic : ""),
       },
@@ -298,12 +305,14 @@ const BASE_SECTIONS: SectionDef[] = [
         label: "Nama lembaga penyalur",
         group: "Lembaga Penyalur",
         dependsOnPenyalur: true,
+        required: true,
       },
       {
         key: "PIC penyaluran",
         label: "PIC penyaluran",
         group: "Lembaga Penyalur",
         dependsOnPenyalur: true,
+        required: true,
       },
       {
         key: "Profil & legalitas penyalur",
@@ -312,6 +321,7 @@ const BASE_SECTIONS: SectionDef[] = [
         type: "textarea",
         full: true,
         dependsOnPenyalur: true,
+        required: true,
       },
     ],
   },
@@ -439,6 +449,8 @@ export function DataPksMitraModal({
 
   const penyalurDisabled = values[KEY_PENYALUR] !== "Ya";
   const isReview = step === reviewStep;
+  const isRequired = (f: FieldDef) =>
+    !!f.required && !(f.dependsOnPenyalur && penyalurDisabled);
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -459,7 +471,8 @@ export function DataPksMitraModal({
   const handleNext = () => {
     const nextErrors: Record<string, boolean> = {};
     for (const f of sections[step].fields) {
-      if (f.required && !(values[f.key] ?? "").trim()) nextErrors[f.key] = true;
+      if (isRequired(f) && !(values[f.key] ?? "").trim())
+        nextErrors[f.key] = true;
     }
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -478,7 +491,7 @@ export function DataPksMitraModal({
     const nextErrors: Record<string, boolean> = {};
     for (const section of sections) {
       for (const f of section.fields) {
-        if (!f.required) continue;
+        if (!isRequired(f)) continue;
         if (!(values[f.key] ?? "").trim()) nextErrors[f.key] = true;
       }
     }
@@ -743,7 +756,7 @@ export function DataPksMitraModal({
                     {f.label && (
                       <label className="mb-1.5 block whitespace-nowrap text-sm font-medium text-gray-600">
                         {f.label}
-                        {f.required && (
+                        {isRequired(f) && (
                           <span className="ml-0.5 text-red-400">*</span>
                         )}
                       </label>

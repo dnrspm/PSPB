@@ -1,3 +1,4 @@
+import { DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock } from "lucide-react";
@@ -869,6 +870,13 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
         const signedTanggal = signedAt.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
         const signedWaktu = signedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
         const namaDokumenSigned = "PKS yang sudah ditandatangani.pdf";
+        const dokumenPks: DokumenPksItem[] = [
+          { nama: namaDokumen, oleh: "Biro Kerjasama", tanggal, waktu },
+          ...(pksLog ? [{ nama: namaDokumenMitra, oleh: pksLog.actor, tanggal: mitraTanggal!, waktu: mitraWaktu! }] : []),
+          ...(isAfterBiroHukum ? [{ nama: namaDokumenBiroHukum, oleh: "Biro Hukum", tanggal: biroHukumTanggal, waktu: biroHukumWaktu }] : []),
+          ...(isPelaksanaanPersiapan || isDalamProses || isSelesai ? [{ nama: namaDokumenTtd, oleh: signLog ? signLog.actor : "Biro Kerjasama", tanggal: signTanggal, waktu: signWaktu }] : []),
+          ...(isDalamProses || isSelesai ? [{ nama: namaDokumenSigned, oleh: signedLog ? signedLog.actor : "Biro Kerjasama", tanggal: signedTanggal, waktu: signedWaktu }] : []),
+        ];
         return (
           <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
@@ -895,121 +903,7 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
                   : "Menunggu Data Mitra"}
               </span>
             </div>
-            <div className="divide-y divide-gray-100">
-              <div className="flex items-start gap-3 py-2">
-                <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-900 text-sm truncate block">{namaDokumen}</span>
-                  <p className="text-xs text-gray-400 mt-0.5">Digenerate oleh Biro Kerjasama · {tanggal} pukul {waktu}</p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = "#";
-                      link.download = namaDokumen;
-                      link.click();
-                    }}
-                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                  >
-                    Lihat
-                  </button>
-                </div>
-              </div>
-              {pksLog && (
-                <div className="flex items-start gap-3 py-2">
-                  <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-gray-900 text-sm truncate block">{namaDokumenMitra}</span>
-                    <p className="text-xs text-gray-400 mt-0.5">Digenerate oleh {pksLog.actor} · {mitraTanggal} pukul {mitraWaktu}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.download = namaDokumenMitra;
-                        link.click();
-                      }}
-                      className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                    >
-                      Lihat
-                    </button>
-                  </div>
-                </div>
-              )}
-              {isAfterBiroHukum && (
-                <div className="flex items-start gap-3 py-2">
-                  <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-gray-900 text-sm truncate block">{namaDokumenBiroHukum}</span>
-                    <p className="text-xs text-gray-400 mt-0.5">Digenerate oleh Biro Hukum · {biroHukumTanggal} pukul {biroHukumWaktu}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.download = namaDokumenBiroHukum;
-                        link.click();
-                      }}
-                      className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                    >
-                      Lihat
-                    </button>
-                  </div>
-                </div>
-              )}
-              {(isPelaksanaanPersiapan || isDalamProses || isSelesai) && (
-                <div className="flex items-start gap-3 py-2">
-                  <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-gray-900 text-sm truncate block">{namaDokumenTtd}</span>
-                    <p className="text-xs text-gray-400 mt-0.5">Digenerate oleh {signLog ? signLog.actor : "Biro Kerjasama"} · {signTanggal} pukul {signWaktu}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.download = namaDokumenTtd;
-                        link.click();
-                      }}
-                      className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                    >
-                      Lihat
-                    </button>
-                  </div>
-                </div>
-              )}
-              {(isDalamProses || isSelesai) && (
-                <div className="flex items-start gap-3 py-2">
-                  <FileText className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-gray-900 text-sm truncate block">{namaDokumenSigned}</span>
-                    <p className="text-xs text-gray-400 mt-0.5">Digenerate oleh {signedLog ? signedLog.actor : "Biro Kerjasama"} · {signedTanggal} pukul {signedWaktu}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.download = namaDokumenSigned;
-                        link.click();
-                      }}
-                      className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                    >
-                      Lihat
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <DokumenPksList items={dokumenPks} />
           </div>
         );
       })()}
