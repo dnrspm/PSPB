@@ -380,6 +380,7 @@ function buildKontribusiFields(entries: PaketEntry[]): FieldDef[] {
     key: "jangkaWaktuTahun",
     label: "Jangka waktu (tahun)",
     type: "number",
+    required: true,
     subheading: "Jangka Waktu Kerja Sama",
     placeholder: "Contoh: 3",
   });

@@ -1,9 +1,10 @@
+import { LembagaPenyalurSection } from "../components/LembagaPenyalurSection";
 import { DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock } from "lucide-react";
 import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
-import { getSubmissionSiblings } from "../lib/contributionGroups";
+import { getSubmissionSiblings, resolvePaketBantuan } from "../lib/contributionGroups";
 import { StatusBadge } from "../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar } from "../components/detail/WorkflowStepsSidebar";
 import { ActionModal } from "../components/modals/ActionModal";
@@ -310,7 +311,13 @@ function findTargetPenerima(aktivitas: Contribution["aktivitas"]): Record<string
   return null;
 }
 
-function InformasiBantuanCard({ c }: { c: Contribution }) {
+function InformasiBantuanCard({ c, deskripsi }: { c: Contribution; deskripsi?: string }) {
+  const deskripsiRow = deskripsi ? (
+    <div className="sm:col-span-2">
+      <dt className="text-gray-400">Deskripsi dari Mitra</dt>
+      <dd className="whitespace-pre-line text-gray-900">{deskripsi}</dd>
+    </div>
+  ) : null;
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -329,7 +336,8 @@ function InformasiBantuanCard({ c }: { c: Contribution }) {
               <dt className="text-gray-400">Paket Dukungan</dt>
               <dd className="text-gray-900">{c.program}: {c.paketBantuan}</dd>
             </div>
-            </dl>
+              {deskripsiRow}
+          </dl>
 
           {(c.sekolahDetail && c.sekolahDetail.length > 0) && (
             <div className="overflow-x-auto">
@@ -394,6 +402,7 @@ function InformasiBantuanCard({ c }: { c: Contribution }) {
                 <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
+            {deskripsiRow}
           </dl>
         </div>
       )}
@@ -427,6 +436,7 @@ function InformasiBantuanCard({ c }: { c: Contribution }) {
                 <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
+            {deskripsiRow}
           </dl>
         </div>
       )}
@@ -452,10 +462,31 @@ function InformasiBantuanCard({ c }: { c: Contribution }) {
                 <dd className="text-gray-900">{c.infoTambahan}</dd>
               </div>
             )}
+            {deskripsiRow}
           </dl>
         </div>
       )}
     </>
+  );
+}
+
+function PaketTambahanCard({ jenis, deskripsi }: { jenis: string; deskripsi: string }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5"><Package className="h-4 w-4" /> Informasi Bantuan: {jenis}</h3>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+        <div className="sm:col-span-2">
+          <dt className="text-gray-400">Paket Dukungan</dt>
+          <dd className="text-gray-900">{jenis}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-gray-400">Deskripsi dari Mitra</dt>
+          <dd className="whitespace-pre-line text-gray-900">{deskripsi || "-"}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -651,9 +682,15 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
       </div>
 
       {/* Informasi Bantuan — satu kartu per program dalam pengajuan yang sama */}
-      {bantuanList.map((b) => (
-        <InformasiBantuanCard key={b.id} c={b} />
-      ))}
+      {resolvePaketBantuan(bantuanList).map((e) =>
+        e.c ? (
+          <InformasiBantuanCard key={e.id} c={e.c} deskripsi={e.deskripsi} />
+        ) : (
+          <PaketTambahanCard key={e.id} jenis={e.jenis} deskripsi={e.deskripsi} />
+        )
+      )}
+
+      <LembagaPenyalurSection c={c} />
 
       {/* Target Penerima */}
       {targetPenerima && (

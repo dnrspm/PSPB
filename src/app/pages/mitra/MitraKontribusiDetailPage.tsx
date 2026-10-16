@@ -1,10 +1,11 @@
+import { LembagaPenyalurSection } from "../../components/LembagaPenyalurSection";
 import { DokumenPksList, type DokumenPksItem } from "../../components/DokumenPksList";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Info, Package, Upload } from "lucide-react";
 import { getMitraContributionById, getMitraContributions, getMitraSession } from "../../lib/mitra";
 import { useContributionsSync } from "../../lib/useContributions";
-import { getSubmissionSiblings } from "../../lib/contributionGroups";
+import { getSubmissionSiblings, resolvePaketBantuan } from "../../lib/contributionGroups";
 import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { StatusBadge } from "../../components/workspace/StatusBadge";
 import { WorkflowStepsSidebar, formatDate } from "../../components/detail/WorkflowStepsSidebar";
@@ -106,9 +107,25 @@ export default function MitraKontribusiDetailPage() {
               </p>
             </div>
 
-            {bantuanList.map((bantuan) => (
-              <InformasiBantuan key={bantuan.id} c={bantuan} />
-            ))}
+            {resolvePaketBantuan(bantuanList).map((e) =>
+              e.c ? (
+                <InformasiBantuan key={e.id} c={e.c} deskripsi={e.deskripsi} />
+              ) : (
+                <SectionCard
+                  key={e.id}
+                  icon={<Package className="h-4 w-4" />}
+                  title={`Informasi Bantuan: ${e.jenis}`}
+                >
+                  <Dl
+                    fields={[
+                      ["Paket Dukungan", e.jenis],
+                      ["Deskripsi dari Mitra", e.deskripsi],
+                    ]}
+                  />
+                </SectionCard>
+              )
+            )}
+            <LembagaPenyalurSection c={c} className="p-6" />
             {["perjanjian-draft-pks", "perjanjian-pembahasan-pks", "perjanjian-finalisasi-pks", "pelaksanaan-persiapan", "pelaksanaan-dalam-proses", "selesai"].includes(c.workflowStatus) && (
               <DokumenPKSSection c={c} />
             )}
@@ -172,7 +189,7 @@ function Dl({ fields }: { fields: [string, React.ReactNode][] }) {
   );
 }
 
-function InformasiBantuan({ c }: { c: Contribution }) {
+function InformasiBantuan({ c, deskripsi }: { c: Contribution; deskripsi?: string }) {
   const isSchoolProgram = c.program === "Infrastruktur Digital" || c.program === "Revitalisasi Sekolah";
   const isPlatformGtk = c.program === "Pengembangan Platform Digital" || c.program === "Pendampingan Pelatihan GTK";
   const isBahanAjar = c.program === "Bahan Ajar Digital";
@@ -231,6 +248,13 @@ function InformasiBantuan({ c }: { c: Contribution }) {
             ["Informasi Tambahan", c.infoTambahan],
           ]}
         />
+      )}
+
+      {deskripsi && (
+        <div className="mt-3 text-sm">
+          <p className="text-gray-400">Deskripsi dari Mitra</p>
+          <p className="whitespace-pre-line text-gray-900">{deskripsi}</p>
+        </div>
       )}
 
       {isSchoolProgram && c.sekolahDetail && c.sekolahDetail.length > 0 && (

@@ -207,7 +207,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "templateSuratKuasa", label: "Download Template Surat Kuasa", type: "download-template" },
       { key: "file", label: "Unggah Draf Final PKS yang siap ditandatangani", type: "file", required: true },
       { key: "fileRencana", label: "Unggah rencana kerja final yang siap ditandatangani", type: "file", required: true },
-      { key: "fileSuratKuasa", label: "Unggah Surat Kuasa", type: "file", required: true },
+      { key: "fileSuratKuasa", label: "Unggah Surat Kuasa", type: "file" },
       { key: "fileLainnya", label: "Dokumen Lainnya", type: "file" },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan finalisasi..." },
     ],

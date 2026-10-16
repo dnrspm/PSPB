@@ -77,3 +77,55 @@ export function groupContributions(list: Contribution[]): ContributionGroup[] {
     };
   });
 }
+
+export interface PaketBantuanEntry {
+  id: string;
+  /** Kontribusi asal pengajuan; kosong untuk paket yang ditambahkan atau diganti mitra saat mengisi Data PKS. */
+  c?: Contribution;
+  jenis: string;
+  /** Deskripsi yang diinput mitra pada Data PKS ("" bila belum diisi). */
+  deskripsi: string;
+}
+
+/**
+ * Daftar paket dukungan sesuai isian terakhir Data PKS Mitra: paket yang dihapus
+ * mitra tidak ikut, paket yang ditambahkan mitra ikut. Sebelum Data PKS diisi,
+ * mengembalikan seluruh kontribusi pengajuan apa adanya.
+ */
+export function resolvePaketBantuan(siblings: Contribution[]): PaketBantuanEntry[] {
+  const asIs = (): PaketBantuanEntry[] =>
+    siblings.map((c) => ({ id: c.id, c, jenis: c.program, deskripsi: "" }));
+
+  const latest = siblings
+    .flatMap((c) => c.aktivitas)
+    .filter((a) => a.action === "Isi Data PKS Mitra" && a.fields)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    .pop();
+  const fields = latest?.fields;
+  if (!fields) return asIs();
+
+  const entries: PaketBantuanEntry[] = [];
+  for (const c of siblings) {
+    const jenis = fields[`${c.id}__jenis`];
+    if (jenis) {
+      entries.push({
+        id: c.id,
+        // Paket diganti mitra = bantuan lain, diperlakukan seperti paket tambahan.
+        c: jenis === c.program ? c : undefined,
+        jenis,
+        deskripsi: fields[`${c.id}__deskripsi`] ?? "",
+      });
+    }
+  }
+  for (const key of Object.keys(fields)) {
+    const m = key.match(/^(.+)__jenis$/);
+    if (m && !siblings.some((c) => c.id === m[1])) {
+      entries.push({
+        id: m[1],
+        jenis: fields[key],
+        deskripsi: fields[`${m[1]}__deskripsi`] ?? "",
+      });
+    }
+  }
+  return entries.length > 0 ? entries : asIs();
+}
