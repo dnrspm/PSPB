@@ -51,6 +51,10 @@ interface SectionDef {
 const join = (parts: (string | undefined | null)[]) =>
   parts.filter((p) => p && String(p).trim()).join(" - ");
 
+/** Alamat demo bila belum ada data alamat sesungguhnya di kontribusi. */
+const prefillAlamat = (c: Contribution) =>
+  c.wilayah ? `Kantor Pusat, ${c.wilayah}` : "Kantor Pusat";
+
 /** Pilihan ruang lingkup lain yang disepakati para pihak. */
 const RUANG_LINGKUP_LAIN = [
   "Pengembangan kurikulum, perangkat ajar, dan sumber belajar, termasuk inovasi dan pengembangan model pembelajaran.",
@@ -104,6 +108,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Data Lembaga",
         required: true,
         full: true,
+        prefill: prefillAlamat,
       },
       {
         key: "Website/email resmi",
@@ -117,6 +122,7 @@ const BASE_SECTIONS: SectionDef[] = [
         label: "Nama notaris",
         group: "Akta Pendirian",
         required: true,
+        prefill: () => "Siti Rahmawati, S.H., M.Kn.",
       },
       {
         key: "No. akta pendirian",
@@ -124,6 +130,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Akta Pendirian",
         placeholder: "Contoh: 123",
         required: true,
+        prefill: () => "12",
       },
       {
         key: "Tanggal akta pendirian",
@@ -131,6 +138,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Akta Pendirian",
         type: "date",
         required: true,
+        prefill: () => "2015-03-10",
       },
       {
         key: "No. SK pengesahan pendirian",
@@ -138,6 +146,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Akta Pendirian",
         placeholder: "Contoh: AHU-0012345.AH.01.01.Tahun 2020",
         required: true,
+        prefill: () => "AHU-0012345.AH.01.01.Tahun 2015",
       },
       {
         key: "Nama notaris akta perubahan",
@@ -191,6 +200,8 @@ const BASE_SECTIONS: SectionDef[] = [
         placeholder: "Nomor dan tanggal Surat Keputusan penunjukan",
         required: true,
         full: true,
+        prefill: (c) =>
+          `SK Penunjukan ${c.jabatan || "Pejabat"} No. 001/SK-Internal/${new Date(c.submissionDate).getFullYear()}`,
       },
     ],
   },
@@ -241,6 +252,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Data Institusi",
         required: true,
         full: true,
+        prefill: prefillAlamat,
       },
       {
         key: "Nomor telepon",
@@ -276,7 +288,7 @@ const BASE_SECTIONS: SectionDef[] = [
         group: "Narahubung (PIC)",
         required: true,
         full: true,
-        prefill: (c) => (c.pic && c.pic.includes("@") ? c.pic : ""),
+        prefill: (c) => (c.pic && c.pic.includes("@") ? c.pic : c.email || ""),
       },
     ],
   },
@@ -291,6 +303,7 @@ const BASE_SECTIONS: SectionDef[] = [
         type: "select",
         options: ["Ya", "Tidak"],
         required: true,
+        prefill: () => "Ya",
       },
       {
         key: KEY_PENYALUR,
@@ -299,6 +312,7 @@ const BASE_SECTIONS: SectionDef[] = [
         type: "select",
         options: ["Ya", "Tidak"],
         required: true,
+        prefill: () => "Tidak",
       },
       {
         key: "Nama lembaga penyalur",
@@ -383,6 +397,7 @@ function buildKontribusiFields(entries: PaketEntry[]): FieldDef[] {
     required: true,
     subheading: "Jangka Waktu Kerja Sama",
     placeholder: "Contoh: 3",
+    prefill: () => "3",
   });
   return fields;
 }
@@ -444,6 +459,10 @@ export function DataPksMitraModal({
     setEntries((prev) => [...prev, { id: `paket${Date.now()}` }]);
   const removeEntry = (id: string) =>
     setEntries((prev) => prev.filter((e) => e.id !== id));
+  // Hanya PT Schneider Electric Indonesia (demo multi paket dalam satu pengajuan) yang boleh
+  // menambah/menghapus paket dukungan di sini; mitra lain punya satu paket tetap per kontribusi
+  // (tampilannya view-only / tidak bisa diubah).
+  const entriesLocked = contribution.instansi !== "PT Schneider Electric Indonesia";
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
@@ -738,7 +757,9 @@ export function DataPksMitraModal({
                 showSubheading: boolean,
                 suppressGroup = false,
               ) => {
-                const disabled = !!f.dependsOnPenyalur && penyalurDisabled;
+                const disabled =
+                  (!!f.dependsOnPenyalur && penyalurDisabled) ||
+                  (!!f.entryId && entriesLocked);
                 const invalid = !!errors[f.key];
                 const showGroup =
                   !suppressGroup && !!f.group && f.group !== arr[i - 1]?.group;
@@ -938,7 +959,7 @@ export function DataPksMitraModal({
                                     <span className="text-sm font-semibold text-gray-700">
                                       {block.group}
                                     </span>
-                                    {block.fields[0]?.entryId && (
+                                    {block.fields[0]?.entryId && !entriesLocked && (
                                       <button
                                         type="button"
                                         onClick={() =>
@@ -963,16 +984,17 @@ export function DataPksMitraModal({
                                 </div>
                               </div>
                             ))}
-                            {entries.length < PAKET_DUKUNGAN_OPTIONS.length && (
-                              <button
-                                type="button"
-                                onClick={addEntry}
-                                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 px-3 py-2.5 text-sm text-gray-600 transition-colors hover:border-blue-400 hover:text-blue-600"
-                              >
-                                <Plus className="h-4 w-4" />
-                                Tambah paket dukungan
-                              </button>
-                            )}
+                            {!entriesLocked &&
+                              entries.length < PAKET_DUKUNGAN_OPTIONS.length && (
+                                <button
+                                  type="button"
+                                  onClick={addEntry}
+                                  className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 px-3 py-2.5 text-sm text-gray-600 transition-colors hover:border-blue-400 hover:text-blue-600"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  Tambah paket dukungan
+                                </button>
+                              )}
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">

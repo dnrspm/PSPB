@@ -23,6 +23,7 @@ type SortDir = "asc" | "desc";
 
 interface WorkspaceTableProps {
   contributions: Contribution[];
+  statusFilter?: string;
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -41,7 +42,7 @@ function formatDate(date: Date): string {
 
 const PAGE_SIZE = 10;
 
-export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
+export function WorkspaceTable({ contributions, statusFilter }: WorkspaceTableProps) {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -55,7 +56,8 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
 
   const sorted = groupContributions(
     contributions.filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
-  ).sort((a, b) => {
+  ).filter((g) => !statusFilter || g.workflowStatus === statusFilter)
+  .sort((a, b) => {
     const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     if (aMasuk !== bMasuk) return bMasuk - aMasuk;
@@ -151,7 +153,19 @@ export function WorkspaceTable({ contributions }: WorkspaceTableProps) {
                   className={`cursor-pointer transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-100" : "hover:bg-gray-100"}`}
                 >
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-800 leading-snug">{g.instansi}</div>
+                    <div className="flex flex-col items-start gap-1">
+                      {g.items.length > 1 && (
+                        <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700 whitespace-nowrap">
+                          Demo flow multiple kontribusi
+                        </span>
+                      )}
+                      {g.instansi === "PT Mitra Digital Nusantara" && (
+                        <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 whitespace-nowrap">
+                          Demo flow per kontribusi
+                        </span>
+                      )}
+                      <div className="text-sm font-medium text-gray-800 leading-snug">{g.instansi}</div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {g.items.map((c) => (

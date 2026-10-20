@@ -142,6 +142,10 @@ export function ContributionFormWizard({
       const now = new Date();
       const baseId = `mtr-${now.getTime()}`;
       const namaMitra = profile?.namaPerusahaan || formData.organization || "";
+      // Khusus demo PT Schneider Electric Indonesia: pengajuan dengan lebih dari satu
+      // paket dukungan tetap digabung jadi satu row di dasbor (submissionId sama).
+      // Mitra lain tetap dipecah per paket dukungan (lihat perubahan id di bawah).
+      const isSchneiderDemo = namaMitra === "PT Schneider Electric Indonesia";
 
       selectedProgram.forEach((programIndex, idx) => {
         const program = cardDetails[programIndex];
@@ -209,8 +213,12 @@ export function ContributionFormWizard({
         }
 
         const newContribution: Contribution = {
-          id: `${baseId}-${idx}`,
-          submissionId: baseId,
+          // Id sengaja TIDAK memakai pola lama "mtr-<timestamp>-<index>": setiap paket
+          // dukungan dalam satu pengajuan harus tetap tampil sebagai row terpisah di dasbor
+          // (operasional maupun mitra), kecuali untuk demo PT Schneider Electric Indonesia
+          // yang sengaja digabung lewat submissionId di bawah.
+          id: `${baseId}-p${idx}`,
+          ...(isSchneiderDemo ? { submissionId: baseId } : {}),
           namaMitra,
           instansi: namaMitra,
           narahubung: profile?.nama || formData.fullName || "",

@@ -30,13 +30,19 @@ function DemoAccountList() {
         <span className="ml-auto text-xs text-[var(--text-subdued)]">{open ? "Tutup" : "Lihat"}</span>
       </button>
       {open && (
-        <ul className="mt-2 space-y-1 text-xs text-[var(--text-subdued)]">
-          <li>maya.anggraini@se.com</li>
-          <li>reza.firmansyah@telkom.co.id</li>
-          <li>sri.wahyuni@ypn.or.id</li>
-          <li>hendra.kusuma@bri.co.id</li>
-          <li>aditya.putra@gojek.com</li>
-          <li>dll. (lihat data kontribusi mock)</li>
+        <ul className="mt-2 space-y-2.5 text-xs text-[var(--text-subdued)]">
+          <li className="flex flex-col items-start gap-1">
+            <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700 whitespace-nowrap">
+              Demo flow multiple kontribusi
+            </span>
+            <span>maya.anggraini@se.com (PT Schneider Electric Indonesia)</span>
+          </li>
+          <li className="flex flex-col items-start gap-1">
+            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 whitespace-nowrap">
+              Demo flow per kontribusi
+            </span>
+            <span>dian.permata@mitradigital.co.id (PT Mitra Digital Nusantara)</span>
+          </li>
           <li className="mt-1 font-medium text-[var(--text-default)]">
             Semua kata sandi demo: <code className="rounded bg-[var(--gray-5)] px-1 py-0.5">Mitra@123</code>
           </li>

@@ -24,7 +24,6 @@ export default function WorkspacePage() {
       if (q && ![c.namaMitra, c.program, c.paketBantuan].some((s) => (s || "").toLowerCase().includes(q)))
         return false;
       if (filters.program && c.program !== filters.program) return false;
-      if (filters.status && c.workflowStatus !== filters.status) return false;
       return true;
     });
   }, [contributions, filters]);
@@ -40,7 +39,7 @@ export default function WorkspacePage() {
           <FilterBar filters={filters} onChange={setFilters} programs={programs} />
 
           {/* Table */}
-          <WorkspaceTable contributions={filtered} />
+          <WorkspaceTable contributions={filtered} statusFilter={filters.status} />
 
       </div>
     </div>

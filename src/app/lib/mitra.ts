@@ -57,8 +57,17 @@ function writeJson(key: string, value: unknown): void {
 
 // ---------- Seeding from mock contributions ----------
 
+// Demo login dibatasi hanya untuk dua instansi ini (lihat permintaan: sisakan
+// akun demo untuk PT Schneider Electric Indonesia dan PT Mitra Digital Nusantara saja).
+const ALLOWED_DEMO_INSTANSI = new Set([
+  "PT Schneider Electric Indonesia",
+  "PT Mitra Digital Nusantara",
+]);
+
 function seedAccounts(): MitraProfile[] {
-  return mockContributions.map((c) => {
+  return mockContributions
+    .filter((c) => ALLOWED_DEMO_INSTANSI.has(c.instansi))
+    .map((c) => {
     const nama = c.narahubung || c.namaMitra || "";
     return {
       email: c.email,
@@ -88,18 +97,23 @@ function seedAccounts(): MitraProfile[] {
 }
 
 export function getMitraAccounts(): MitraProfile[] {
-  const accounts = readJson<MitraProfile[]>(ACCOUNTS_KEY, []);
-  // Merge: pastikan semua akun seed dari mockContributions selalu ada,
-  // meski localStorage sudah terisi dari versi data sebelumnya (mis. kontribusi baru c022).
+  const stored = readJson<MitraProfile[]>(ACCOUNTS_KEY, []);
   const seeded = seedAccounts();
-  const existingEmails = new Set(accounts.map((a) => a.email.toLowerCase()));
+  const allowedSeedEmails = new Set(seeded.map((s) => s.email.toLowerCase()));
+  const allMockEmails = new Set(mockContributions.map((c) => c.email.toLowerCase()));
+  // Buang akun demo lama (localStorage) dari instansi yang sudah tidak diizinkan lagi,
+  // tapi tetap simpan akun yang didaftarkan manual lewat registrasi mitra.
+  const kept = stored.filter(
+    (a) => allowedSeedEmails.has(a.email.toLowerCase()) || !allMockEmails.has(a.email.toLowerCase())
+  );
+  // Merge: pastikan semua akun seed yang diizinkan selalu ada.
+  const existingEmails = new Set(kept.map((a) => a.email.toLowerCase()));
   const missing = seeded.filter((s) => !existingEmails.has(s.email.toLowerCase()));
-  if (missing.length > 0) {
-    const merged = [...accounts, ...missing];
+  const merged = [...kept, ...missing];
+  if (merged.length !== stored.length || missing.length > 0) {
     writeJson(ACCOUNTS_KEY, merged);
-    return merged;
   }
-  return accounts;
+  return merged;
 }
 
 function saveAccounts(accounts: MitraProfile[]): void {
