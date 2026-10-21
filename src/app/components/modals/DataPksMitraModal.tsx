@@ -68,6 +68,22 @@ const RUANG_LINGKUP_LAIN = [
 /** Paket dukungan yang tersedia di platform. */
 const PAKET_DUKUNGAN_OPTIONS = cardDetails.map((d) => d.title);
 
+/** Placeholder deskripsi bantuan per jenis paket dukungan. */
+const PAKET_DUKUNGAN_PLACEHOLDERS: Record<string, string> = {
+  "Infrastruktur Digital":
+    "Penyediaan sarana dan prasarana fisik untuk ekosistem pembelajaran digital, seperti penyediaan listrik, penyediaan internet satelit, dan sistem elektronik.",
+  "Pengembangan Platform Digital":
+    "Pengembangan fungsi di Rumah Pendidikan mulai dari tahap perencanaan, pembangunan, dan pemeliharaan sistem serta fitur digital yang mendukung layanan pembelajaran.",
+  "Pendampingan Pelatihan GTK":
+    "Penyediaan materi dan pelatihan yang bertujuan untuk meningkatkan kompetensi pendidik.",
+  "Bahan Ajar Digital":
+    "Penyediaan sumber materi belajar digital untuk mendukung proses belajar murid.",
+  "Revitalisasi Sekolah":
+    "Penyediaan sarana dasar seperti rehabilitasi ruang, pembangunan unit sekolah baru, pembangunan ruang tambahan, dan pengadaan peralatan.",
+  "Kebutuhan Pendidikan Lainnya":
+    "Berbagai kebutuhan pendidikan, seperti kegiatan pendidikan, publikasi dan komunikasi, beasiswa, dan lainnya.",
+};
+
 /** Placeholder pilihan ruang lingkup lainnya (sementara). */
 const RUANG_LINGKUP_LAINNYA = [
   "Ruang lingkup lainnya 1 (placeholder)",
@@ -757,9 +773,16 @@ export function DataPksMitraModal({
                 showSubheading: boolean,
                 suppressGroup = false,
               ) => {
+                const isDeskripsiBantuan =
+                  !!f.entryId && f.key.endsWith("__deskripsi");
                 const disabled =
                   (!!f.dependsOnPenyalur && penyalurDisabled) ||
-                  (!!f.entryId && entriesLocked);
+                  (!!f.entryId && entriesLocked && !isDeskripsiBantuan);
+                const deskripsiPlaceholder = isDeskripsiBantuan
+                  ? PAKET_DUKUNGAN_PLACEHOLDERS[
+                      values[`${f.entryId}__jenis`] ?? ""
+                    ]
+                  : undefined;
                 const invalid = !!errors[f.key];
                 const showGroup =
                   !suppressGroup && !!f.group && f.group !== arr[i - 1]?.group;
@@ -816,7 +839,7 @@ export function DataPksMitraModal({
                         onChange={(e) => setValue(f.key, e.target.value)}
                         disabled={disabled}
                         rows={3}
-                        placeholder={f.placeholder}
+                        placeholder={f.placeholder ?? deskripsiPlaceholder}
                         className={`${inputClass} focus:ring-1 focus:ring-blue-100`}
                       />
                     ) : f.type === "checkboxes" ? (
