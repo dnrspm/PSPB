@@ -629,8 +629,10 @@ export function DataPksMitraModal({
               <p className="flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Setelah data disimpan, draf dokumen Perjanjian Kerja Sama
-                  (PKS) akan terunduh secara otomatis ke perangkat Anda.
+                  Setelah data disimpan, sistem akan membuat draf dokumen
+                  Perjanjian Kerja Sama (PKS). Proses ini membutuhkan waktu;
+                  dokumen akan muncul di bagian Dokumen PKS setelah selesai
+                  diproses.
                 </span>
               </p>
               <p className="text-sm text-gray-500">

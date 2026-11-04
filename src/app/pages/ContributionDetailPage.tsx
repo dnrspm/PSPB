@@ -1,4 +1,5 @@
 import { LembagaPenyalurSection } from "../components/LembagaPenyalurSection";
+import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../lib/pksGenerateScenario";
 import { DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
 import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
@@ -28,6 +29,7 @@ function formatDate(date: Date): string {
 }
 
 export default function ContributionDetailPage({ currentUser }: ContributionDetailPageProps) {
+  const pksScenario = usePksScenario();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("info");
@@ -909,7 +911,7 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
         const namaDokumenSigned = "PKS yang sudah ditandatangani.pdf";
         const dokumenPks: DokumenPksItem[] = [
           { nama: namaDokumen, oleh: "Biro Kerjasama", tanggal, waktu },
-          ...(pksLog ? [{ nama: namaDokumenMitra, oleh: pksLog.actor, tanggal: mitraTanggal!, waktu: mitraWaktu! }] : []),
+          ...(pksLog ? [{ nama: namaDokumenMitra, oleh: pksLog.actor, tanggal: mitraTanggal!, waktu: mitraWaktu!, ...resolvePksDocState(new Date(pksLog.timestamp).getTime(), pksScenario) }] : []),
           ...(isAfterBiroHukum ? [{ nama: namaDokumenBiroHukum, oleh: "Biro Hukum", tanggal: biroHukumTanggal, waktu: biroHukumWaktu }] : []),
           ...(isPelaksanaanPersiapan || isDalamProses || isSelesai ? [{ nama: namaDokumenTtd, oleh: signLog ? signLog.actor : "Biro Kerjasama", tanggal: signTanggal, waktu: signWaktu }] : []),
           ...(isDalamProses || isSelesai ? [{ nama: namaDokumenSigned, oleh: signedLog ? signedLog.actor : "Biro Kerjasama", tanggal: signedTanggal, waktu: signedWaktu }] : []),
@@ -940,7 +942,7 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser }:
                   : "Menunggu Data Mitra"}
               </span>
             </div>
-            <DokumenPksList items={dokumenPks} />
+            <DokumenPksList items={dokumenPks} onRetry={retryPksGenerate} />
           </div>
         );
       })()}

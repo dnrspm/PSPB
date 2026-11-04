@@ -84,7 +84,9 @@ export default function MitraLayout() {
 
   return (
     <div className="min-h-screen bg-[var(--gray-0)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--gray-10)] bg-[var(--surface-default)]">
+      <div className="sticky top-0 z-40">
+      <div id="prototype-control-slot" />
+      <header className="border-b border-[var(--gray-10)] bg-[var(--surface-default)]">
         <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4" ref={ref}>
           <Link to="/" className="flex items-center">
             <LogoKemitraanPendidikan withWordmark={false} className="h-[24px] w-[137px]" />
@@ -144,6 +146,7 @@ export default function MitraLayout() {
           </div>
         </div>
       </header>
+      </div>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
         <Breadcrumb />

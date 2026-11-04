@@ -1,4 +1,6 @@
 import { LembagaPenyalurSection } from "../../components/LembagaPenyalurSection";
+import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../../lib/pksGenerateScenario";
+import { PksScenarioControl } from "../../components/PksScenarioControl";
 import { DokumenPksList, type DokumenPksItem } from "../../components/DokumenPksList";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -105,6 +107,7 @@ export default function MitraKontribusiDetailPage() {
                   {formatDate(c.lastUpdate)}
                 </span>
               </p>
+              {pksFilled && <PksScenarioControl />}
             </div>
 
             {resolvePaketBantuan(bantuanList).map((e) =>
@@ -307,6 +310,7 @@ function InformasiBantuan({ c, deskripsi }: { c: Contribution; deskripsi?: strin
 }
 
 function DokumenPKSSection({ c }: { c: Contribution }) {
+  const pksScenario = usePksScenario();
   const draftLog =
     [...c.aktivitas].reverse().find((a) => a.action === "Setuju Hasil Audiensi") ||
     c.aktivitas[c.aktivitas.length - 1];
@@ -393,7 +397,7 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
 
   const dokumenPks: DokumenPksItem[] = [
     { nama: namaDokumen, oleh: "Biro Kerjasama", tanggal, waktu },
-    ...(pksLog ? [{ nama: namaDokumenMitra, oleh: pksLog.actor, tanggal: mitraTanggal!, waktu: mitraWaktu! }] : []),
+    ...(pksLog ? [{ nama: namaDokumenMitra, oleh: pksLog.actor, tanggal: mitraTanggal!, waktu: mitraWaktu!, ...resolvePksDocState(new Date(pksLog.timestamp).getTime(), pksScenario) }] : []),
     ...(isAfterBiroHukum ? [{ nama: namaDokumenBiroHukum, oleh: "Biro Hukum", tanggal: biroHukumTanggal, waktu: biroHukumWaktu }] : []),
     ...(isPelaksanaanPersiapan || isDalamProses || isSelesai ? [{ nama: namaDokumenTtd, oleh: signLog ? signLog.actor : "Biro Kerjasama", tanggal: signTanggal, waktu: signWaktu }] : []),
     ...(isDalamProses || isSelesai ? [{ nama: namaDokumenSigned, oleh: signedLog ? signedLog.actor : "Biro Kerjasama", tanggal: signedTanggal, waktu: signedWaktu }] : []),
@@ -425,7 +429,7 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
         </span>
       }
     >
-      <DokumenPksList items={dokumenPks} />
+      <DokumenPksList items={dokumenPks} onRetry={retryPksGenerate} />
     </SectionCard>
   );
 }
