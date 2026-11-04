@@ -14,10 +14,10 @@ export interface DokumenPksItem {
   lambat?: boolean;
 }
 
-const sedangDiproses = (d: DokumenPksItem, now: number) =>
+export const sedangDiproses = (d: DokumenPksItem, now: number) =>
   d.status === "processing" ||
   (d.status !== "failed" && d.diprosesHingga !== undefined && now < d.diprosesHingga);
-const gagal = (d: DokumenPksItem) => d.status === "failed";
+export const gagal = (d: DokumenPksItem) => d.status === "failed";
 
 function Keterangan({ d, now, muted }: { d: DokumenPksItem; now: number; muted?: boolean }) {
   if (gagal(d))
@@ -65,7 +65,7 @@ function Keterangan({ d, now, muted }: { d: DokumenPksItem; now: number; muted?:
   );
 }
 
-function useNow(items: DokumenPksItem[]) {
+export function useNow(items: DokumenPksItem[]) {
   const [now, setNow] = useState(() => Date.now());
   const deadline = Math.max(0, ...items.map((i) => i.diprosesHingga ?? 0));
   useEffect(() => {
@@ -189,5 +189,33 @@ export function DokumenPksList({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Badge status segmen Dokumen PKS. Jika `item` (draf PKS Mitra) diberikan, badge
+ * belum selesai digenerate, badge tetap menampilkan `labelSebelumnya`.
+ */
+export function StatusDokumenPksBadge({
+  label,
+  labelSebelumnya,
+  className,
+  item,
+}: {
+  label: string;
+  /** Label yang ditampilkan selama `item` masih diproses atau gagal. */
+  labelSebelumnya: string;
+  className: string;
+  item?: DokumenPksItem;
+}) {
+  const now = useNow(item ? [item] : []);
+  // Selama draf belum selesai digenerate (diproses/gagal), status tetap seperti sebelum data diisi.
+  const belumSelesai = !!item && (gagal(item) || sedangDiproses(item, now));
+  const text = belumSelesai ? labelSebelumnya : label;
+  const cls = className;
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+      {text}
+    </span>
   );
 }

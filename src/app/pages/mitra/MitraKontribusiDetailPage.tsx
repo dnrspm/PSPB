@@ -1,7 +1,7 @@
 import { LembagaPenyalurSection } from "../../components/LembagaPenyalurSection";
 import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../../lib/pksGenerateScenario";
 import { PksScenarioControl } from "../../components/PksScenarioControl";
-import { DokumenPksList, type DokumenPksItem } from "../../components/DokumenPksList";
+import { StatusDokumenPksBadge, DokumenPksList, type DokumenPksItem } from "../../components/DokumenPksList";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Info, Package, Upload } from "lucide-react";
@@ -408,14 +408,9 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
       icon={<FileText className="h-4 w-4" />}
       title="Dokumen PKS"
       actions={
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-            isDalamProses || isSelesai
-              ? "border-green-200 bg-green-50 text-green-700"
-              : "border-amber-200 bg-amber-50 text-amber-700"
-          }`}
-        >
-          {isPelaksanaanPersiapan
+        <StatusDokumenPksBadge
+        labelSebelumnya="Menunggu Data Mitra"
+        label={isPelaksanaanPersiapan
             ? "Menunggu Ditandatangani"
             : isDalamProses || isSelesai
             ? "Sudah Ditandatangani"
@@ -426,7 +421,9 @@ function DokumenPKSSection({ c }: { c: Contribution }) {
             : pksFilled
             ? "Menunggu Draf Biro Hukum"
             : "Menunggu Data Mitra"}
-        </span>
+        className={isDalamProses || isSelesai ? "border-green-200 bg-green-50 text-green-700" : "border-amber-200 bg-amber-50 text-amber-700"}
+        item={!(isPelaksanaanPersiapan || isDalamProses || isSelesai || isPembahasan || isFinalisasi) ? dokumenPks.find((d) => d.nama === namaDokumenMitra) : undefined}
+      />
       }
     >
       <DokumenPksList items={dokumenPks} onRetry={retryPksGenerate} />
