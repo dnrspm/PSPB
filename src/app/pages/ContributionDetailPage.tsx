@@ -2,8 +2,8 @@ import { LembagaPenyalurSection } from "../components/LembagaPenyalurSection";
 import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../lib/pksGenerateScenario";
 import { StatusDokumenPksBadge, DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
 import { useState, useCallback, useMemo } from "react";
-import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock } from "lucide-react";
+import { useParams, useNavigate, useLocation } from "react-router";
+import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
 import { getSubmissionSiblings, resolvePaketBantuan } from "../lib/contributionGroups";
 import { StatusBadge } from "../components/workspace/StatusBadge";
@@ -15,6 +15,10 @@ import type { SessionUser } from "../lib/auth";
 import type { Contribution, DampakPelaksanaan, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 import { groupWilayah, realisasiTerkini } from "../lib/dampak";
+import { antreanKontribusi, bolehVerval, formatAngka, formatWaktuVerval, kunciAntrean, type AntreanItem } from "../lib/verval";
+import type { VervalKeputusan } from "../types/contribution";
+import { VervalStatusBadge } from "../components/workspace/VervalStatusBadge";
+import { RiwayatVervalModal, VervalDampakModal } from "../components/modals/VervalDampakModal";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
@@ -32,7 +36,8 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const pksScenario = usePksScenario();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>("info");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<Tab>(() => (location.state as { tab?: Tab } | null)?.tab ?? "info");
   const [, forceRefresh] = useState(0);
   const [activeAction, setActiveAction] = useState<WorkflowAction | null>(null);
 
@@ -182,7 +187,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
                 </div>
               </div>
             )}
-            {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} />}
+            {activeTab === "pelaksanaan" && <PelaksanaanTab contribution={c} currentUser={currentUser} onChanged={handleDokumenChange} />}
           </div>
         </div>
     </div>
@@ -1296,33 +1301,91 @@ function WilayahBreakdown({ wilayah }: { wilayah: string }) {
   );
 }
 
-function DampakGrid({ dampak }: { dampak: DampakPelaksanaan }) {
+function DampakGrid({ dampak, semula }: { dampak: DampakPelaksanaan; semula?: Partial<DampakPelaksanaan> }) {
+  const sel = (label: string, key: "siswa" | "guru" | "satuanPendidikan" | "bantuan") => {
+    const direvisi = !!semula && Object.prototype.hasOwnProperty.call(semula, key);
+    return (
+      <div>
+        <dt className="text-gray-400">{label}</dt>
+        <dd className={direvisi ? "font-semibold text-sky-800" : "text-gray-900"}>{formatAngka(dampak[key])}</dd>
+        {direvisi && <dd className="text-xs text-gray-500">semula {formatAngka(semula![key] as number | undefined)}</dd>}
+      </div>
+    );
+  };
+  const wilayahDirevisi = !!semula && Object.prototype.hasOwnProperty.call(semula, "wilayah");
   return (
     <div className="space-y-3">
-      <dl className="grid grid-cols-3 gap-x-8 gap-y-3 text-sm">
-        <div>
-          <dt className="text-gray-400">Siswa Terdampak</dt>
-          <dd className="text-gray-900">{dampak.siswa.toLocaleString("id-ID")}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-400">Guru Terdampak</dt>
-          <dd className="text-gray-900">{dampak.guru.toLocaleString("id-ID")}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-400">Satuan Pendidikan</dt>
-          <dd className="text-gray-900">{dampak.satuanPendidikan.toLocaleString("id-ID")}</dd>
-        </div>
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
+        {sel("Siswa Terdampak", "siswa")}
+        {sel("Guru Terdampak", "guru")}
+        {sel("Satuan Pendidikan", "satuanPendidikan")}
+        {sel("Penerima Bantuan", "bantuan")}
       </dl>
       <div className="border-t border-gray-200 pt-3 text-sm">
         <p className="mb-1.5 text-sm text-gray-400">Kabupaten/Kota</p>
         <WilayahBreakdown wilayah={dampak.wilayah || ""} />
+        {wilayahDirevisi && (
+          <p className="mt-1.5 text-xs text-gray-500">semula {(semula!.wilayah as string) || "–"}</p>
+        )}
       </div>
     </div>
   );
 }
 
-function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
+/** Status, catatan, dan aksi verval untuk satu target atau satu log realisasi. */
+function VervalPanel({
+  item, boleh, onAksi, onRiwayat,
+}: {
+  item: AntreanItem;
+  boleh: boolean;
+  onAksi: (k: VervalKeputusan) => void;
+  onRiwayat: () => void;
+}) {
+  const v = item.verval;
+  const pending = v.status === "menunggu";
+  const subjek = item.jenis === "target" ? "Target" : "Realisasi";
+  const meta = pending
+    ? `Diajukan oleh ${v.diajukanOleh} pada ${formatWaktuVerval(v.diajukanPada)}.`
+    : v.status === "tidak-relevan"
+    ? `Ditandai tidak relevan oleh ${v.diperbaruiOleh} pada ${formatWaktuVerval(v.diperbaruiPada)}.`
+    : `Diverval oleh ${v.diperbaruiOleh} pada ${formatWaktuVerval(v.diperbaruiPada)}.`;
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <VervalStatusBadge status={v.status} />
+        <span className="text-xs text-gray-500">{meta}</span>
+      </div>
+      {v.catatan && !pending && (
+        <p className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+          <span className="font-medium">{v.status === "tidak-relevan" ? "Alasan tidak relevan" : v.status === "disetujui-revisi" ? "Catatan revisi" : "Catatan verval"}:</span>{" "}
+          {v.catatan}
+        </p>
+      )}
+      {pending && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+          <span className="text-sm text-amber-900">
+            {boleh ? `${subjek} ini menunggu verifikasi Anda.` : `${subjek} ini menunggu verval Biro Kerja Sama.`}
+          </span>
+          {boleh && (
+            <div className="flex gap-2">
+              <button onClick={() => onAksi("tidak-relevan")} className="rounded-md border border-red-300 bg-white px-2.5 py-1 text-sm font-medium text-red-700 hover:bg-red-50">Tidak relevan</button>
+              <button onClick={() => onAksi("revisi")} className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Setuju dengan revisi</button>
+              <button onClick={() => onAksi("setuju")} className="rounded-md bg-blue-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-blue-700">Setuju</button>
+            </div>
+          )}
+        </div>
+      )}
+      <button onClick={onRiwayat} className="text-xs font-medium text-blue-600 hover:text-blue-700">Lihat riwayat verval</button>
+    </div>
+  );
+}
+
+function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribution: Contribution; currentUser: SessionUser; onChanged: () => void }) {
   const p = c.pelaksanaan;
+  const boleh = bolehVerval(currentUser.role);
+  const [modal, setModal] = useState<{ key: string; keputusan: VervalKeputusan } | null>(null);
+  const [riwayat, setRiwayat] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
 
   if (!p) {
     return (
@@ -1335,15 +1398,42 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
     );
   }
 
-  const timeline = [...(p.progressUpdates || [])].sort(
-    (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
-  );
+  const antrean = antreanKontribusi(c.id);
+  const itemTarget = antrean.find((i) => i.key === kunciAntrean(c.id));
+  const itemLog = (id: string) => antrean.find((i) => i.key === kunciAntrean(c.id, id));
+  const jumlahMenunggu = antrean.filter((i) => i.verval.status === "menunggu").length;
+  const modalItem = modal ? antrean.find((i) => i.key === modal.key) : undefined;
+  const riwayatItem = riwayat ? antrean.find((i) => i.key === riwayat) : undefined;
 
-  // Realisasi terkini = total seluruh log penyaluran (fallback: realisasi tersimpan)
+  const timeline = [...(p.progressUpdates || [])]
+    // Realisasi yang ditandai tidak relevan tidak ditampilkan di detail kontribusi
+    .filter((u) => u.verval?.status !== "tidak-relevan")
+    .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+
+  // Realisasi terkini = total log yang sudah disetujui (fallback: realisasi tersimpan untuk data lama)
   const realisasi = realisasiTerkini(p);
+  const targetDihitung = p.targetDampak && p.vervalTarget?.status !== "tidak-relevan" ? p.targetDampak : undefined;
+  const logPending = (p.progressUpdates || []).filter((u) => u.realisasi && u.verval?.status === "menunggu").length;
+
+  const capaian: { label: string; real: number; target?: number }[] = [
+    { label: "Siswa terdampak", real: realisasi?.siswa ?? 0, target: targetDihitung?.siswa },
+    { label: "Guru terdampak", real: realisasi?.guru ?? 0, target: targetDihitung?.guru },
+    { label: "Satuan pendidikan terdampak", real: realisasi?.satuanPendidikan ?? 0, target: targetDihitung?.satuanPendidikan },
+    { label: "Satuan pendidikan penerima bantuan", real: realisasi?.bantuan ?? 0, target: targetDihitung?.bantuan },
+  ];
 
   return (
     <div className="max-w-3xl space-y-4">
+      {jumlahMenunggu > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            {jumlahMenunggu.toLocaleString("id-ID")} data dampak pada kontribusi ini menunggu verval Biro Kerja Sama.
+            Dampak baru dihitung di dasbor setelah disetujui.
+          </span>
+        </div>
+      )}
+
       {/* Ringkasan pelaksanaan */}
       <div className="rounded-lg border border-gray-100 bg-white shadow-sm p-5">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">Status Pelaksanaan</h3>
@@ -1358,18 +1448,65 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
           </div>
         </dl>
 
-        {p.targetDampak && (
+        {p.targetDampak && p.vervalTarget?.status !== "tidak-relevan" && (
           <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
-            <DampakGrid dampak={p.targetDampak} />
+            <DampakGrid dampak={p.targetDampak} semula={p.vervalTarget?.nilaiSemula} />
+            {itemTarget && (
+              <VervalPanel
+                item={itemTarget}
+                boleh={boleh}
+                onAksi={(k) => setModal({ key: itemTarget.key, keputusan: k })}
+                onRiwayat={() => setRiwayat(itemTarget.key)}
+              />
+            )}
+          </div>
+        )}
+        {p.targetDampak && p.vervalTarget?.status === "tidak-relevan" && itemTarget && (
+          <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
+            <p className="text-sm text-gray-600">Target dampak ditandai tidak relevan dan tidak dihitung.</p>
+            <VervalPanel item={itemTarget} boleh={boleh} onAksi={() => {}} onRiwayat={() => setRiwayat(itemTarget.key)} />
           </div>
         )}
 
         {realisasi && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak Terkini</p>
-            <p className="mb-2 text-xs text-green-700/80">Akumulasi seluruh log penyaluran bantuan</p>
+            <p className="mb-2 text-xs text-green-700/80">
+              Akumulasi log penyaluran yang sudah disetujui
+              {logPending > 0 && `. ${logPending.toLocaleString("id-ID")} log masih menunggu verval dan belum dihitung`}
+            </p>
             <DampakGrid dampak={realisasi} />
+          </div>
+        )}
+
+        {targetDihitung && realisasi && (
+          <div className="mt-3 rounded-md border border-gray-100 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Capaian terhadap target</p>
+            <div className="space-y-3">
+              {capaian
+                .filter((r) => r.target !== undefined && r.target > 0)
+                .map((r) => {
+                  const pct = Math.min(100, Math.round((r.real / (r.target as number)) * 100));
+                  return (
+                    <div key={r.label}>
+                      <div className="mb-1 flex items-baseline justify-between text-sm">
+                        <span className="text-gray-700">{r.label}</span>
+                        <span className="text-gray-900">
+                          {formatAngka(r.real)} dari {formatAngka(r.target)} ({pct}%)
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={r.label}>
+                        <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+            {p.vervalTarget?.status === "menunggu" && (
+              <p className="mt-3 text-xs text-gray-500">Target dampak masih menunggu verval, jadi persentase ini belum final.</p>
+            )}
           </div>
         )}
       </div>
@@ -1385,52 +1522,84 @@ function PelaksanaanTab({ contribution: c }: { contribution: Contribution }) {
           <div className="relative">
             <div className="absolute bottom-2 left-[7px] top-2 w-0.5 bg-gray-100" />
             <div className="space-y-5">
-              {timeline.map((entry, i) => (
-                <div key={entry.id} className="relative flex gap-3">
-                  <div className="relative z-10 mt-1 shrink-0">
-                    <div className={`h-4 w-4 rounded-full border-2 bg-white ${i === 0 ? "border-blue-600" : "border-gray-200"}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-gray-800">{entry.judul}</p>
-                      <span className="text-xs text-gray-400">{formatTanggal(entry.tanggal)}</span>
+              {timeline.map((entry, i) => {
+                const item = itemLog(entry.id);
+                return (
+                  <div key={entry.id} className="relative flex gap-3">
+                    <div className="relative z-10 mt-1 shrink-0">
+                      <div className={`h-4 w-4 rounded-full border-2 bg-white ${i === 0 ? "border-blue-600" : "border-gray-200"}`} />
                     </div>
-                    {entry.deskripsi && (
-                      <p className="mt-1 text-sm leading-relaxed text-gray-600">{entry.deskripsi}</p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-400">Dicatat oleh {entry.actor}</p>
-                    {entry.realisasi && (
-                      <div className="mt-2 rounded-md border border-green-100 bg-green-50 p-3">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
-                        <DampakGrid dampak={entry.realisasi} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-gray-800">{entry.judul}</p>
+                        <span className="text-xs text-gray-400">{formatTanggal(entry.tanggal)}</span>
                       </div>
-                    )}
-                    {entry.dokumen.length > 0 && (
-                      <div className="mt-2 space-y-1.5">
-                        {entry.dokumen.map((doc) => (
-                          <div key={doc.id} className="flex items-center gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm">
-                            <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                            <span className="flex-1 truncate text-gray-700">{doc.name}</span>
-                            <a
-                              href={doc.url || "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                            >
-                              Lihat
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      {entry.deskripsi && (
+                        <p className="mt-1 text-sm leading-relaxed text-gray-600">{entry.deskripsi}</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-400">Dicatat oleh {entry.actor}</p>
+                      {entry.realisasi && (
+                        <div className="mt-2 rounded-md border border-green-100 bg-green-50 p-3">
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
+                          <DampakGrid dampak={entry.realisasi} semula={entry.verval?.nilaiSemula} />
+                          {item && (
+                            <VervalPanel
+                              item={item}
+                              boleh={boleh}
+                              onAksi={(k) => setModal({ key: item.key, keputusan: k })}
+                              onRiwayat={() => setRiwayat(item.key)}
+                            />
+                          )}
+                        </div>
+                      )}
+                      {entry.dokumen.length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          {entry.dokumen.map((doc) => (
+                            <div key={doc.id} className="flex items-center gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm">
+                              <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                              <span className="flex-1 truncate text-gray-700">{doc.name}</span>
+                              <a
+                                href={doc.url || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                              >
+                                Lihat
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
 
+      {modal && modalItem && (
+        <VervalDampakModal
+          item={modalItem}
+          keputusanAwal={modal.keputusan}
+          oleh={currentUser.name}
+          onClose={() => setModal(null)}
+          onDone={(pesan) => {
+            setModal(null);
+            setToast(pesan);
+            onChanged();
+            setTimeout(() => setToast(""), 4000);
+          }}
+        />
+      )}
+      {riwayatItem && <RiwayatVervalModal item={riwayatItem} onClose={() => setRiwayat(null)} />}
+      {toast && (
+        <div role="status" className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-lg">
+          <CheckCircle2 className="h-4 w-4 text-green-400" />
+          <span>{toast}</span>
+        </div>
+      )}
     </div>
   );
 }

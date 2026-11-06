@@ -52,6 +52,36 @@ export interface ProgressUpdate {
   dokumen: Document[];
   /** Realisasi dampak yang tercatat pada update ini (opsional, bisa 0). */
   realisasi?: DampakPelaksanaan;
+  /** Status verval realisasi. Kosong pada data lama (dianggap baseline yang sudah dihitung). */
+  verval?: VervalDampak;
+}
+
+/** Status verval dampak. Terpisah dari WorkflowState kontribusi. */
+export type VervalStatus = "menunggu" | "disetujui" | "disetujui-revisi" | "tidak-relevan";
+
+/** Keputusan yang bisa diambil Biro KS saat verval. */
+export type VervalKeputusan = "setuju" | "revisi" | "tidak-relevan";
+
+export interface VervalRiwayat {
+  at: Date;
+  by: string;
+  jenis: "ajukan" | VervalKeputusan;
+  text: string;
+  note?: string;
+}
+
+export interface VervalDampak {
+  status: VervalStatus;
+  diajukanOleh: string;
+  diajukanPada: Date;
+  /** Terakhir diperbarui: pengaju saat masih menunggu, verifikator setelah diputuskan. */
+  diperbaruiOleh: string;
+  diperbaruiPada: Date;
+  /** Catatan verval terakhir (alasan revisi atau alasan tidak relevan). */
+  catatan?: string;
+  /** Nilai yang semula diajukan, hanya untuk field yang direvisi. */
+  nilaiSemula?: Partial<DampakPelaksanaan>;
+  riwayat: VervalRiwayat[];
 }
 
 /** Jumlah penerima manfaat: target saat persiapan, realisasi saat terlaksana. */
@@ -59,6 +89,8 @@ export interface DampakPelaksanaan {
   siswa: number;
   guru: number;
   satuanPendidikan: number;
+  /** Jumlah satuan pendidikan penerima bantuan. Kosong pada data lama. */
+  bantuan?: number;
   wilayah: string;
 }
 
@@ -70,6 +102,8 @@ export interface PelaksanaanInfo {
   dokumentasi: Document[];
   progressUpdates?: ProgressUpdate[];
   targetDampak?: DampakPelaksanaan;
+  /** Status verval target dampak. Target diverval lebih awal, tidak menunggu kontribusi selesai. */
+  vervalTarget?: VervalDampak;
   realisasiDampak?: DampakPelaksanaan;
 }
 

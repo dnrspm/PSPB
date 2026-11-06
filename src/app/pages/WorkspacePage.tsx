@@ -3,9 +3,11 @@ import { MonitoringSummary } from "../components/workspace/MonitoringSummary";
 import { FilterBar, type FilterState } from "../components/workspace/FilterBar";
 import { WorkspaceTable } from "../components/workspace/WorkspaceTable";
 import { getContributions } from "../data/mockWorkspace";
+import { useVervalLayout } from "../lib/vervalLayout";
 import type { Contribution } from "../types/contribution";
 
 export default function WorkspacePage() {
+  const tampilVerval = useVervalLayout() === "tabel";
   const [contributions] = useState<Contribution[]>(getContributions);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -33,13 +35,13 @@ export default function WorkspacePage() {
         <div className="mx-auto max-w-screen-2xl space-y-6 p-6">
 
           {/* Monitoring Summary */}
-          <MonitoringSummary contributions={contributions} />
+          <MonitoringSummary contributions={contributions} tampilVerval={tampilVerval} />
 
           {/* Filter bar */}
-          <FilterBar filters={filters} onChange={setFilters} programs={programs} />
+          <FilterBar filters={filters} onChange={setFilters} programs={programs} tampilVerval={tampilVerval} />
 
           {/* Table */}
-          <WorkspaceTable contributions={filtered} statusFilter={filters.status} />
+          <WorkspaceTable contributions={filtered} statusFilter={filters.status} tampilVerval={tampilVerval} vervalFilter={filters.verval} />
 
       </div>
     </div>

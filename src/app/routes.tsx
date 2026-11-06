@@ -7,6 +7,7 @@ import WorkspaceLayout from "./pages/WorkspaceLayout";
 import WorkspacePageWrapper from "./pages/WorkspacePageWrapper";
 import ContributionDetailWrapper from "./pages/ContributionDetailWrapper";
 import StakeholderPage from "./pages/StakeholderPage";
+import VervalDampakPage from "./pages/VervalDampakPage";
 import MitraLayout from "./components/layout/MitraLayout";
 import MitraLoginPage from "./pages/mitra/MitraLoginPage";
 import MitraRegisterPage from "./pages/mitra/MitraRegisterPage";
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
     errorElement: <ErrorFallback />,
     children: [
       { index: true, element: <WorkspacePageWrapper /> },
+      { path: "verval-dampak", element: <VervalDampakPage /> },
       { path: "pemangku-kepentingan", element: <StakeholderPage /> },
       { path: ":id", element: <ContributionDetailWrapper /> },
     ],

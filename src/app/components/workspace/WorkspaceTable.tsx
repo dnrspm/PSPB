@@ -5,6 +5,8 @@ import type { Contribution } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
+import { ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
+import { VervalStatusBadge } from "./VervalStatusBadge";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
 
@@ -21,9 +23,40 @@ function getPicEmail(c: Contribution): string {
 }
 type SortDir = "asc" | "desc";
 
+export type VervalFilter = "" | "menunggu" | "diverval" | "belum-ada";
+
 interface WorkspaceTableProps {
   contributions: Contribution[];
   statusFilter?: string;
+  /** Tampilkan kolom status verval dampak (opsi tanpa menu Verval Dampak). */
+  tampilVerval?: boolean;
+  vervalFilter?: VervalFilter;
+}
+
+/** Sel ringkas status verval: badge gabungan + keterangan jumlah. */
+function SelVerval({ h, jenis, onOpen }: { h: HitungStatus; jenis: "target" | "realisasi"; onOpen: () => void }) {
+  const status = statusGabungan(h);
+  if (!status) return <span className="text-sm text-gray-400">–</span>;
+  const ket =
+    jenis === "realisasi"
+      ? `${h.total} log${h.menunggu > 0 ? ` · ${h.menunggu} menunggu` : ""}`
+      : h.total > 1
+      ? `${h.total} target${h.menunggu > 0 ? ` · ${h.menunggu} menunggu` : ""}`
+      : "";
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      title="Buka tab Pelaksanaan untuk memverval"
+      className="flex flex-col items-start gap-0.5 text-left"
+    >
+      <VervalStatusBadge status={status} />
+      {ket && <span className="text-[12px] leading-4 text-gray-600">{ket}</span>}
+    </button>
+  );
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -42,7 +75,7 @@ function formatDate(date: Date): string {
 
 const PAGE_SIZE = 10;
 
-export function WorkspaceTable({ contributions, statusFilter }: WorkspaceTableProps) {
+export function WorkspaceTable({ contributions, statusFilter, tampilVerval = false, vervalFilter = "" }: WorkspaceTableProps) {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -57,6 +90,14 @@ export function WorkspaceTable({ contributions, statusFilter }: WorkspaceTablePr
   const sorted = groupContributions(
     contributions.filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
   ).filter((g) => !statusFilter || g.workflowStatus === statusFilter)
+  .filter((g) => {
+    if (!tampilVerval || !vervalFilter) return true;
+    const r = ringkasVerval(g.items);
+    const ada = r.target.total + r.realisasi.total > 0;
+    if (vervalFilter === "belum-ada") return !ada;
+    if (vervalFilter === "menunggu") return r.menunggu > 0;
+    return ada && r.menunggu === 0;
+  })
   .sort((a, b) => {
     const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
     const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
@@ -106,6 +147,12 @@ export function WorkspaceTable({ contributions, statusFilter }: WorkspaceTablePr
     { key: "program", label: "Paket Dukungan" },
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
+    ...(tampilVerval
+      ? [
+          { key: null, label: "Verval Target" },
+          { key: null, label: "Verval Realisasi" },
+        ]
+      : []),
     { key: "lastUpdate", label: "Last Update" },
     { key: "pic", label: "PIC" },
     { key: null, label: "" },
@@ -176,6 +223,18 @@ export function WorkspaceTable({ contributions, statusFilter }: WorkspaceTablePr
                   <td className="px-4 py-3">
                     <StatusBadge state={g.workflowStatus} />
                   </td>
+                  {tampilVerval && (() => {
+                    const r = ringkasVerval(g.items);
+                    // Buka kontribusi yang punya data menunggu verval lebih dulu
+                    const target = g.items.find((c) => ringkasVerval([c]).menunggu > 0) || g.primary;
+                    const buka = () => navigate(`/workspace/${target.id}`, { state: { tab: "pelaksanaan" } });
+                    return (
+                      <>
+                        <td className="px-4 py-3 align-top"><SelVerval h={r.target} jenis="target" onOpen={buka} /></td>
+                        <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} jenis="realisasi" onOpen={buka} /></td>
+                      </>
+                    );
+                  })()}
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                     {formatDate(g.lastUpdate)}
                   </td>

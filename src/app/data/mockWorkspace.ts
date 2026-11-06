@@ -1,10 +1,63 @@
-import type { Contribution } from "../types/contribution";
+import type { Contribution, DampakPelaksanaan, PelaksanaanInfo, VervalDampak, VervalKeputusan, VervalRiwayat, VervalStatus } from "../types/contribution";
+import { akumulasiRealisasi } from "../lib/dampak";
 
 const now = new Date();
 const d = (daysAgo: number) => new Date(now.getTime() - daysAgo * 86400000);
 
 // Satu pengajuan berisi beberapa program (jenis dukungan) untuk contoh multi-dukungan.
 const SCHNEIDER_SUBMISSION_ID = "sub-schneider-electric";
+
+/** Data contoh verval dampak: pengajuan oleh PIC, lalu (opsional) keputusan Biro KS. */
+function seedVerval(o: {
+  jenis: "target" | "realisasi";
+  status: VervalStatus;
+  oleh: string;
+  hariLaluAjukan: number;
+  verifikator?: string;
+  hariLaluVerval?: number;
+  catatan?: string;
+  nilaiSemula?: Partial<DampakPelaksanaan>;
+  perubahan?: string;
+}): VervalDampak {
+  const label = o.jenis === "target" ? "target dampak" : "realisasi dampak";
+  const diajukan = d(o.hariLaluAjukan);
+  const riwayat: VervalRiwayat[] = [
+    {
+      at: diajukan,
+      by: o.oleh,
+      jenis: "ajukan",
+      text: o.jenis === "target" ? "Mengajukan target dampak saat Lanjut Pelaksanaan" : "Menambahkan log penyaluran dengan realisasi dampak",
+    },
+  ];
+  if (o.status === "menunggu") {
+    return { status: "menunggu", diajukanOleh: o.oleh, diajukanPada: diajukan, diperbaruiOleh: o.oleh, diperbaruiPada: diajukan, riwayat };
+  }
+  const keputusan: VervalKeputusan = o.status === "disetujui" ? "setuju" : o.status === "disetujui-revisi" ? "revisi" : "tidak-relevan";
+  const text =
+    keputusan === "setuju"
+      ? `Menyetujui ${label}`
+      : keputusan === "revisi"
+      ? `Menyetujui ${label} dengan revisi (${o.perubahan})`
+      : `Menandai ${label} tidak relevan`;
+  const diverval = d(o.hariLaluVerval ?? 0);
+  riwayat.push({ at: diverval, by: o.verifikator || "Andi Pratama", jenis: keputusan, text, ...(o.catatan ? { note: o.catatan } : {}) });
+  return {
+    status: o.status,
+    diajukanOleh: o.oleh,
+    diajukanPada: diajukan,
+    diperbaruiOleh: o.verifikator || "Andi Pratama",
+    diperbaruiPada: diverval,
+    catatan: o.catatan,
+    nilaiSemula: o.nilaiSemula,
+    riwayat,
+  };
+}
+
+/** Realisasi tersimpan selalu mengikuti log yang sudah disetujui. */
+function denganTotal(p: PelaksanaanInfo): PelaksanaanInfo {
+  const total = akumulasiRealisasi(p.progressUpdates);
+  return total ? { ...p, realisasiDampak: total } : p;
+}
 
 export const mockContributions: Contribution[] = [
   {
@@ -322,14 +375,34 @@ export const mockContributions: Contribution[] = [
       { id: "a018", timestamp: d(120), actor: "Siti Rahmawati", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
       { id: "a019", timestamp: d(14), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Lanjut Pelaksanaan", fromState: "pelaksanaan-persiapan", toState: "pelaksanaan-persiapan" },
     ],
-    pelaksanaan: {
+    pelaksanaan: denganTotal({
       progress: 60,
       startDate: d(14),
       latestUpdate: "Instalasi di SMAN 1 dan SMAN 2 selesai. SMPN 6 dijadwalkan minggu depan.",
       dokumentasi: [
         { id: "d016", name: "Dok Pelaksanaan - Batch 1.pdf", type: "dokumentasi", uploadedAt: d(7), uploadedBy: "Budi Santoso" },
       ],
-    },
+      targetDampak: { siswa: 3150, guru: 186, satuanPendidikan: 3, bantuan: 3, wilayah: "Kota Makassar (Sulawesi Selatan)" },
+      vervalTarget: seedVerval({ jenis: "target", status: "menunggu", oleh: "Budi Santoso", hariLaluAjukan: 1 }),
+      progressUpdates: [
+        {
+          id: "pu-c009-1", judul: "Instalasi fiber optik SMAN 1 Makassar selesai",
+          deskripsi: "Fiber optik dedicated 100 Mbps terpasang dan sudah dipakai untuk pembelajaran.",
+          tanggal: d(9), actor: "Budi Santoso",
+          dokumen: [{ id: "d016a", name: "BA_Instalasi_SMAN1_Makassar.pdf", type: "dokumentasi", uploadedAt: d(9), uploadedBy: "Budi Santoso" }],
+          realisasi: { siswa: 1064, guru: 62, satuanPendidikan: 1, bantuan: 1, wilayah: "Kota Makassar (Sulawesi Selatan)" },
+          verval: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Budi Santoso", hariLaluAjukan: 9, hariLaluVerval: 7 }),
+        },
+        {
+          id: "pu-c009-2", judul: "Hotspot area belajar SMAN 2 Makassar aktif",
+          deskripsi: "Hotspot aktif di area belajar. Pelatihan singkat untuk guru TIK sudah dilakukan.",
+          tanggal: d(2), actor: "Budi Santoso",
+          dokumen: [{ id: "d016b", name: "Dokumentasi_SMAN2_Makassar.pdf", type: "dokumentasi", uploadedAt: d(2), uploadedBy: "Budi Santoso" }],
+          realisasi: { siswa: 1020, guru: 61, satuanPendidikan: 1, bantuan: 1, wilayah: "Kota Makassar (Sulawesi Selatan)" },
+          verval: seedVerval({ jenis: "realisasi", status: "menunggu", oleh: "Budi Santoso", hariLaluAjukan: 2 }),
+        },
+      ],
+    }),
   },
   {
     id: "c010",
@@ -368,6 +441,22 @@ export const mockContributions: Contribution[] = [
       progress: 35,
       startDate: d(20),
       dokumentasi: [],
+      targetDampak: { siswa: 1200, guru: 340, satuanPendidikan: 45, bantuan: 45, wilayah: "Kota Denpasar (Bali), Kabupaten Badung (Bali)" },
+      vervalTarget: seedVerval({
+        jenis: "target", status: "disetujui-revisi", oleh: "Andi Pratama", hariLaluAjukan: 18,
+        verifikator: "Budi Santoso", hariLaluVerval: 16,
+        catatan: "Jumlah siswa disesuaikan dengan data Dapodik semester ganjil 2026/2027.",
+        nilaiSemula: { siswa: 1500 }, perubahan: "Siswa: 1.500 → 1.200",
+      }),
+      progressUpdates: [
+        {
+          id: "pu-c010-1", judul: "Modul tahap 1 didistribusikan ke SMK sasaran",
+          deskripsi: "Modul digital marketing tahap 1 mulai dipakai di 12 SMK sasaran.",
+          tanggal: d(3), actor: "Andi Pratama", dokumen: [],
+          realisasi: { siswa: 410, guru: 96, satuanPendidikan: 12, bantuan: 12, wilayah: "Kota Denpasar (Bali)" },
+          verval: seedVerval({ jenis: "realisasi", status: "menunggu", oleh: "Andi Pratama", hariLaluAjukan: 3 }),
+        },
+      ],
     },
   },
   {
@@ -406,6 +495,8 @@ export const mockContributions: Contribution[] = [
       progress: 70,
       startDate: d(25),
       dokumentasi: [],
+      targetDampak: { siswa: 8000, guru: 520, satuanPendidikan: 40, bantuan: 40, wilayah: "Kota Surabaya (Jawa Timur), Kota Malang (Jawa Timur)" },
+      vervalTarget: seedVerval({ jenis: "target", status: "menunggu", oleh: "Budi Santoso", hariLaluAjukan: 2 }),
     },
   },
   {
@@ -442,14 +533,46 @@ export const mockContributions: Contribution[] = [
       { id: "a024", timestamp: d(150), actor: "Ahmad Fauzi", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
       { id: "a025", timestamp: d(7), actor: "Andi Pratama", actorRole: "biro-perencanaan", action: "Terlaksana", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
     ],
-    pelaksanaan: {
+    pelaksanaan: denganTotal({
       progress: 100,
       startDate: d(60),
       completionDate: d(7),
       dokumentasi: [
         { id: "d021", name: "BAST - Astra.pdf", type: "bast", uploadedAt: d(7), uploadedBy: "Andi Pratama" },
       ],
-    },
+      targetDampak: { siswa: 2400, guru: 96, satuanPendidikan: 6, bantuan: 6, wilayah: "Kota Bekasi (Jawa Barat), Kabupaten Karawang (Jawa Barat)" },
+      vervalTarget: seedVerval({ jenis: "target", status: "disetujui", oleh: "Andi Pratama", hariLaluAjukan: 62, hariLaluVerval: 60, verifikator: "Budi Santoso" }),
+      progressUpdates: [
+        {
+          id: "pu-c012-1", judul: "Toilet SDN 1 Bekasi selesai dibangun",
+          deskripsi: "Tiga unit toilet baru di tiga sekolah Kota Bekasi sudah dipakai.",
+          tanggal: d(40), actor: "Andi Pratama", dokumen: [],
+          realisasi: { siswa: 1200, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kota Bekasi (Jawa Barat)" },
+          verval: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Andi Pratama", hariLaluAjukan: 40, hariLaluVerval: 38, verifikator: "Budi Santoso" }),
+        },
+        {
+          id: "pu-c012-2", judul: "Toilet tiga sekolah di Karawang selesai",
+          deskripsi: "Tiga unit toilet di Karawang selesai dan diserahterimakan.",
+          tanggal: d(20), actor: "Andi Pratama", dokumen: [],
+          realisasi: { siswa: 1180, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kabupaten Karawang (Jawa Barat)" },
+          verval: seedVerval({
+            jenis: "realisasi", status: "disetujui-revisi", oleh: "Andi Pratama", hariLaluAjukan: 20,
+            hariLaluVerval: 18, verifikator: "Budi Santoso",
+            catatan: "Jumlah siswa disesuaikan dengan data Dapodik.", nilaiSemula: { siswa: 1350 }, perubahan: "Siswa: 1.350 → 1.180",
+          }),
+        },
+        {
+          id: "pu-c012-3", judul: "Serah terima toilet Karawang (catatan ganda)",
+          deskripsi: "Serah terima yang sama tercatat dua kali.",
+          tanggal: d(19), actor: "Andi Pratama", dokumen: [],
+          realisasi: { siswa: 1180, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kabupaten Karawang (Jawa Barat)" },
+          verval: seedVerval({
+            jenis: "realisasi", status: "tidak-relevan", oleh: "Andi Pratama", hariLaluAjukan: 19,
+            hariLaluVerval: 18, verifikator: "Budi Santoso", catatan: "Log tercatat ganda untuk serah terima yang sama.",
+          }),
+        },
+      ],
+    }),
   },
   {
     id: "c013",
@@ -787,7 +910,8 @@ export const mockContributions: Contribution[] = [
       progress: 90,
       startDate: d(80),
       dokumentasi: [],
-      targetDampak: { siswa: 1600, guru: 90, satuanPendidikan: 2, wilayah: "Kota Semarang (Jawa Tengah)" },
+      targetDampak: { siswa: 1600, guru: 90, satuanPendidikan: 2, bantuan: 2, wilayah: "Kota Semarang (Jawa Tengah)" },
+      vervalTarget: seedVerval({ jenis: "target", status: "disetujui", oleh: "Andi Pratama", hariLaluAjukan: 82, hariLaluVerval: 80, verifikator: "Budi Santoso" }),
       progressUpdates: [
         { id: "pu-c021-1", judul: "Renovasi ruang perpustakaan selesai", deskripsi: "Renovasi dua ruang perpustakaan rampung, koleksi buku mulai didistribusikan.", tanggal: d(40), actor: "Andi Pratama", dokumen: [] },
       ],
@@ -1009,7 +1133,18 @@ export const mockContributions: Contribution[] = [
   },
 ];
 
-const PERSIST_KEY = "pspb_contributions_store_v1";
+// v2: data contoh kini memuat status verval dampak
+const PERSIST_KEY = "pspb_contributions_store_v2";
+
+function reviveVerval(v?: VervalDampak): VervalDampak | undefined {
+  if (!v) return v;
+  return {
+    ...v,
+    diajukanPada: new Date(v.diajukanPada),
+    diperbaruiPada: new Date(v.diperbaruiPada),
+    riwayat: (v.riwayat || []).map((r) => ({ ...r, at: new Date(r.at) })),
+  };
+}
 
 function reviveContribution(raw: Contribution): Contribution {
   const c: Contribution = { ...raw };
@@ -1022,11 +1157,13 @@ function reviveContribution(raw: Contribution): Contribution {
     const p = { ...c.pelaksanaan };
     if (p.startDate) p.startDate = new Date(p.startDate);
     if (p.completionDate) p.completionDate = new Date(p.completionDate);
+    if (p.vervalTarget) p.vervalTarget = reviveVerval(p.vervalTarget);
     p.dokumentasi = (p.dokumentasi || []).map((d) => ({ ...d, uploadedAt: new Date(d.uploadedAt) }));
     if (p.progressUpdates) {
       p.progressUpdates = p.progressUpdates.map((u) => ({
         ...u,
         tanggal: new Date(u.tanggal),
+        verval: reviveVerval(u.verval),
         dokumen: (u.dokumen || []).map((d) => ({ ...d, uploadedAt: new Date(d.uploadedAt) })),
       }));
     }

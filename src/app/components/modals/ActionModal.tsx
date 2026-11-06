@@ -5,7 +5,8 @@ import { ACTION_LABELS, WORKFLOW_STATE_LABELS, INTERNAL_TEAM, PROGRAM_UNIT_KERJA
 import { getContributionById, updateContribution } from "../../data/mockWorkspace";
 import { useStakeholders } from "../../lib/useStakeholders";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
-import { akumulasiRealisasi, groupWilayah, realisasiTerkini } from "../../lib/dampak";
+import { akumulasiRealisasi, groupWilayah, realisasiTercatat } from "../../lib/dampak";
+import { vervalBaru } from "../../lib/verval";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
@@ -219,10 +220,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "filePKS", label: "Unggah PKS yang Sudah Ditandatangani", type: "file", required: true },
       { key: "fileRencana", label: "Unggah Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
       { key: "fileLainnya", label: "Unggah Dokumen Lainnya", type: "file", multiple: true },
-      { key: "targetHeader", label: "Target Dampak", type: "section-header" },
+      { key: "targetHeader", label: "Target Dampak (akan diverval Biro Kerja Sama)", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
+      { key: "bantuan", label: "Satuan Pendidikan Penerima Bantuan", type: "number", required: true, placeholder: "0" },
       { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten", required: true },
       { key: "notes", label: "Keterangan", type: "textarea", placeholder: "Catatan penandatanganan dan persiapan pelaksanaan..." },
     ],
@@ -234,10 +236,11 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "deskripsi", label: "Deskripsi Progress Bantuan", type: "textarea", required: true, placeholder: "Jelaskan perkembangan penyaluran bantuan..." },
       { key: "tanggal", label: "Tanggal Kejadian", type: "date", required: true },
       { key: "file", label: "Dokumentasi atau Dokumen Pendukung", type: "file", multiple: true },
-      { key: "realisasiHeader", label: "Realisasi Dampak (opsional, isi bila sudah ada realisasi)", type: "section-header" },
+      { key: "realisasiHeader", label: "Realisasi Dampak (opsional, akan diverval Biro Kerja Sama)", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", placeholder: "0", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", placeholder: "0" },
+      { key: "bantuan", label: "Satuan Pendidikan Penerima Bantuan", type: "number", placeholder: "0" },
       { key: "wilayah", label: "Kabupaten/Kota yang Dibantu", type: "multi-kabupaten" },
     ],
   },
@@ -278,8 +281,12 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
 /** Realisasi terkumpul ditampilkan sebagai isian biasa yang terkunci (tidak bisa diubah di sini). */
 function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Contribution; onUpdateProgress?: () => void }) {
   const [wilayahTerbuka, setWilayahTerbuka] = useState(false);
-  const total = contribution.pelaksanaan ? realisasiTerkini(contribution.pelaksanaan) : undefined;
-  const jumlahLog = (contribution.pelaksanaan?.progressUpdates || []).filter((u) => u.realisasi).length;
+  const total = contribution.pelaksanaan ? realisasiTercatat(contribution.pelaksanaan) : undefined;
+  const logRealisasi = (contribution.pelaksanaan?.progressUpdates || []).filter(
+    (u) => u.realisasi && u.verval?.status !== "tidak-relevan"
+  );
+  const jumlahLog = logRealisasi.length;
+  const menungguVerval = logRealisasi.filter((u) => u.verval?.status === "menunggu").length;
   const { groups, lainnya, totalKabupaten } = groupWilayah(total?.wilayah || "");
 
   const angka = (n?: number) => (total ? (n || 0).toLocaleString("id-ID") : "");
@@ -306,7 +313,9 @@ function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Co
         <div className="flex gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
           <p className="text-xs leading-relaxed text-blue-800">
-            Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan. Perubahan realisasi dicatat lewat aksi{" "}
+            Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan
+            {menungguVerval > 0 && `, ${menungguVerval.toLocaleString("id-ID")} di antaranya masih menunggu verval Biro Kerja Sama`}
+            . Perubahan realisasi dicatat lewat aksi{" "}
             {updateProgressLink}.
           </p>
         </div>
@@ -473,7 +482,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const data = (progressVersion ? getContributionById(contribution.id) : undefined) || contribution;
 
   // Terlaksana wajib punya realisasi dampak yang sudah tercatat lewat Update Progress
-  const realisasiSiap = action !== "terlaksana" || !!(data.pelaksanaan && realisasiTerkini(data.pelaksanaan));
+  const realisasiSiap = action !== "terlaksana" || !!(data.pelaksanaan && realisasiTercatat(data.pelaksanaan));
 
   /** Tutup modal; bila sempat ada Update Progress tersimpan, beri tahu induk agar data disegarkan. */
   const handleClose = () => {
@@ -659,13 +668,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           siswa: parseInt((values.siswa as string) || "0", 10) || 0,
           guru: parseInt((values.guru as string) || "0", 10) || 0,
           satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
+          bantuan: parseInt((values.bantuan as string) || "0", 10) || 0,
           wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
         });
 
         // "Update Progress" tidak mengubah status; hanya menambah entri timeline penyaluran
         if (action === "update-progress") {
           // Realisasi opsional: hanya dicatat bila salah satu field dampak diisi
-          const dampakDiisi = ["siswa", "guru", "satuanPendidikan", "wilayah"].some(
+          const dampakDiisi = ["siswa", "guru", "satuanPendidikan", "bantuan", "wilayah"].some(
             (k) => values[k] !== undefined && values[k] !== ""
           );
           const realisasi = dampakDiisi ? readDampak() : undefined;
@@ -676,7 +686,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             tanggal: values.tanggal ? new Date(values.tanggal as string) : now,
             actor: currentUser.name,
             dokumen: newDocs,
-            ...(realisasi ? { realisasi } : {}),
+            // Realisasi baru masuk antrean verval Biro Kerja Sama
+            ...(realisasi ? { realisasi, verval: vervalBaru(currentUser.name, "realisasi", now) } : {}),
           };
           const updates = [...(base.progressUpdates || []), entry];
           const total = akumulasiRealisasi(updates);
@@ -692,6 +703,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           updated.pelaksanaan = {
             ...base,
             targetDampak: readDampak(),
+            // Target diverval lebih awal: langsung masuk antrean verval, tanpa menunggu kontribusi selesai
+            vervalTarget: vervalBaru(currentUser.name, "target", now),
             startDate: base.startDate || now,
           };
         } else {

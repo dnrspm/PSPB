@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Outlet, Navigate, useNavigate } from "react-router";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
+import { VervalLayoutControl } from "../components/layout/VervalLayoutControl";
 import { getSession } from "../lib/auth";
 import { resetContributions } from "../data/mockWorkspace";
 import { useContributionsSync } from "../lib/useContributions";
@@ -28,6 +29,7 @@ export default function WorkspaceLayout() {
     <div className="flex h-screen overflow-hidden bg-[#fafafa]">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <VervalLayoutControl />
         <Header user={user} onLogout={handleLogout} onReset={handleReset} />
         <main className="flex-1 overflow-hidden">
           <Outlet key={resetKey} context={{ currentUser: user }} />
