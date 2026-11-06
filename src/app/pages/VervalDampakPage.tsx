@@ -2,24 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate, useOutletContext } from "react-router";
 import { CheckCircle2, ChevronLeft, ChevronRight, Info, Search } from "lucide-react";
 import { useContributionsSync } from "../lib/useContributions";
-import { useVervalLayout } from "../lib/vervalLayout";
+import { PratinjauDasborPublik } from "../components/workspace/PratinjauDasborPublik";
+import { punyaMenuVerval, useVervalLayout } from "../lib/vervalLayout";
 import type { SessionUser } from "../lib/auth";
 import type { VervalKeputusan, VervalStatus } from "../types/contribution";
 import {
-  BASELINE_DAMPAK,
   bangunAntrean,
   bolehVerval,
   formatAngka,
   formatWaktuVerval,
   hitungMenunggu,
-  ringkasanDashboard,
   setujuiMassal,
   splitWilayah,
   teksField,
   unitKerjaOf,
   type AntreanItem,
   type DampakKey,
-  type JenisDampak,
 } from "../lib/verval";
 import { VervalStatusBadge } from "../components/workspace/VervalStatusBadge";
 import { RiwayatVervalModal, VervalDampakModal } from "../components/modals/VervalDampakModal";
@@ -70,18 +68,6 @@ function SelNilai({ item, field }: { item: AntreanItem; field: DampakKey }) {
   );
 }
 
-function KartuRingkasan({ label, total, baseline, tambahan }: { label: string; total: number; baseline: number; tambahan: number }) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-[13px] leading-5 text-gray-600">{label}</p>
-      <p className="text-[24px] font-semibold leading-7 text-gray-900">{formatAngka(total)}</p>
-      <p className="mt-1 text-[12px] leading-4 text-gray-600">
-        Baseline {formatAngka(baseline)} + <span className="font-semibold text-green-700">{formatAngka(tambahan)}</span> dari dampak disetujui
-      </p>
-    </div>
-  );
-}
-
 export default function VervalDampakPage() {
   useContributionsSync();
   const layout = useVervalLayout();
@@ -89,7 +75,6 @@ export default function VervalDampakPage() {
   const { currentUser } = useOutletContext<{ currentUser: SessionUser }>();
   const boleh = bolehVerval(currentUser.role);
 
-  const [tab, setTab] = useState<JenisDampak>("target");
   const [filter, setFilter] = useState<FilterStatus>("semua");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -106,8 +91,7 @@ export default function VervalDampakPage() {
 
   const antrean = bangunAntrean();
   const menunggu = hitungMenunggu(antrean);
-  const ringkasan = ringkasanDashboard(antrean);
-  const daftarTab = antrean.filter((i) => i.jenis === tab);
+  const daftarTab = antrean;
 
   const jumlahPerStatus = useMemo(() => {
     const n: Record<FilterStatus, number> = { semua: 0, menunggu: 0, disetujui: 0, "disetujui-revisi": 0, "tidak-relevan": 0 };
@@ -143,13 +127,6 @@ export default function VervalDampakPage() {
   const semuaDipilih = bisaDipilih.length > 0 && bisaDipilih.every((k) => dipilih[k]);
   const jumlahDipilih = Object.keys(dipilih).filter((k) => daftarTab.some((i) => i.key === k && i.verval.status === "menunggu")).length;
 
-  const pindahTab = (t: JenisDampak) => {
-    setTab(t);
-    setFilter("semua");
-    setPage(1);
-    setDipilih({});
-  };
-
   const modalItem = modal ? antrean.find((i) => i.key === modal.key) : undefined;
   const riwayatItem = riwayat ? antrean.find((i) => i.key === riwayat) : undefined;
 
@@ -169,17 +146,16 @@ export default function VervalDampakPage() {
     setToast(`${berhasil.toLocaleString("id-ID")} data dampak disetujui.`);
   };
 
-  const isTarget = tab === "target";
   const kolomNilai: { key: DampakKey; label: string }[] = [
-    { key: "siswa", label: isTarget ? "Target Siswa Terdampak" : "Realisasi Siswa Terdampak" },
-    { key: "guru", label: isTarget ? "Target Guru Terdampak" : "Realisasi Guru Terdampak" },
-    { key: "satuanPendidikan", label: isTarget ? "Target Satuan Pendidikan Terdampak" : "Realisasi Satuan Pendidikan Terdampak" },
-    { key: "bantuan", label: isTarget ? "Target Satuan Pendidikan Penerima Bantuan" : "Realisasi Satuan Pendidikan Penerima Bantuan" },
-    { key: "wilayah", label: isTarget ? "Target Kabupaten/Kota yang Dibantu" : "Realisasi Kabupaten/Kota yang Dibantu" },
+    { key: "siswa", label: "Realisasi Siswa Terdampak" },
+    { key: "guru", label: "Realisasi Guru Terdampak" },
+    { key: "satuanPendidikan", label: "Realisasi Satuan Pendidikan Terdampak" },
+    { key: "bantuan", label: "Realisasi Satuan Pendidikan Penerima Bantuan" },
+    { key: "wilayah", label: "Realisasi Kabupaten/Kota yang Dibantu" },
   ];
 
-  // Opsi tanpa menu Verval Dampak: halaman ini tidak dipakai, status verval ada di tabel dasbor
-  if (layout === "tabel") return <Navigate to="/workspace" replace />;
+  // Hanya dipakai pada opsi dengan menu Verval Dampak
+  if (!punyaMenuVerval(layout)) return <Navigate to="/workspace" replace />;
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50">
@@ -187,28 +163,13 @@ export default function VervalDampakPage() {
         <div>
           <h1 className="text-[22px] font-semibold leading-7 text-gray-900">Verval Dampak</h1>
           <p className="mt-1 max-w-3xl text-[15px] leading-[22px] text-gray-600">
-            Periksa target dan realisasi dampak yang diajukan, lalu setujui, setujui dengan revisi, atau tandai tidak relevan.
+            {layout === "menu-akhir" ? "Periksa total realisasi dampak setiap kontribusi yang sudah selesai, lalu setujui" : "Periksa realisasi dampak dari log penyaluran yang diajukan, lalu setujui"}, setujui dengan revisi, atau tandai tidak relevan.
             Keputusan di halaman ini langsung tercatat di tab Pelaksanaan pada detail kontribusi.
           </p>
         </div>
 
-        {/* Preview dasbor dampak */}
-        <section aria-label="Preview dasbor dampak">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-[15px] font-semibold leading-[22px] text-gray-900">Preview dasbor dampak</h2>
-            <p className="text-[13px] leading-5 text-gray-600">
-              {ringkasan.terakhir
-                ? `Terakhir diperbarui ${formatWaktuVerval(ringkasan.terakhir)}`
-                : "Belum ada dampak disetujui sejak baseline"}
-              . Hanya dampak berstatus Disetujui atau Disetujui dengan Revisi yang dihitung.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <KartuRingkasan label="Siswa telah merasakan manfaat program pendidikan" total={BASELINE_DAMPAK.siswa + ringkasan.siswa} baseline={BASELINE_DAMPAK.siswa} tambahan={ringkasan.siswa} />
-            <KartuRingkasan label="Guru telah merasakan dampak dari kontribusi" total={BASELINE_DAMPAK.guru + ringkasan.guru} baseline={BASELINE_DAMPAK.guru} tambahan={ringkasan.guru} />
-            <KartuRingkasan label="Satuan pendidikan telah menerima bantuan" total={BASELINE_DAMPAK.satuanPendidikan + ringkasan.satuanPendidikan} baseline={BASELINE_DAMPAK.satuanPendidikan} tambahan={ringkasan.satuanPendidikan} />
-          </div>
-        </section>
+        {/* Pratinjau dasbor publik: tujuan verval adalah memperbarui angka dampak di web publik */}
+        <PratinjauDasborPublik />
 
         {!boleh && (
           <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] leading-5 text-blue-800">
@@ -217,30 +178,13 @@ export default function VervalDampakPage() {
           </div>
         )}
 
-        {/* Tab target / realisasi */}
-        <div role="tablist" aria-label="Jenis data dampak" className="flex border-b border-gray-200">
-          {([
-            ["target", "Target Dampak", menunggu.target],
-            ["realisasi", "Realisasi Dampak", menunggu.realisasi],
-          ] as [JenisDampak, string, number][]).map(([key, label, n]) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => pindahTab(key)}
-              className={`relative flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold leading-[22px] transition-colors ${
-                tab === key ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {label}
-              {n > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 text-amber-800" title="Menunggu verval">
-                  {n}
-                </span>
-              )}
-              {tab === key && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600" />}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
+          <h2 className="text-[15px] font-semibold leading-[22px] text-gray-900">Realisasi Dampak</h2>
+          {menunggu.total > 0 && (
+            <span className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 text-amber-800" title="Menunggu verval">
+              {menunggu.total}
+            </span>
+          )}
         </div>
 
         {/* Filter status + pencarian */}
@@ -302,7 +246,7 @@ export default function VervalDampakPage() {
         {/* Tabel */}
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full" style={{ borderCollapse: "collapse" }} aria-label={isTarget ? "Daftar target dampak" : "Daftar realisasi dampak"}>
+            <table className="w-full" style={{ borderCollapse: "collapse" }} aria-label="Daftar realisasi dampak">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className={`${TH} min-w-[260px]`}>
@@ -322,7 +266,7 @@ export default function VervalDampakPage() {
                   </th>
                   <th className={`${TH} min-w-[200px]`}>Paket Dukungan</th>
                   <th className={`${TH} min-w-[130px]`}>Unit Kerja</th>
-                  {!isTarget && <th className={`${TH} min-w-[220px]`}>Log Penyaluran</th>}
+                  <th className={`${TH} min-w-[220px]`}>{layout === "menu-akhir" ? "Cakupan" : "Log Penyaluran"}</th>
                   {kolomNilai.map((k) => (
                     <th key={k.key} className={`${TH} ${k.key === "wilayah" ? "min-w-[200px]" : "min-w-[120px] text-right"}`}>
                       {k.label}
@@ -371,13 +315,15 @@ export default function VervalDampakPage() {
                         <div className="text-[13px] leading-5 text-gray-600">{c.paketBantuan}</div>
                       </td>
                       <td className="px-4 py-3 align-top text-[15px] leading-[22px] text-gray-900">{unitKerjaOf(c)}</td>
-                      {!isTarget && (
-                        <td className="px-4 py-3 align-top">
-                          <div className="text-[15px] leading-[22px] text-gray-900">{i.logJudul}</div>
-                          <div className="text-[13px] leading-5 text-gray-600">Tanggal kejadian: {formatTanggal(i.logTanggal)}</div>
-                          {i.logDokumen && <div className="truncate text-[13px] leading-5 text-gray-600" title={i.logDokumen}>{i.logDokumen}</div>}
-                        </td>
-                      )}
+                      <td className="px-4 py-3 align-top">
+                        <div className="text-[15px] leading-[22px] text-gray-900">
+                          {i.logId ? i.logJudul : i.jumlahLog ? `Total dari ${i.jumlahLog.toLocaleString("id-ID")} log penyaluran` : "Total realisasi kontribusi"}
+                        </div>
+                        <div className="text-[13px] leading-5 text-gray-600">
+                          {i.logId ? "Tanggal kejadian" : "Kontribusi selesai"}: {formatTanggal(i.logTanggal)}
+                        </div>
+                        {i.logDokumen && <div className="truncate text-[13px] leading-5 text-gray-600" title={i.logDokumen}>{i.logDokumen}</div>}
+                      </td>
                       {kolomNilai.map((k) => (
                         <td key={k.key} className="px-4 py-3 align-top">
                           <SelNilai item={i} field={k.key} />

@@ -18,13 +18,17 @@ export function VervalLayoutControl() {
           aria-label="Opsi penempatan verval dampak"
           className="rounded-md border border-violet-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-400"
         >
-          {VERVAL_LAYOUTS.map((l) => (
+          {VERVAL_LAYOUTS.map((l, i) => (
             <option key={l.value} value={l.value}>
-              {l.label}
+              {i + 1}. {l.label}
             </option>
           ))}
         </select>
-        {aktif && <span className="text-xs text-violet-600">{aktif.hint}</span>}
+        {aktif && (
+          <span className="text-xs text-violet-600">
+            <strong className="font-semibold">Opsi {VERVAL_LAYOUTS.indexOf(aktif) + 1}:</strong> {aktif.hint}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -42,7 +42,6 @@ function awalEdit(d: DampakPelaksanaan): Record<string, string> {
 
 export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }: VervalDampakModalProps) {
   const { contribution: c, dampak, verval } = item;
-  const isTarget = item.jenis === "target";
   const [keputusan, setKeputusan] = useState<VervalKeputusan>(keputusanAwal);
   const [edits, setEdits] = useState<Record<string, string>>(() => awalEdit(dampak));
   const [catatan, setCatatan] = useState("");
@@ -82,12 +81,10 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
     { label: "Paket dukungan", value: `${c.program}: ${c.paketBantuan}` },
     { label: "Unit kerja", value: unitKerjaOf(c) },
     { label: "Diajukan oleh", value: `${verval.diajukanOleh}, ${formatWaktuVerval(verval.diajukanPada)}` },
-    ...(!isTarget
-      ? [
-          { label: "Log penyaluran", value: item.logJudul || "-" },
-          ...(item.logDokumen ? [{ label: "Dokumen pendukung", value: item.logDokumen }] : []),
-        ]
-      : []),
+    item.logId
+      ? { label: "Log penyaluran", value: item.logJudul || "-" }
+      : { label: "Cakupan", value: item.jumlahLog ? `Total realisasi dari ${item.jumlahLog.toLocaleString("id-ID")} log penyaluran` : "Total realisasi kontribusi" },
+    ...(item.logDokumen ? [{ label: "Dokumen pendukung", value: item.logDokumen }] : []),
   ];
 
   const revisi = keputusan === "revisi";
@@ -97,12 +94,12 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={isTarget ? "Verval target dampak" : "Verval realisasi dampak"}
+        aria-label="Verval realisasi dampak"
         className="flex max-h-[88vh] w-full max-w-xl flex-col rounded-xl bg-white shadow-xl"
       >
         <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-[18px] font-semibold leading-6 text-gray-900">
-            {isTarget ? "Verval Target Dampak" : "Verval Realisasi Dampak"}
+            Verval Realisasi Dampak
           </h2>
           <button onClick={onClose} aria-label="Tutup" className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
@@ -152,7 +149,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
 
           <div>
             <p className="mb-1 text-[15px] font-semibold leading-[22px] text-gray-900">
-              {isTarget ? "Target dampak yang diajukan" : "Realisasi dampak yang diajukan"}
+              Realisasi dampak yang diajukan
             </p>
             {revisi && (
               <p className="mb-2 text-[13px] leading-5 text-gray-600">
@@ -260,9 +257,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
   );
 }
 
-/** Riwayat verval satu target atau log realisasi, dari pengajuan sampai keputusan terakhir. */
+/** Riwayat verval satu log realisasi, dari pengajuan sampai keputusan terakhir. */
 export function RiwayatVervalModal({ item, onClose }: { item: AntreanItem; onClose: () => void }) {
-  const judul = item.jenis === "target" ? "Riwayat Verval Target Dampak" : "Riwayat Verval Realisasi Dampak";
+  const judul = "Riwayat Verval Realisasi Dampak";
   const entri = [...item.verval.riwayat].reverse();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">

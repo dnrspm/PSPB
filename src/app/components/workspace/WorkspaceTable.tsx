@@ -30,19 +30,16 @@ interface WorkspaceTableProps {
   statusFilter?: string;
   /** Tampilkan kolom status verval dampak (opsi tanpa menu Verval Dampak). */
   tampilVerval?: boolean;
+  /** Opsi menu + kolom ringkas: satu kolom lencana Status Verval tanpa aksi. */
+  kolomRingkas?: boolean;
   vervalFilter?: VervalFilter;
 }
 
 /** Sel ringkas status verval: badge gabungan + keterangan jumlah. */
-function SelVerval({ h, jenis, onOpen }: { h: HitungStatus; jenis: "target" | "realisasi"; onOpen: () => void }) {
+function SelVerval({ h, onOpen }: { h: HitungStatus; onOpen: () => void }) {
   const status = statusGabungan(h);
   if (!status) return <span className="text-sm text-gray-400">–</span>;
-  const ket =
-    jenis === "realisasi"
-      ? `${h.total} log${h.menunggu > 0 ? ` · ${h.menunggu} menunggu` : ""}`
-      : h.total > 1
-      ? `${h.total} target${h.menunggu > 0 ? ` · ${h.menunggu} menunggu` : ""}`
-      : "";
+  const ket = h.menunggu > 0 ? "Total realisasi menunggu" : "Total realisasi";
   return (
     <button
       type="button"
@@ -75,7 +72,7 @@ function formatDate(date: Date): string {
 
 const PAGE_SIZE = 10;
 
-export function WorkspaceTable({ contributions, statusFilter, tampilVerval = false, vervalFilter = "" }: WorkspaceTableProps) {
+export function WorkspaceTable({ contributions, statusFilter, tampilVerval = false, kolomRingkas = false, vervalFilter = "" }: WorkspaceTableProps) {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -93,7 +90,7 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
   .filter((g) => {
     if (!tampilVerval || !vervalFilter) return true;
     const r = ringkasVerval(g.items);
-    const ada = r.target.total + r.realisasi.total > 0;
+    const ada = r.realisasi.total > 0;
     if (vervalFilter === "belum-ada") return !ada;
     if (vervalFilter === "menunggu") return r.menunggu > 0;
     return ada && r.menunggu === 0;
@@ -148,10 +145,9 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     ...(tampilVerval
-      ? [
-          { key: null, label: "Verval Target" },
-          { key: null, label: "Verval Realisasi" },
-        ]
+      ? [{ key: null, label: "Verval Realisasi" }]
+      : kolomRingkas
+      ? [{ key: null, label: "Status Verval" }]
       : []),
     { key: "lastUpdate", label: "Last Update" },
     { key: "pic", label: "PIC" },
@@ -229,10 +225,26 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
                     const target = g.items.find((c) => ringkasVerval([c]).menunggu > 0) || g.primary;
                     const buka = () => navigate(`/workspace/${target.id}`, { state: { tab: "pelaksanaan" } });
                     return (
-                      <>
-                        <td className="px-4 py-3 align-top"><SelVerval h={r.target} jenis="target" onOpen={buka} /></td>
-                        <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} jenis="realisasi" onOpen={buka} /></td>
-                      </>
+                      <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} onOpen={buka} /></td>
+                    );
+                  })()}
+                  {kolomRingkas && (() => {
+                    const r = ringkasVerval(g.items);
+                    const gabung: HitungStatus = r.realisasi;
+                    const status = statusGabungan(gabung);
+                    return (
+                      <td className="px-4 py-3 align-top">
+                        {status ? (
+                          <div className="flex flex-col items-start gap-0.5">
+                            <VervalStatusBadge status={status} />
+                            {gabung.menunggu > 0 && (
+                              <span className="text-[12px] leading-4 text-gray-600">{gabung.menunggu} menunggu</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">–</span>
+                        )}
+                      </td>
                     );
                   })()}
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">

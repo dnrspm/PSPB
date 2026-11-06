@@ -7,6 +7,7 @@ import { useStakeholders } from "../../lib/useStakeholders";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { akumulasiRealisasi, groupWilayah, realisasiTercatat } from "../../lib/dampak";
 import { vervalBaru } from "../../lib/verval";
+import { useVervalLayout, vervalSaatSelesai } from "../../lib/vervalLayout";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
@@ -220,7 +221,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "filePKS", label: "Unggah PKS yang Sudah Ditandatangani", type: "file", required: true },
       { key: "fileRencana", label: "Unggah Rencana Kerja yang Sudah Ditandatangani", type: "file", required: true },
       { key: "fileLainnya", label: "Unggah Dokumen Lainnya", type: "file", multiple: true },
-      { key: "targetHeader", label: "Target Dampak (akan diverval Biro Kerja Sama)", type: "section-header" },
+      { key: "targetHeader", label: "Target Dampak", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", required: true, placeholder: "0", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", required: true, placeholder: "0" },
@@ -280,10 +281,12 @@ const FILE_DOC_TYPE: Record<string, (action: WorkflowAction) => string> = {
 
 /** Realisasi terkumpul ditampilkan sebagai isian biasa yang terkunci (tidak bisa diubah di sini). */
 function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Contribution; onUpdateProgress?: () => void }) {
+  const layout = useVervalLayout();
+  const perLog = layout !== "eksisting" && !vervalSaatSelesai(layout);
   const [wilayahTerbuka, setWilayahTerbuka] = useState(false);
   const total = contribution.pelaksanaan ? realisasiTercatat(contribution.pelaksanaan) : undefined;
   const logRealisasi = (contribution.pelaksanaan?.progressUpdates || []).filter(
-    (u) => u.realisasi && u.verval?.status !== "tidak-relevan"
+    (u) => u.realisasi && (!perLog || u.verval?.status !== "tidak-relevan")
   );
   const jumlahLog = logRealisasi.length;
   const menungguVerval = logRealisasi.filter((u) => u.verval?.status === "menunggu").length;
@@ -314,7 +317,7 @@ function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Co
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
           <p className="text-xs leading-relaxed text-blue-800">
             Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan
-            {menungguVerval > 0 && `, ${menungguVerval.toLocaleString("id-ID")} di antaranya masih menunggu verval Biro Kerja Sama`}
+            {perLog && menungguVerval > 0 && `, ${menungguVerval.toLocaleString("id-ID")} di antaranya masih menunggu verval Biro Kerja Sama`}
             . Perubahan realisasi dicatat lewat aksi{" "}
             {updateProgressLink}.
           </p>
@@ -396,7 +399,30 @@ function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Co
 }
 
 export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
-  const config = MODAL_CONFIGS[action];
+  const layout = useVervalLayout();
+  const eksisting = layout === "eksisting";
+  const vervalAkhir = vervalSaatSelesai(layout);
+  // Verval per log hanya pada opsi menu + kolom ringkas dan opsi tanpa menu
+  const perLog = !eksisting && !vervalAkhir;
+  const configAsal = MODAL_CONFIGS[action];
+  // Kondisi eksisting: tanpa field Satuan Pendidikan Penerima Bantuan dan tanpa keterangan verval
+  const config = configAsal && (eksisting || vervalAkhir)
+    ? {
+        ...configAsal,
+        fields: configAsal.fields
+          .filter((f) => !eksisting || f.key !== "bantuan")
+          .map((f) =>
+            f.key === "realisasiHeader"
+              ? {
+                  ...f,
+                  label: eksisting
+                    ? "Realisasi Dampak (opsional, isi bila sudah ada realisasi)"
+                    : "Realisasi Dampak (opsional, diverval Biro Kerja Sama setelah kontribusi selesai)",
+                }
+              : f
+          ),
+      }
+    : configAsal;
   const [values, setValues] = useState<Record<string, string | boolean>>(() => {
     const initial: Record<string, string | boolean> = {};
     if (config) {
@@ -580,7 +606,14 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   };
 
   const handleSubmit = () => {
-    if (!realisasiSiap || !validate()) return;
+    if (!realisasiSiap) return;
+    if (!validate()) {
+      // Gulirkan ke galat pertama agar terlihat walau tombol Simpan ada di bawah
+      requestAnimationFrame(() =>
+        document.querySelector("[data-galat]")?.scrollIntoView({ behavior: "smooth", block: "center" })
+      );
+      return;
+    }
     setLoading(true);
 
     setTimeout(() => {
@@ -668,7 +701,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           siswa: parseInt((values.siswa as string) || "0", 10) || 0,
           guru: parseInt((values.guru as string) || "0", 10) || 0,
           satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
-          bantuan: parseInt((values.bantuan as string) || "0", 10) || 0,
+          ...(eksisting ? {} : { bantuan: parseInt((values.bantuan as string) || "0", 10) || 0 }),
           wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
         });
 
@@ -687,7 +720,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             actor: currentUser.name,
             dokumen: newDocs,
             // Realisasi baru masuk antrean verval Biro Kerja Sama
-            ...(realisasi ? { realisasi, verval: vervalBaru(currentUser.name, "realisasi", now) } : {}),
+            ...(realisasi ? { realisasi, ...(perLog ? { verval: vervalBaru(currentUser.name, now) } : {}) } : {}),
           };
           const updates = [...(base.progressUpdates || []), entry];
           const total = akumulasiRealisasi(updates);
@@ -703,8 +736,6 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           updated.pelaksanaan = {
             ...base,
             targetDampak: readDampak(),
-            // Target diverval lebih awal: langsung masuk antrean verval, tanpa menunggu kontribusi selesai
-            vervalTarget: vervalBaru(currentUser.name, "target", now),
             startDate: base.startDate || now,
           };
         } else {
@@ -714,6 +745,13 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
             ...base,
             completionDate: now,
             ...(total ? { realisasiDampak: total } : {}),
+            // Opsi verval saat selesai: total realisasi diajukan sekali, masuk antrean Biro Kerja Sama
+            ...(vervalAkhir && total
+              ? {
+                  realisasiAkhir: total,
+                  vervalAkhir: vervalBaru(currentUser.name, now, "Mengajukan total realisasi dampak saat kontribusi selesai"),
+                }
+              : {}),
           };
         }
       }
@@ -858,7 +896,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                         </select>
                       )}
                       {errors[f.key] && (
-                        <p className="mt-0.5 text-sm text-red-500">{errors[f.key]}</p>
+                        <p data-galat className="mt-0.5 text-sm text-red-500">{errors[f.key]}</p>
                       )}
                     </div>
                   );
@@ -1273,7 +1311,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   )}
 
                   {errors[field.key] && (
-                    <p className="mt-0.5 text-sm text-red-500">{errors[field.key]}</p>
+                    <p data-galat className="mt-0.5 text-sm text-red-500">{errors[field.key]}</p>
                   )}
                 </div>
               );

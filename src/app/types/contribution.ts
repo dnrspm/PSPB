@@ -101,10 +101,13 @@ export interface PelaksanaanInfo {
   latestUpdate?: string;
   dokumentasi: Document[];
   progressUpdates?: ProgressUpdate[];
+  /** Target dampak dicatat saat Lanjut Pelaksanaan dan tidak diverval. */
   targetDampak?: DampakPelaksanaan;
-  /** Status verval target dampak. Target diverval lebih awal, tidak menunggu kontribusi selesai. */
-  vervalTarget?: VervalDampak;
   realisasiDampak?: DampakPelaksanaan;
+  /** Opsi verval saat selesai: total realisasi yang diajukan ketika kontribusi ditandai Terlaksana. */
+  realisasiAkhir?: DampakPelaksanaan;
+  /** Status verval untuk realisasiAkhir (satu kali per kontribusi). */
+  vervalAkhir?: VervalDampak;
 }
 
 export interface SekolahDetail {

@@ -2,14 +2,14 @@ import { NavLink } from "react-router";
 import { ClipboardCheck, TableProperties, Users } from "lucide-react";
 import { bangunAntrean, hitungMenunggu } from "../../lib/verval";
 import { useContributionsSync } from "../../lib/useContributions";
-import { useVervalLayout } from "../../lib/vervalLayout";
+import { punyaMenuVerval, useVervalLayout } from "../../lib/vervalLayout";
 
 interface SidebarProps {
 }
 
 export function Sidebar({}: SidebarProps) {
   useContributionsSync();
-  const adaMenuVerval = useVervalLayout() === "menu";
+  const adaMenuVerval = punyaMenuVerval(useVervalLayout());
   const menunggu = hitungMenunggu(bangunAntrean()).total;
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-[#1a4a8a] bg-[#103178]">

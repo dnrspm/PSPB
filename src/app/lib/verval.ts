@@ -2,6 +2,7 @@ import type {
   ActivityLog,
   Contribution,
   DampakPelaksanaan,
+  PelaksanaanInfo,
   UserRole,
   VervalDampak,
   VervalKeputusan,
@@ -10,9 +11,11 @@ import type {
 } from "../types/contribution";
 import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
 import { akumulasiRealisasi } from "./dampak";
+import { getVervalLayout, vervalSaatSelesai } from "./vervalLayout";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "./workflow";
 
-export type JenisDampak = "target" | "realisasi";
+/** Hanya realisasi per log penyaluran yang diverval; target dampak dicatat tanpa verval. */
+export type JenisDampak = "realisasi";
 
 /** Hanya Biro Kerja Sama (Biro Perencanaan dan Kerja Sama) yang boleh memverval dampak. */
 export const VERVAL_ROLE: UserRole = "biro-perencanaan";
@@ -103,8 +106,12 @@ export function unitKerjaOf(c: Contribution): string {
   return "-";
 }
 
-/** Pembuka riwayat saat target atau realisasi baru diajukan. */
-export function vervalBaru(oleh: string, jenis: JenisDampak, at: Date = new Date()): VervalDampak {
+/** Pembuka riwayat saat realisasi baru diajukan. */
+export function vervalBaru(
+  oleh: string,
+  at: Date = new Date(),
+  teks = "Menambahkan log penyaluran dengan realisasi dampak"
+): VervalDampak {
   return {
     status: "menunggu",
     diajukanOleh: oleh,
@@ -116,10 +123,7 @@ export function vervalBaru(oleh: string, jenis: JenisDampak, at: Date = new Date
         at,
         by: oleh,
         jenis: "ajukan",
-        text:
-          jenis === "target"
-            ? "Mengajukan target dampak saat Lanjut Pelaksanaan"
-            : "Menambahkan log penyaluran dengan realisasi dampak",
+        text: teks,
       },
     ],
   };
@@ -132,7 +136,10 @@ export interface AntreanItem {
   key: string;
   jenis: JenisDampak;
   contribution: Contribution;
+  /** Kosong pada opsi verval saat selesai: satu item mewakili total realisasi kontribusi. */
   logId?: string;
+  /** Jumlah log penyaluran yang menjadi dasar total (opsi verval saat selesai). */
+  jumlahLog?: number;
   logJudul?: string;
   logTanggal?: Date;
   logDeskripsi?: string;
@@ -142,23 +149,29 @@ export interface AntreanItem {
 }
 
 export function kunciAntrean(contributionId: string, logId?: string): string {
-  return `${contributionId}:${logId ?? "target"}`;
+  return `${contributionId}:${logId ?? "akhir"}`;
 }
 
-/** Seluruh target dan realisasi yang punya status verval. Data lama tanpa status tidak ikut. */
+/** Seluruh realisasi (log penyaluran) yang punya status verval. Data lama tanpa status tidak ikut. */
 export function bangunAntrean(list: Contribution[] = getContributions()): AntreanItem[] {
   const items: AntreanItem[] = [];
   for (const c of list) {
     const p = c.pelaksanaan;
     if (!p) continue;
-    if (p.targetDampak && p.vervalTarget) {
-      items.push({
-        key: kunciAntrean(c.id),
-        jenis: "target",
-        contribution: c,
-        dampak: p.targetDampak,
-        verval: p.vervalTarget,
-      });
+    if (vervalSaatSelesai(getVervalLayout())) {
+      // Verval sekali per kontribusi: total realisasi yang diajukan saat Terlaksana
+      if (p.realisasiAkhir && p.vervalAkhir) {
+        items.push({
+          key: kunciAntrean(c.id),
+          jenis: "realisasi",
+          contribution: c,
+          jumlahLog: (p.progressUpdates || []).filter((u) => u.realisasi).length,
+          logTanggal: p.completionDate,
+          dampak: p.realisasiAkhir,
+          verval: p.vervalAkhir,
+        });
+      }
+      continue;
     }
     for (const u of p.progressUpdates || []) {
       if (!u.realisasi || !u.verval) continue;
@@ -180,18 +193,16 @@ export function bangunAntrean(list: Contribution[] = getContributions()): Antrea
 }
 
 export interface JumlahMenunggu {
-  target: number;
   realisasi: number;
   total: number;
 }
 
 export function hitungMenunggu(items: AntreanItem[]): JumlahMenunggu {
-  const target = items.filter((i) => i.jenis === "target" && i.verval.status === "menunggu").length;
-  const realisasi = items.filter((i) => i.jenis === "realisasi" && i.verval.status === "menunggu").length;
-  return { target, realisasi, total: target + realisasi };
+  const realisasi = items.filter((i) => i.verval.status === "menunggu").length;
+  return { realisasi, total: realisasi };
 }
 
-/** Item verval milik satu kontribusi (target lalu log terbaru), untuk tab Pelaksanaan. */
+/** Item verval milik satu kontribusi (per log penyaluran), untuk tab Pelaksanaan. */
 export function antreanKontribusi(contributionId: string): AntreanItem[] {
   const c = getContributionById(contributionId);
   return c ? bangunAntrean([c]) : [];
@@ -230,20 +241,15 @@ function ringkasPerubahan(semula: DampakPelaksanaan, baru: DampakPelaksanaan): s
     .join("; ");
 }
 
-function jenisLabel(jenis: JenisDampak): string {
-  return jenis === "target" ? "target dampak" : "realisasi dampak";
-}
-
 function terapkanKeVerval(
   verval: VervalDampak,
-  jenis: JenisDampak,
   keputusan: VervalKeputusan,
   oleh: string,
   catatan: string,
   at: Date,
   perubahan?: string
 ): VervalDampak {
-  const label = jenisLabel(jenis);
+  const label = "realisasi dampak";
   let text = `Menyetujui ${label}`;
   if (keputusan === "revisi") text = `Menyetujui ${label} dengan revisi (${perubahan})`;
   if (keputusan === "tidak-relevan") text = `Menandai ${label} tidak relevan`;
@@ -264,10 +270,11 @@ export function terapkanVerval(input: TerapkanVervalInput): TerapkanVervalHasil 
   const p = c?.pelaksanaan;
   if (!c || !p) return { ok: false, error: "Kontribusi tidak ditemukan. Muat ulang halaman, lalu coba lagi." };
 
-  const jenis: JenisDampak = input.logId ? "realisasi" : "target";
-  const log = input.logId ? p.progressUpdates?.find((u) => u.id === input.logId) : undefined;
-  const dampakAsal = jenis === "target" ? p.targetDampak : log?.realisasi;
-  const vervalAsal = jenis === "target" ? p.vervalTarget : log?.verval;
+  // Tanpa logId: verval total realisasi saat selesai
+  const totalAkhir = !input.logId;
+  const log = totalAkhir ? undefined : p.progressUpdates?.find((u) => u.id === input.logId);
+  const dampakAsal = totalAkhir ? p.realisasiAkhir : log?.realisasi;
+  const vervalAsal = totalAkhir ? p.vervalAkhir : log?.verval;
   if (!dampakAsal || !vervalAsal) return { ok: false, error: "Data dampak tidak ditemukan. Muat ulang halaman, lalu coba lagi." };
   if (vervalAsal.status !== "menunggu") return { ok: false, error: "Data ini sudah diverval. Muat ulang halaman untuk melihat keputusan terbaru." };
 
@@ -304,14 +311,12 @@ export function terapkanVerval(input: TerapkanVervalInput): TerapkanVervalHasil 
 
   const at = new Date();
   const vervalBaruObj = {
-    ...terapkanKeVerval(vervalAsal, jenis, input.keputusan, input.oleh, catatan, at, perubahan),
+    ...terapkanKeVerval(vervalAsal, input.keputusan, input.oleh, catatan, at, perubahan),
     ...(nilaiSemula ? { nilaiSemula } : {}),
   };
 
-  let pelaksanaan = p;
-  if (jenis === "target") {
-    pelaksanaan = { ...p, targetDampak: dampakBaru, vervalTarget: vervalBaruObj };
-  } else {
+  let pelaksanaan: PelaksanaanInfo = { ...p, realisasiAkhir: dampakBaru, vervalAkhir: vervalBaruObj };
+  if (!totalAkhir) {
     const updates = (p.progressUpdates || []).map((u) =>
       u.id === input.logId ? { ...u, realisasi: dampakBaru, verval: vervalBaruObj } : u
     );
@@ -324,11 +329,12 @@ export function terapkanVerval(input: TerapkanVervalInput): TerapkanVervalHasil 
     timestamp: at,
     actor: input.oleh,
     actorRole: VERVAL_ROLE,
-    action: jenis === "target" ? "Verval Target Dampak" : "Verval Realisasi Dampak",
+    action: "Verval Realisasi Dampak",
     notes: catatan || undefined,
     fields: {
       Keputusan: VERVAL_STATUS_LABELS[STATUS_DARI_KEPUTUSAN[input.keputusan]],
-      ...(jenis === "realisasi" && log ? { "Log penyaluran": log.judul } : {}),
+      ...(log ? { "Log penyaluran": log.judul } : {}),
+      ...(totalAkhir ? { Cakupan: "Total realisasi saat kontribusi selesai" } : {}),
       ...(perubahan ? { "Nilai direvisi": perubahan } : {}),
     },
     fromState: c.workflowStatus,
@@ -337,7 +343,7 @@ export function terapkanVerval(input: TerapkanVervalInput): TerapkanVervalHasil 
 
   updateContribution({ ...c, lastUpdate: at, pelaksanaan, aktivitas: [...c.aktivitas, aktivitas] });
 
-  const subjek = `${jenis === "target" ? "Target dampak" : "Realisasi dampak"} ${c.namaMitra}`;
+  const subjek = `Realisasi dampak ${c.namaMitra}`;
   const akhir: Record<VervalKeputusan, string> = {
     setuju: "disetujui.",
     revisi: "disetujui dengan revisi.",
@@ -372,21 +378,46 @@ export function setujuiMassal(keys: string[], oleh: string): number {
  */
 export const BASELINE_DAMPAK = { siswa: 411233, guru: 21981, satuanPendidikan: 113 };
 
+/**
+ * Angka lain di dasbor publik yang belum terhubung ke data kontribusi prototipe (nilai tampilan saja):
+ * jumlah program, daerah, dan mitra beserta yang masih dalam perencanaan atau pengajuan.
+ */
+export const DASBOR_PUBLIK_LAINNYA = {
+  rencana: { program: 15, daerah: 240 },
+  program: 29,
+  daerah: "120+",
+  mitra: 92,
+  mitraPengajuan: 28,
+};
+
 export interface RingkasanDashboard {
   siswa: number;
   guru: number;
   satuanPendidikan: number;
   /** Waktu keputusan setuju terakhir; kosong bila belum ada. */
   terakhir?: Date;
+  /** Tambahan yang sudah disetujui sampai akhir bulan lalu, pembanding kenaikan bulanan. */
+  sampaiBulanLalu: { siswa: number; guru: number; satuanPendidikan: number };
+  /** Akhir bulan lalu (pembanding); dipakai untuk keterangan. */
+  akhirBulanLalu: Date;
 }
 
 /** Tambahan dampak dari realisasi yang disetujui (dengan atau tanpa revisi), di atas baseline. */
-export function ringkasanDashboard(items: AntreanItem[]): RingkasanDashboard {
-  const dihitung = items.filter(
-    (i) => i.jenis === "realisasi" && (i.verval.status === "disetujui" || i.verval.status === "disetujui-revisi")
-  );
+export function ringkasanDashboard(items: AntreanItem[], sekarang: Date = new Date()): RingkasanDashboard {
+  const dihitung = items.filter((i) => i.verval.status === "disetujui" || i.verval.status === "disetujui-revisi");
   const waktu = dihitung.map((i) => new Date(i.verval.diperbaruiPada).getTime());
+  // Dasbor publik diasumsikan diperbarui tiap bulan: pembandingnya posisi di akhir bulan lalu
+  const awalBulanIni = new Date(sekarang.getFullYear(), sekarang.getMonth(), 1);
+  const lalu = dihitung.filter((i) => new Date(i.verval.diperbaruiPada) < awalBulanIni);
+  const jumlah = (list: AntreanItem[], k: "siswa" | "guru" | "satuanPendidikan") =>
+    list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
   return {
+    sampaiBulanLalu: {
+      siswa: jumlah(lalu, "siswa"),
+      guru: jumlah(lalu, "guru"),
+      satuanPendidikan: jumlah(lalu, "satuanPendidikan"),
+    },
+    akhirBulanLalu: new Date(awalBulanIni.getTime() - 1),
     siswa: dihitung.reduce((n, i) => n + (i.dampak.siswa || 0), 0),
     guru: dihitung.reduce((n, i) => n + (i.dampak.guru || 0), 0),
     satuanPendidikan: dihitung.reduce((n, i) => n + (i.dampak.satuanPendidikan || 0), 0),
@@ -405,9 +436,8 @@ export interface HitungStatus {
 }
 
 export interface RingkasanVerval {
-  target: HitungStatus;
   realisasi: HitungStatus;
-  /** Jumlah data yang masih menunggu verval (target + realisasi). */
+  /** Jumlah realisasi yang masih menunggu verval. */
   menunggu: number;
 }
 
@@ -425,9 +455,8 @@ function hitungStatus(items: AntreanItem[]): HitungStatus {
 /** Status verval gabungan untuk satu pengajuan (bisa memuat beberapa kontribusi/program). */
 export function ringkasVerval(list: Contribution[]): RingkasanVerval {
   const antrean = bangunAntrean(list);
-  const target = hitungStatus(antrean.filter((i) => i.jenis === "target"));
-  const realisasi = hitungStatus(antrean.filter((i) => i.jenis === "realisasi"));
-  return { target, realisasi, menunggu: target.menunggu + realisasi.menunggu };
+  const realisasi = hitungStatus(antrean);
+  return { realisasi, menunggu: realisasi.menunggu };
 }
 
 /** Status tunggal yang mewakili sekumpulan data: menunggu dulu, lalu revisi, lalu disetujui. */

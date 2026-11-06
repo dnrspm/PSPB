@@ -1,3 +1,4 @@
+import { getVervalLayout, vervalSaatSelesai } from "./vervalLayout";
 import type { DampakPelaksanaan, PelaksanaanInfo, ProgressUpdate, VervalDampak } from "../types/contribution";
 
 /** Gabungkan daftar "Kab (Prov), Kab (Prov)" tanpa duplikat, urut sesuai pencatatan. */
@@ -16,6 +17,9 @@ function gabungWilayah(list: string[]): string {
  * Data lama tanpa status verval dianggap baseline yang sudah dihitung.
  */
 export function vervalDihitung(verval?: VervalDampak): boolean {
+  // Kondisi eksisting (tanpa verval) dan opsi verval saat selesai: semua log penyaluran dihitung
+  const layout = getVervalLayout();
+  if (layout === "eksisting" || vervalSaatSelesai(layout)) return true;
   return !verval || verval.status === "disetujui" || verval.status === "disetujui-revisi";
 }
 
@@ -33,6 +37,15 @@ function jumlahkan(realisasi: DampakPelaksanaan[]): DampakPelaksanaan | undefine
   };
 }
 
+/** Akumulasi log yang disetujui, tidak bergantung pada opsi prototipe (untuk data contoh). */
+export function akumulasiDisetujui(updates: ProgressUpdate[] = []): DampakPelaksanaan | undefined {
+  return jumlahkan(
+    updates
+      .filter((u) => u.realisasi && (!u.verval || u.verval.status === "disetujui" || u.verval.status === "disetujui-revisi"))
+      .map((u) => u.realisasi as DampakPelaksanaan)
+  );
+}
+
 /**
  * Realisasi dampak adalah akumulasi log penyaluran yang sudah diverval (disetujui),
  * bukan cerminan log terakhir: angka dijumlahkan, wilayah digabung unik.
@@ -45,18 +58,28 @@ export function akumulasiRealisasi(updates: ProgressUpdate[] = []): DampakPelaks
   );
 }
 
+/** Tanpa verval per log (kondisi eksisting, atau verval baru dilakukan saat selesai). */
+function semuaLog(): boolean {
+  const layout = getVervalLayout();
+  return layout === "eksisting" || vervalSaatSelesai(layout);
+}
+
 /** Akumulasi seluruh log yang pernah dicatat, termasuk yang masih menunggu verval (tanpa yang tidak relevan). */
 export function akumulasiTercatat(updates: ProgressUpdate[] = []): DampakPelaksanaan | undefined {
   return jumlahkan(
     updates
-      .filter((u) => u.realisasi && u.verval?.status !== "tidak-relevan")
+      .filter((u) => u.realisasi && (semuaLog() || u.verval?.status !== "tidak-relevan"))
       .map((u) => u.realisasi as DampakPelaksanaan)
   );
 }
 
 /** Total dari log yang sudah diverval bila ada; bila belum ada log berdampak, pakai realisasi tersimpan. */
 export function realisasiTerkini(p: PelaksanaanInfo): DampakPelaksanaan | undefined {
-  const adaVerval = (p.progressUpdates || []).some((u) => u.realisasi && u.verval);
+  if (vervalSaatSelesai(getVervalLayout()) && p.vervalAkhir) {
+    // Total saat selesai: hanya dihitung bila sudah disetujui (dengan atau tanpa revisi)
+    return vervalDihitung(p.vervalAkhir) ? p.realisasiAkhir : undefined;
+  }
+  const adaVerval = !semuaLog() && (p.progressUpdates || []).some((u) => u.realisasi && u.verval);
   const total = akumulasiRealisasi(p.progressUpdates);
   // Sudah memakai verval: jangan jatuh ke angka tersimpan yang bisa memuat data belum disetujui
   return total || (adaVerval ? undefined : p.realisasiDampak);

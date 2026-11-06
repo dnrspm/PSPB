@@ -1,12 +1,9 @@
 import type { Contribution } from "../../types/contribution";
 import { groupContributions } from "../../lib/contributionGroups";
 import { WORKFLOW_PHASES } from "../../lib/workflow";
-import { bangunAntrean, hitungMenunggu } from "../../lib/verval";
 
 interface MonitoringSummaryProps {
   contributions: Contribution[];
-  /** Tambah kartu jumlah data dampak yang menunggu verval (opsi tanpa menu Verval Dampak). */
-  tampilVerval?: boolean;
 }
 
 interface SummaryCard {
@@ -15,7 +12,7 @@ interface SummaryCard {
   color: string;
 }
 
-export function MonitoringSummary({ contributions, tampilVerval = false }: MonitoringSummaryProps) {
+export function MonitoringSummary({ contributions }: MonitoringSummaryProps) {
   const groups = groupContributions(contributions);
   const byPhase = (states: string[]) =>
     groups.filter((g) => states.includes(g.workflowStatus)).length;
@@ -27,8 +24,6 @@ export function MonitoringSummary({ contributions, tampilVerval = false }: Monit
       count: byPhase(phase.states),
       color: phase.color,
     }));
-
-  const menunggu = hitungMenunggu(bangunAntrean(contributions));
 
   return (
     <div className="space-y-4">
@@ -49,18 +44,6 @@ export function MonitoringSummary({ contributions, tampilVerval = false }: Monit
             <div className="mt-2 text-[12px] font-medium text-gray-500 leading-snug">{card.label}</div>
           </div>
         ))}
-        {tampilVerval && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
-              <span className="text-[20px] font-semibold leading-none text-black">{menunggu.total}</span>
-            </div>
-            <div className="mt-2 text-[12px] font-medium leading-snug text-amber-900">Dampak Menunggu Verval</div>
-            <div className="text-[12px] leading-4 text-amber-800">
-              {menunggu.target} target · {menunggu.realisasi} realisasi
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

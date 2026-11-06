@@ -15,6 +15,7 @@ import type { SessionUser } from "../lib/auth";
 import type { Contribution, DampakPelaksanaan, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 import { groupWilayah, realisasiTerkini } from "../lib/dampak";
+import { useVervalLayout, vervalSaatSelesai } from "../lib/vervalLayout";
 import { antreanKontribusi, bolehVerval, formatAngka, formatWaktuVerval, kunciAntrean, type AntreanItem } from "../lib/verval";
 import type { VervalKeputusan } from "../types/contribution";
 import { VervalStatusBadge } from "../components/workspace/VervalStatusBadge";
@@ -1302,6 +1303,7 @@ function WilayahBreakdown({ wilayah }: { wilayah: string }) {
 }
 
 function DampakGrid({ dampak, semula }: { dampak: DampakPelaksanaan; semula?: Partial<DampakPelaksanaan> }) {
+  const eksisting = useVervalLayout() === "eksisting";
   const sel = (label: string, key: "siswa" | "guru" | "satuanPendidikan" | "bantuan") => {
     const direvisi = !!semula && Object.prototype.hasOwnProperty.call(semula, key);
     return (
@@ -1312,14 +1314,14 @@ function DampakGrid({ dampak, semula }: { dampak: DampakPelaksanaan; semula?: Pa
       </div>
     );
   };
-  const wilayahDirevisi = !!semula && Object.prototype.hasOwnProperty.call(semula, "wilayah");
+  const wilayahDirevisi = !eksisting && !!semula && Object.prototype.hasOwnProperty.call(semula, "wilayah");
   return (
     <div className="space-y-3">
-      <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
+      <dl className={`grid gap-x-8 gap-y-3 text-sm ${eksisting ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
         {sel("Siswa Terdampak", "siswa")}
         {sel("Guru Terdampak", "guru")}
         {sel("Satuan Pendidikan", "satuanPendidikan")}
-        {sel("Penerima Bantuan", "bantuan")}
+        {!eksisting && sel("Penerima Bantuan", "bantuan")}
       </dl>
       <div className="border-t border-gray-200 pt-3 text-sm">
         <p className="mb-1.5 text-sm text-gray-400">Kabupaten/Kota</p>
@@ -1343,7 +1345,7 @@ function VervalPanel({
 }) {
   const v = item.verval;
   const pending = v.status === "menunggu";
-  const subjek = item.jenis === "target" ? "Target" : "Realisasi";
+  const subjek = "Realisasi";
   const meta = pending
     ? `Diajukan oleh ${v.diajukanOleh} pada ${formatWaktuVerval(v.diajukanPada)}.`
     : v.status === "tidak-relevan"
@@ -1382,6 +1384,11 @@ function VervalPanel({
 
 function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribution: Contribution; currentUser: SessionUser; onChanged: () => void }) {
   const p = c.pelaksanaan;
+  const layout = useVervalLayout();
+  const eksisting = layout === "eksisting";
+  // Opsi verval saat selesai: log dicatat tanpa status, total realisasi diverval sekali
+  const akhir = vervalSaatSelesai(layout);
+  const perLog = !eksisting && !akhir;
   const boleh = bolehVerval(currentUser.role);
   const [modal, setModal] = useState<{ key: string; keputusan: VervalKeputusan } | null>(null);
   const [riwayat, setRiwayat] = useState<string | null>(null);
@@ -1398,8 +1405,9 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
     );
   }
 
-  const antrean = antreanKontribusi(c.id);
-  const itemTarget = antrean.find((i) => i.key === kunciAntrean(c.id));
+  // Kondisi eksisting: tanpa status maupun aksi verval
+  const antrean = eksisting ? [] : antreanKontribusi(c.id);
+  const itemAkhir = akhir ? antrean.find((i) => !i.logId) : undefined;
   const itemLog = (id: string) => antrean.find((i) => i.key === kunciAntrean(c.id, id));
   const jumlahMenunggu = antrean.filter((i) => i.verval.status === "menunggu").length;
   const modalItem = modal ? antrean.find((i) => i.key === modal.key) : undefined;
@@ -1407,13 +1415,13 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
 
   const timeline = [...(p.progressUpdates || [])]
     // Realisasi yang ditandai tidak relevan tidak ditampilkan di detail kontribusi
-    .filter((u) => u.verval?.status !== "tidak-relevan")
+    .filter((u) => !perLog || u.verval?.status !== "tidak-relevan")
     .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
 
   // Realisasi terkini = total log yang sudah disetujui (fallback: realisasi tersimpan untuk data lama)
   const realisasi = realisasiTerkini(p);
-  const targetDihitung = p.targetDampak && p.vervalTarget?.status !== "tidak-relevan" ? p.targetDampak : undefined;
-  const logPending = (p.progressUpdates || []).filter((u) => u.realisasi && u.verval?.status === "menunggu").length;
+  const targetDihitung = p.targetDampak;
+  const logPending = !perLog ? 0 : (p.progressUpdates || []).filter((u) => u.realisasi && u.verval?.status === "menunggu").length;
 
   const capaian: { label: string; real: number; target?: number }[] = [
     { label: "Siswa terdampak", real: realisasi?.siswa ?? 0, target: targetDihitung?.siswa },
@@ -1428,7 +1436,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            {jumlahMenunggu.toLocaleString("id-ID")} data dampak pada kontribusi ini menunggu verval Biro Kerja Sama.
+            {akhir ? "Total realisasi kontribusi ini menunggu verval Biro Kerja Sama." : `${jumlahMenunggu.toLocaleString("id-ID")} data dampak pada kontribusi ini menunggu verval Biro Kerja Sama.`}{" "}
             Dampak baru dihitung di dasbor setelah disetujui.
           </span>
         </div>
@@ -1448,40 +1456,45 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
           </div>
         </dl>
 
-        {p.targetDampak && p.vervalTarget?.status !== "tidak-relevan" && (
+        {p.targetDampak && (
           <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
-            <DampakGrid dampak={p.targetDampak} semula={p.vervalTarget?.nilaiSemula} />
-            {itemTarget && (
-              <VervalPanel
-                item={itemTarget}
-                boleh={boleh}
-                onAksi={(k) => setModal({ key: itemTarget.key, keputusan: k })}
-                onRiwayat={() => setRiwayat(itemTarget.key)}
-              />
-            )}
-          </div>
-        )}
-        {p.targetDampak && p.vervalTarget?.status === "tidak-relevan" && itemTarget && (
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
-            <p className="text-sm text-gray-600">Target dampak ditandai tidak relevan dan tidak dihitung.</p>
-            <VervalPanel item={itemTarget} boleh={boleh} onAksi={() => {}} onRiwayat={() => setRiwayat(itemTarget.key)} />
+            <DampakGrid dampak={p.targetDampak} />
           </div>
         )}
 
-        {realisasi && (
+        {itemAkhir && (
+          <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Total Realisasi Dampak Saat Selesai</p>
+            <p className="mb-2 text-xs text-green-700/80">
+              Akumulasi seluruh log penyaluran, diajukan sekali saat kontribusi selesai. Dampak baru dihitung di dasbor setelah disetujui.
+            </p>
+            <DampakGrid dampak={itemAkhir.dampak} semula={p.vervalAkhir?.nilaiSemula} />
+            <VervalPanel
+              item={itemAkhir}
+              boleh={boleh}
+              onAksi={(k) => setModal({ key: itemAkhir.key, keputusan: k })}
+              onRiwayat={() => setRiwayat(itemAkhir.key)}
+            />
+          </div>
+        )}
+
+        {!itemAkhir && realisasi && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak Terkini</p>
             <p className="mb-2 text-xs text-green-700/80">
-              Akumulasi log penyaluran yang sudah disetujui
+              {eksisting
+                ? "Akumulasi seluruh log penyaluran bantuan"
+                : akhir
+                ? "Akumulasi seluruh log penyaluran. Diverval Biro Kerja Sama sekali saat kontribusi selesai"
+                : "Akumulasi log penyaluran yang sudah disetujui"}
               {logPending > 0 && `. ${logPending.toLocaleString("id-ID")} log masih menunggu verval dan belum dihitung`}
             </p>
             <DampakGrid dampak={realisasi} />
           </div>
         )}
 
-        {targetDihitung && realisasi && (
+        {!eksisting && targetDihitung && realisasi && (
           <div className="mt-3 rounded-md border border-gray-100 p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Capaian terhadap target</p>
             <div className="space-y-3">
@@ -1504,9 +1517,6 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
                   );
                 })}
             </div>
-            {p.vervalTarget?.status === "menunggu" && (
-              <p className="mt-3 text-xs text-gray-500">Target dampak masih menunggu verval, jadi persentase ini belum final.</p>
-            )}
           </div>
         )}
       </div>
@@ -1541,7 +1551,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
                       {entry.realisasi && (
                         <div className="mt-2 rounded-md border border-green-100 bg-green-50 p-3">
                           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak</p>
-                          <DampakGrid dampak={entry.realisasi} semula={entry.verval?.nilaiSemula} />
+                          <DampakGrid dampak={entry.realisasi} semula={perLog ? entry.verval?.nilaiSemula : undefined} />
                           {item && (
                             <VervalPanel
                               item={item}
