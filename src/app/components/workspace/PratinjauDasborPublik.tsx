@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useOutletContext } from "react-router";
-import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, Handshake, Info, MapPin, Minus, Send, Users } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, ChevronDown, Handshake, Info, MapPin, Minus, Send, Users } from "lucide-react";
 import { useContributionsSync } from "../../lib/useContributions";
 import { publikasikanDampak, usePublikasi, type PublikasiDampak } from "../../lib/publikasiDampak";
 import type { SessionUser } from "../../lib/auth";
@@ -56,21 +56,9 @@ const DAFTAR: { key: Kunci; label: string; kalimat: string; ikon: ReactNode }[] 
 const CATATAN =
   "Angka di web publik berubah saat admin menekan Publikasikan. Kenaikan dibandingkan dengan bulan publikasi sebelumnya (atau baseline bila belum ada publikasi sebelumnya). Hanya dampak Disetujui atau Disetujui dengan Revisi yang dihitung. Daerah dan mitra dianggap belum termasuk dalam baseline.";
 
-/** Pratinjau dasbor publik: angka dampak = baseline + realisasi yang sudah diverval, tayang saat dipublikasikan. */
-export function PratinjauDasborPublik({ className = "" }: { className?: string }) {
-  useContributionsSync();
-  const konteks = useOutletContext<{ currentUser: SessionUser } | undefined>();
-  const boleh = konteks ? bolehVerval(konteks.currentUser.role) : false;
+/** Angka yang tayang, angka draf (seluruh dampak disetujui), dan selisihnya. Dipakai kartu dan penanda di switch. */
+function useStatusPublikasi() {
   const publikasi = usePublikasi();
-  const [toast, setToast] = useState("");
-  const [lihatSetelah, setLihatSetelah] = useState(false);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   const antrean = bangunAntrean();
   const draf = ringkasanDashboard(antrean);
 
@@ -87,6 +75,32 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
 
   // Perubahan yang sudah disetujui tetapi belum dipublikasikan
   const belumTerbit = DAFTAR.map((m) => ({ ...m, selisih: draf[m.key] - tampil[m.key] })).filter((m) => m.selisih !== 0);
+  return { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit };
+}
+
+/** Jumlah angka dampak yang sudah disetujui tetapi belum dipublikasikan. */
+export function useJumlahBelumDipublikasikan(): number {
+  useContributionsSync();
+  return useStatusPublikasi().belumTerbit.length;
+}
+
+/** Pratinjau dasbor publik: angka dampak = baseline + realisasi yang sudah diverval, tayang saat dipublikasikan. */
+export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisaDilipat = true }: { className?: string; awalTerbuka?: boolean; bisaDilipat?: boolean }) {
+  useContributionsSync();
+  const konteks = useOutletContext<{ currentUser: SessionUser } | undefined>();
+  const boleh = konteks ? bolehVerval(konteks.currentUser.role) : false;
+  const [toast, setToast] = useState("");
+  const [lihatSetelah, setLihatSetelah] = useState(false);
+  const [terbukaState, setTerbuka] = useState(awalTerbuka);
+  const terbuka = bisaDilipat ? terbukaState : true;
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit } = useStatusPublikasi();
 
   // Pembanding dilabeli bulan publikasi sebelumnya; tanpa publikasi sebelumnya (baseline) memakai label tetap data contoh
   const labelPembanding = sebelumnya
@@ -99,6 +113,11 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
   const angkaTampil = pratinjau ? draf : tampil;
   const pembandingTampil = pratinjau ? tampil : pembanding;
   const labelTampil = pratinjau ? bulanTayang : labelPembanding;
+
+  const tinjau = () => {
+    setTerbuka(true);
+    setLihatSetelah(true);
+  };
 
   const publikasikan = () => {
     if (!konteks) return;
@@ -137,7 +156,7 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
 
   return (
     <section aria-label="Dasbor Dampak" className={`flex flex-col rounded-lg border bg-white shadow-sm ${pratinjau ? "border-blue-300" : "border-gray-200"} ${className}`}>
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-gray-100 px-4 py-3">
+      <header className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 ${terbuka ? "border-b border-gray-100" : ""}`}>
         <div className="min-w-0">
           <h3 className="flex items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-gray-900">
             Dasbor Dampak
@@ -149,10 +168,13 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
             {pratinjau
               ? "Pratinjau setelah publikasi, belum tayang di web publik"
               : `Dipublikasikan ${formatWaktuVerval(terbit.at)} oleh ${terbit.oleh}`}
+            {!terbuka && belumTerbit.length > 0 && (
+              <span className="font-semibold text-amber-700"> · {belumTerbit.length} angka belum dipublikasikan</span>
+            )}
           </p>
         </div>
-        {belumTerbit.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {belumTerbit.length > 0 && terbuka && (
             <label className="flex cursor-pointer items-center gap-2 text-[12px] leading-4 text-gray-700">
               <button
                 type="button"
@@ -165,27 +187,41 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
               </button>
               Pratinjau Publikasi
             </label>
-            {boleh ? (
+          )}
+          {belumTerbit.length > 0 &&
+            (boleh ? (
               <button
                 type="button"
-                onClick={publikasikan}
+                // Saat tertutup, tombol hanya membuka kartu dengan pratinjau; publikasi dilakukan setelah angkanya ditinjau
+                onClick={terbuka ? publikasikan : tinjau}
                 className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-[13px] font-semibold leading-5 text-white hover:bg-blue-700"
               >
                 <Send className="h-3.5 w-3.5" aria-hidden />
-                Publikasikan
+                {terbuka ? "Publikasikan" : "Tinjau publikasi"}
               </button>
             ) : (
               <span className="text-[12px] leading-4 text-gray-600">Dipublikasikan oleh Biro Kerja Sama</span>
-            )}
-          </div>
-        )}
+            ))}
+          {bisaDilipat && (
+            <button
+              type="button"
+              onClick={() => setTerbuka((v) => !v)}
+              aria-expanded={terbuka}
+              aria-label={terbuka ? "Tutup Dasbor Dampak" : "Buka Dasbor Dampak"}
+              className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
+            >
+              <ChevronDown className={`h-5 w-5 transition-transform ${terbuka ? "rotate-180" : ""}`} aria-hidden />
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-3 sm:divide-y-0">
+      {terbuka && (
+      <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-3 sm:divide-y-0 xl:grid-cols-6">
         {DAFTAR.map((m, i) => (
           <div
             key={m.key}
-            className={`${i >= 3 ? "sm:border-t sm:border-gray-100" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${
+            className={`${i >= 3 ? "sm:border-t sm:border-gray-100 xl:border-t-0" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${i === 3 ? "xl:border-l xl:border-gray-100" : ""} ${
               pratinjau && draf[m.key] !== tampil[m.key] ? "bg-blue-50" : ""
             }`}
           >
@@ -195,6 +231,7 @@ export function PratinjauDasborPublik({ className = "" }: { className?: string }
           </div>
         ))}
       </div>
+      )}
 
       {toast && (
         <div role="status" className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-[15px] leading-[22px] text-white shadow-lg">
