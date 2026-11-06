@@ -13,6 +13,19 @@ interface PapanRingkasanProps {
   onTabChange?: (tab: Tab) => void;
 }
 
+/** Kartu angka seperti ringkasan opsi 1: titik warna, angka, lalu label. */
+function KartuAngka({ label, jumlah, warna }: { label: string; jumlah: number; warna: string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-4 py-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: warna }} aria-hidden />
+        <span className="text-[20px] font-semibold leading-none tabular-nums text-black">{jumlah}</span>
+      </div>
+      <div className="mt-2 text-[12px] font-medium leading-snug text-gray-500">{label}</div>
+    </div>
+  );
+}
+
 /**
  * Opsi tanpa menu: ringkasan di atas tabel dibagi dua tab agar tidak menumpuk.
  * "Operasional" berisi card Status workflow dan Verval realisasi;
@@ -32,10 +45,10 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
   const hitung = (s: string) => antrean.filter((i) => i.verval.status === s).length;
   const menunggu = hitung("menunggu");
   const statusVerval = [
-    { label: "Menunggu verval", n: menunggu, dot: "bg-amber-500", menunggu: true },
-    { label: "Disetujui", n: hitung("disetujui"), dot: "bg-green-600", menunggu: false },
-    { label: "Disetujui dengan revisi", n: hitung("disetujui-revisi"), dot: "bg-sky-500", menunggu: false },
-    { label: "Tidak relevan", n: hitung("tidak-relevan"), dot: "bg-gray-400", menunggu: false },
+    { label: "Menunggu verval", n: menunggu, warna: "#F59E0B" },
+    { label: "Disetujui", n: hitung("disetujui"), warna: "#16A34A" },
+    { label: "Disetujui dengan revisi", n: hitung("disetujui-revisi"), warna: "#0EA5E9" },
+    { label: "Tidak relevan", n: hitung("tidak-relevan"), warna: "#9CA3AF" },
   ];
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
@@ -80,42 +93,20 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
       </div>
 
       {tab === "operasional" ? (
-        <div role="tabpanel" className="space-y-3">
-          <section aria-label="Status workflow" className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <h3 className="border-b border-gray-100 px-4 py-3 text-[15px] font-semibold leading-[22px] text-gray-900">Status workflow</h3>
-            <dl className="grid grid-cols-3 gap-y-1 py-2 sm:grid-cols-5 sm:divide-x sm:divide-gray-100">
-              {fase.map((f) => (
-                <div key={f.label} className="px-4 py-1.5">
-                  <dt className="flex items-center gap-1.5 whitespace-nowrap text-[12px] leading-4 text-gray-600">
-                    <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: f.color }} aria-hidden />
-                    {f.label}
-                  </dt>
-                  <dd className="mt-0.5 text-[24px] font-semibold leading-8 tabular-nums text-gray-900">{f.count}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+        <div role="tabpanel" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {fase.map((f) => (
+            <KartuAngka key={f.label} label={f.label} jumlah={f.count} warna={f.color} />
+          ))}
         </div>
       ) : tab === "verval" ? (
-        <section role="tabpanel" aria-label="Verval realisasi" className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <header className="border-b border-gray-100 px-4 py-3">
-            <h3 className="text-[15px] font-semibold leading-[22px] text-gray-900">Verval realisasi</h3>
-          </header>
-          <dl className="grid grid-cols-2 gap-y-1 py-2 sm:grid-cols-4 sm:divide-x sm:divide-gray-100">
-            {statusVerval.map((v) => (
-              <div key={v.label} className="px-4 py-1.5">
-                <dt className="flex items-center gap-1.5 text-[12px] leading-4 text-gray-600">
-                  <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${v.dot}`} aria-hidden />
-                  {v.label}
-                </dt>
-                <dd className={`mt-0.5 text-[24px] font-semibold leading-8 tabular-nums ${v.menunggu && v.n > 0 ? "text-amber-700" : "text-gray-900"}`}>{v.n}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <div role="tabpanel" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {statusVerval.map((v) => (
+            <KartuAngka key={v.label} label={v.label} jumlah={v.n} warna={v.warna} />
+          ))}
+        </div>
       ) : (
         <div role="tabpanel">
-          <PratinjauDasborPublik bisaDilipat={false} />
+          <PratinjauDasborPublik bisaDilipat={false} tanpaJudul kartuTerpisah />
         </div>
       )}
     </div>

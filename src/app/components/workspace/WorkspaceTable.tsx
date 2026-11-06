@@ -5,7 +5,7 @@ import type { Contribution, VervalStatus } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
-import { ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
+import { VERVAL_STATUS_LABELS, bangunAntrean, formatAngka, ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
 import { VervalStatusBadge } from "./VervalStatusBadge";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
@@ -35,11 +35,66 @@ interface WorkspaceTableProps {
   vervalFilter?: VervalFilter;
 }
 
-/** Sel ringkas status verval: badge gabungan + keterangan jumlah. */
-function SelVerval({ h, onOpen }: { h: HitungStatus; onOpen: () => void }) {
+interface AngkaRealisasi {
+  siswa: number;
+  guru: number;
+  satuanPendidikan: number;
+}
+
+const WARNA_VERVAL: Record<VervalStatus, string> = {
+  menunggu: "#F59E0B",
+  disetujui: "#16A34A",
+  "disetujui-revisi": "#0EA5E9",
+  "tidak-relevan": "#9CA3AF",
+};
+
+/**
+ * Hanya jenis dengan angka terbesar yang tampil (dalam kontainer abu-abu, lengkap dengan namanya);
+ * jenis lainnya muncul saat kontainer "…" di-hover atau difokus.
+ */
+function AngkaTerbesar({ angka }: { angka: AngkaRealisasi }) {
+  const semua = [
+    { nama: "siswa", n: angka.siswa },
+    { nama: "guru", n: angka.guru },
+    { nama: "satdik", n: angka.satuanPendidikan },
+  ];
+  // Jumlah sama: urutan siswa, guru, satdik
+  const utama = semua.reduce((a, b) => (b.n > a.n ? b : a));
+  const lainnya = semua.filter((x) => x !== utama);
+  const ringkas = lainnya.map((x) => `${x.nama} ${formatAngka(x.n)}`).join(", ");
+  return (
+    <span className="flex items-center gap-2 text-sm leading-5">
+      <span className="shrink-0 whitespace-nowrap rounded-[2px] bg-gray-100 px-2 py-0.5 text-sm leading-5 tabular-nums text-gray-900">
+        {formatAngka(utama.n)} {utama.nama}
+      </span>
+      {/* Kontainer "…" sebagai penanda ada jenis lain; isinya muncul saat di-hover atau difokus */}
+      <span
+        className="group relative shrink-0 cursor-default rounded-[2px] bg-gray-100 px-2 py-0.5 text-sm leading-5 text-gray-600 hover:bg-gray-200 focus:bg-gray-200"
+        tabIndex={0}
+        aria-label={`${lainnya.length} lainnya: ${ringkas}`}
+      >
+        …
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-[2px] border border-gray-200 bg-white px-3 py-2 text-sm leading-5 text-gray-900 shadow-md group-hover:block group-focus:block"
+        >
+          {lainnya.map((x) => (
+            <span key={x.nama} className="flex items-baseline justify-between gap-4 text-sm leading-5">
+              <span className="text-sm leading-5 text-gray-600">{x.nama.charAt(0).toUpperCase() + x.nama.slice(1)}</span>
+              <span className="text-sm leading-5 tabular-nums">{formatAngka(x.n)}</span>
+            </span>
+          ))}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/** Sel realisasi: titik warna status verval gabungan, lalu angka realisasi yang diajukan. */
+function SelVerval({ h, angka, onOpen }: { h: HitungStatus; angka?: AngkaRealisasi; onOpen: () => void }) {
   const status = statusGabungan(h);
   if (!status) return <span className="text-sm text-gray-400">–</span>;
-  const ket = h.menunggu > 0 ? "Total realisasi menunggu" : "Total realisasi";
+  const label = VERVAL_STATUS_LABELS[status];
   return (
     <button
       type="button"
@@ -47,13 +102,25 @@ function SelVerval({ h, onOpen }: { h: HitungStatus; onOpen: () => void }) {
         e.stopPropagation();
         onOpen();
       }}
-      title="Buka tab Pelaksanaan untuk memverval"
-      className="flex flex-col items-start gap-0.5 text-left"
+      title={`${label}. Buka tab Pelaksanaan untuk memverval`}
+      className="flex flex-col items-start gap-1.5 text-left text-sm font-normal text-gray-600"
     >
-      <VervalStatusBadge status={status} />
-      {ket && <span className="text-[12px] leading-4 text-gray-600">{ket}</span>}
+      {/* Status ditulis dengan titik warna, di atas angka realisasi */}
+      <span className="flex items-center gap-1.5 text-sm leading-5 text-gray-700">
+        <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: WARNA_VERVAL[status] }} aria-hidden />
+        {label}
+      </span>
+      {angka && <AngkaTerbesar angka={angka} />}
     </button>
   );
+}
+
+/** Jumlah realisasi yang diajukan (tanpa yang ditandai tidak relevan); kosong bila belum ada. */
+function angkaRealisasi(items: Contribution[]): AngkaRealisasi | undefined {
+  const list = bangunAntrean(items).filter((i) => i.verval.status !== "tidak-relevan");
+  if (list.length === 0) return undefined;
+  const jumlah = (k: keyof AngkaRealisasi) => list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
+  return { siswa: jumlah("siswa"), guru: jumlah("guru"), satuanPendidikan: jumlah("satuanPendidikan") };
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -63,11 +130,25 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
     : <ChevronDown className="h-3 w-3 text-blue-500" />;
 }
 
-function formatDate(date: Date): string {
+/** Tanggal dan jam dipisah agar bisa tampil di dua baris dan menghemat lebar kolom. */
+function formatDate(date: Date): { tanggal: string; jam: string } {
   const d = new Date(date);
-  const formattedDate = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-  const formattedTime = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-  return `${formattedDate}, ${formattedTime}`;
+  return {
+    tanggal: d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+    jam: d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+/** Email dipecah di tanda @ agar domain turun ke baris baru. */
+function EmailBertingkat({ email }: { email: string }) {
+  const i = email.indexOf("@");
+  if (i < 0) return <span className="block text-sm leading-5">{email}</span>;
+  return (
+    <span className="block text-sm leading-5">
+      <span className="block text-sm leading-5">{email.slice(0, i)}</span>
+      <span className="block text-sm leading-5">{email.slice(i)}</span>
+    </span>
+  );
 }
 
 const PAGE_SIZE = 10;
@@ -138,9 +219,8 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     return units.length > 0 ? units.join(", ") : "-";
   }
 
-  function getGroupPicEmail(g: ContributionGroup): string {
-    const emails = [...new Set(g.items.map(getPicEmail).filter((e) => e && e !== "-"))];
-    return emails.length > 0 ? emails.join(", ") : "-";
+  function getGroupPicEmails(g: ContributionGroup): string[] {
+    return [...new Set(g.items.map(getPicEmail).filter((e) => e && e !== "-"))];
   }
 
   const headers: { key: SortKey | null; label: string }[] = [
@@ -149,7 +229,7 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     ...(tampilVerval
-      ? [{ key: null, label: "Verval Realisasi" }]
+      ? [{ key: null, label: "Realisasi" }]
       : kolomRingkas
       ? [{ key: null, label: "Status Verval" }]
       : []),
@@ -229,7 +309,7 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
                     const target = g.items.find((c) => ringkasVerval([c]).menunggu > 0) || g.primary;
                     const buka = () => navigate(`/workspace/${target.id}`, { state: { tab: "pelaksanaan" } });
                     return (
-                      <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} onOpen={buka} /></td>
+                      <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} angka={angkaRealisasi(g.items)} onOpen={buka} /></td>
                     );
                   })()}
                   {kolomRingkas && (() => {
@@ -252,10 +332,18 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
                     );
                   })()}
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
-                    {formatDate(g.lastUpdate)}
+                    {formatDate(g.lastUpdate).tanggal}
+                    <br />
+                    {formatDate(g.lastUpdate).jam}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {getGroupPicEmail(g)}
+                    {getGroupPicEmails(g).length > 0
+                      ? getGroupPicEmails(g).map((e) => (
+                          <div key={e} className="[&:not(:first-child)]:mt-1">
+                            <EmailBertingkat email={e} />
+                          </div>
+                        ))
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-400">
                     <ChevronRight className="h-4 w-4" />
