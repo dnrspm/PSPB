@@ -1,132 +1,207 @@
-import type { ReactNode } from "react";
-import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, Handshake, MapPin, Minus, Users } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useOutletContext } from "react-router";
+import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, Handshake, Info, MapPin, Minus, Send, Users } from "lucide-react";
 import { useContributionsSync } from "../../lib/useContributions";
+import { publikasikanDampak, usePublikasi, type PublikasiDampak } from "../../lib/publikasiDampak";
+import type { SessionUser } from "../../lib/auth";
 import {
+  ANGKA_PUBLIK_KOSONG,
   BASELINE_DAMPAK,
-  DASBOR_PUBLIK_LAINNYA,
+  PUBLIKASI_AWAL,
+  angkaDisetujuiSebelum,
   bangunAntrean,
+  bolehVerval,
   formatAngka,
   formatWaktuVerval,
-  hitungMenunggu,
   ringkasanDashboard,
+  type AngkaPublik,
 } from "../../lib/verval";
 
-/** Metrik dampak yang dipengaruhi verval: angka besar, penjelasan, lalu kenaikan bulanan. */
-function Metrik({
-  ikon,
-  angka,
-  tebal,
-  sisa,
-  kenaikan,
-}: {
-  ikon: ReactNode;
-  angka: string;
-  tebal: string;
-  sisa: string;
-  kenaikan: ReactNode;
-}) {
-  return (
-    <div className="min-w-0 px-4 py-4 sm:px-5">
-      <div className="flex items-center gap-2 text-blue-600">{ikon}</div>
-      <p className="mt-2 text-[32px] font-bold leading-10 tracking-tight tabular-nums text-gray-900">{angka}</p>
-      <p className="mt-0.5 text-[13px] leading-5 text-gray-600">
-        <strong className="font-semibold text-gray-900">{tebal}</strong> {sisa}
-      </p>
-      <p className="mt-2 text-[13px] leading-5">{kenaikan}</p>
-    </div>
-  );
-}
+type Kunci = keyof AngkaPublik;
 
-/** Angka pendukung yang belum terhubung ke data: dibuat lebih redup dari metrik dampak. */
-function Pendukung({ ikon, angka, label, catatan }: { ikon: ReactNode; angka: string; label: string; catatan: string }) {
+/** Metrik dampak: label, angka, lalu kenaikan dibanding periode sebelumnya. */
+function Metrik({ ikon, label, kalimat, angka, kenaikan, belum }: { ikon: ReactNode; label: string; kalimat: string; angka: string; kenaikan: ReactNode; belum?: string }) {
   return (
-    <div className="flex min-w-0 items-start gap-2.5 px-4 py-3 sm:px-5">
-      <span className="mt-0.5 text-gray-400">{ikon}</span>
-      <div className="min-w-0">
-        <p className="text-[13px] leading-5 text-gray-900">
-          <span className="font-semibold tabular-nums">{angka}</span> {label}
-        </p>
-        <p className="text-[12px] leading-4 text-gray-600">{catatan}</p>
+    <div className="min-w-0 px-3 py-3" title={kalimat}>
+      <div className="flex items-center gap-1.5 whitespace-nowrap text-[12px] leading-4 text-gray-600">
+        <span className="text-blue-600">{ikon}</span>
+        {label}
       </div>
-    </div>
-  );
-}
-
-/** Pratinjau dasbor publik: dampak = baseline + realisasi yang sudah diverval (disetujui). */
-export function PratinjauDasborPublik({ className = "" }: { className?: string }) {
-  useContributionsSync();
-  const antrean = bangunAntrean();
-  const tambahan = ringkasanDashboard(antrean);
-  const menunggu = hitungMenunggu(antrean).total;
-  const lain = DASBOR_PUBLIK_LAINNYA;
-  const ikon = "h-5 w-5";
-  const bulanLalu = tambahan.akhirBulanLalu.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-
-  /** Kenaikan angka dibanding akhir bulan lalu (data diperbarui tiap bulan). */
-  const kenaikan = (baseline: number, sekarang: number, lalu: number) => {
-    const awal = baseline + lalu;
-    const naik = sekarang - lalu;
-    const persen = awal > 0 ? (Math.abs(naik) / awal) * 100 : 0;
-    const teksPersen = persen > 0 && persen < 0.1 ? "<0,1" : persen.toLocaleString("id-ID", { maximumFractionDigits: 1 });
-    const warna = naik > 0 ? "text-green-700" : naik < 0 ? "text-red-700" : "text-gray-600";
-    const Ikon = naik > 0 ? ArrowUpRight : naik < 0 ? ArrowDownRight : Minus;
-    return (
-      <span title={`Dibanding posisi akhir bulan lalu (${bulanLalu})`} className={`inline-flex items-center gap-1 font-medium ${warna}`}>
-        <Ikon className="h-4 w-4 shrink-0" aria-hidden />
-        {naik === 0 ? (
-          "Tidak berubah dari bulan lalu"
-        ) : (
-          <span>
-            {naik > 0 ? "Naik" : "Turun"} {formatAngka(Math.abs(naik))} ({teksPersen}%) dari bulan lalu
+      <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
+        <p className="text-[24px] font-semibold leading-8 tabular-nums text-gray-900">{angka}</p>
+        {belum && (
+          <span
+            title="Belum dipublikasikan"
+            aria-label={`${belum} belum dipublikasikan`}
+            className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold leading-4 tabular-nums text-amber-800"
+          >
+            {belum}
           </span>
         )}
+      </div>
+      <p className="text-[12px] leading-4">{kenaikan}</p>
+    </div>
+  );
+}
+
+const DAFTAR: { key: Kunci; label: string; kalimat: string; ikon: ReactNode }[] = [
+  { key: "siswa", label: "Siswa", kalimat: "Siswa telah merasakan manfaat program pendidikan", ikon: <Users className="h-4 w-4" /> },
+  { key: "guru", label: "Guru", kalimat: "Guru telah mengikuti pengembangan kompetensi", ikon: <BookOpen className="h-4 w-4" /> },
+  { key: "satuanPendidikan", label: "Satuan pendidikan", kalimat: "Satuan pendidikan telah terbantu program kami", ikon: <Building2 className="h-4 w-4" /> },
+  { key: "program", label: "Program kolaborasi", kalimat: "Program kolaborasi berjalan dengan sukses", ikon: <CheckCircle2 className="h-4 w-4" /> },
+  { key: "daerah", label: "Daerah", kalimat: "Daerah di Indonesia telah terjangkau program kami", ikon: <MapPin className="h-4 w-4" /> },
+  { key: "mitra", label: "Mitra", kalimat: "Mitra telah berpartisipasi dalam program", ikon: <Handshake className="h-4 w-4" /> },
+];
+
+const CATATAN =
+  "Angka di web publik berubah saat admin menekan Publikasikan. Kenaikan dibandingkan dengan bulan publikasi sebelumnya (atau baseline bila belum ada publikasi sebelumnya). Hanya dampak Disetujui atau Disetujui dengan Revisi yang dihitung. Daerah dan mitra dianggap belum termasuk dalam baseline.";
+
+/** Pratinjau dasbor publik: angka dampak = baseline + realisasi yang sudah diverval, tayang saat dipublikasikan. */
+export function PratinjauDasborPublik({ className = "" }: { className?: string }) {
+  useContributionsSync();
+  const konteks = useOutletContext<{ currentUser: SessionUser } | undefined>();
+  const boleh = konteks ? bolehVerval(konteks.currentUser.role) : false;
+  const publikasi = usePublikasi();
+  const [toast, setToast] = useState("");
+  const [lihatSetelah, setLihatSetelah] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const antrean = bangunAntrean();
+  const draf = ringkasanDashboard(antrean);
+
+  // Publikasi awal data contoh (turunan dari data verval), lalu publikasi yang dilakukan admin
+  const waktuAwal = new Date();
+  waktuAwal.setDate(waktuAwal.getDate() - PUBLIKASI_AWAL.hariLalu);
+  waktuAwal.setHours(9, 0, 0, 0);
+  const awal: PublikasiDampak = { id: "pub-awal", at: waktuAwal, oleh: PUBLIKASI_AWAL.oleh, angka: angkaDisetujuiSebelum(antrean, waktuAwal) };
+  const riwayat = [awal, ...publikasi];
+  const terbit = riwayat[riwayat.length - 1];
+  const sebelumnya = riwayat[riwayat.length - 2];
+  const tampil = terbit.angka;
+  const pembanding = sebelumnya?.angka ?? ANGKA_PUBLIK_KOSONG;
+
+  // Perubahan yang sudah disetujui tetapi belum dipublikasikan
+  const belumTerbit = DAFTAR.map((m) => ({ ...m, selisih: draf[m.key] - tampil[m.key] })).filter((m) => m.selisih !== 0);
+
+  // Pembanding dilabeli bulan publikasi sebelumnya; tanpa publikasi sebelumnya (baseline) memakai label tetap data contoh
+  const labelPembanding = sebelumnya
+    ? sebelumnya.at.toLocaleDateString("id-ID", { month: "short", year: "numeric" })
+    : "Nov 2026";
+
+  // Pratinjau visual: angka seandainya Publikasikan diklik, dibandingkan dengan yang sedang tayang
+  const pratinjau = lihatSetelah && belumTerbit.length > 0;
+  const bulanTayang = terbit.at.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
+  const angkaTampil = pratinjau ? draf : tampil;
+  const pembandingTampil = pratinjau ? tampil : pembanding;
+  const labelTampil = pratinjau ? bulanTayang : labelPembanding;
+
+  const publikasikan = () => {
+    if (!konteks) return;
+    const { siswa, guru, satuanPendidikan, program, daerah, mitra } = draf;
+    publikasikanDampak(konteks.currentUser.name, { siswa, guru, satuanPendidikan, program, daerah, mitra });
+    setLihatSetelah(false);
+    setToast("Dasbor publik dipublikasikan.");
+  };
+
+  /** Kenaikan angka dibanding publikasi sebelumnya (periode = jarak antar publikasi). */
+  const kenaikan = (key: Kunci) => {
+    const naik = angkaTampil[key] - pembandingTampil[key];
+    const warna = naik > 0 ? "text-green-700" : naik < 0 ? "text-red-700" : "text-gray-600";
+    const Ikon = naik > 0 ? ArrowUpRight : naik < 0 ? ArrowDownRight : Minus;
+    // Selisih berwarna (naik/turun); pembanding "dari Nov 2026" netral
+    return (
+      <span className="inline-flex items-start gap-0.5">
+        <span className={`mt-px shrink-0 ${warna}`}>
+          <Ikon className="h-3.5 w-3.5" aria-hidden />
+        </span>
+        <span>
+          {naik === 0 ? (
+            <span className="text-gray-600">Tidak berubah dari {labelTampil}</span>
+          ) : (
+            <>
+              <span className={`font-medium ${warna}`}>
+                {naik > 0 ? "Naik" : "Turun"} {formatAngka(Math.abs(naik))}
+              </span>{" "}
+              <span className="text-gray-600">dari {labelTampil}</span>
+            </>
+          )}
+        </span>
       </span>
     );
   };
 
   return (
-    <section aria-label="Pratinjau dasbor publik" className={`flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm ${className}`}>
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-b border-gray-100 px-4 py-3 sm:px-5">
-        <h3 className="text-[15px] font-semibold leading-[22px] text-gray-900">Pratinjau dasbor publik</h3>
-        <p className="text-[12px] leading-4 text-gray-600">
-          {tambahan.terakhir ? `Terakhir diperbarui ${formatWaktuVerval(tambahan.terakhir)}` : "Belum ada dampak disetujui sejak baseline"}
-          {menunggu > 0 && ` · ${menunggu.toLocaleString("id-ID")} menunggu verval, belum tampil`}
-        </p>
+    <section aria-label="Dasbor Dampak" className={`flex flex-col rounded-lg border bg-white shadow-sm ${pratinjau ? "border-blue-300" : "border-gray-200"} ${className}`}>
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-gray-100 px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-gray-900">
+            Dasbor Dampak
+            <span title={CATATAN} className="text-gray-400" aria-label={CATATAN} role="img">
+              <Info className="h-4 w-4" aria-hidden />
+            </span>
+          </h3>
+          <p className="text-[12px] leading-4 text-gray-600">
+            {pratinjau
+              ? "Pratinjau setelah publikasi, belum tayang di web publik"
+              : `Dipublikasikan ${formatWaktuVerval(terbit.at)} oleh ${terbit.oleh}`}
+          </p>
+        </div>
+        {belumTerbit.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <label className="flex cursor-pointer items-center gap-2 text-[12px] leading-4 text-gray-700">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={pratinjau}
+                onClick={() => setLihatSetelah((v) => !v)}
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${pratinjau ? "bg-blue-600" : "bg-gray-300"}`}
+              >
+                <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pratinjau ? "translate-x-4" : ""}`} />
+              </button>
+              Pratinjau Publikasi
+            </label>
+            {boleh ? (
+              <button
+                type="button"
+                onClick={publikasikan}
+                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-[13px] font-semibold leading-5 text-white hover:bg-blue-700"
+              >
+                <Send className="h-3.5 w-3.5" aria-hidden />
+                Publikasikan
+              </button>
+            ) : (
+              <span className="text-[12px] leading-4 text-gray-600">Dipublikasikan oleh Biro Kerja Sama</span>
+            )}
+          </div>
+        )}
       </header>
 
-      <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <Metrik
-          ikon={<Users className={ikon} />}
-          angka={formatAngka(BASELINE_DAMPAK.siswa + tambahan.siswa)}
-          tebal="Siswa"
-          sisa="telah merasakan manfaat program pendidikan"
-          kenaikan={kenaikan(BASELINE_DAMPAK.siswa, tambahan.siswa, tambahan.sampaiBulanLalu.siswa)}
-        />
-        <Metrik
-          ikon={<BookOpen className={ikon} />}
-          angka={formatAngka(BASELINE_DAMPAK.guru + tambahan.guru)}
-          tebal="Guru"
-          sisa="telah mengikuti pengembangan kompetensi"
-          kenaikan={kenaikan(BASELINE_DAMPAK.guru, tambahan.guru, tambahan.sampaiBulanLalu.guru)}
-        />
-        <Metrik
-          ikon={<Building2 className={ikon} />}
-          angka={formatAngka(BASELINE_DAMPAK.satuanPendidikan + tambahan.satuanPendidikan)}
-          tebal="Satuan pendidikan"
-          sisa="telah terbantu program kami"
-          kenaikan={kenaikan(BASELINE_DAMPAK.satuanPendidikan, tambahan.satuanPendidikan, tambahan.sampaiBulanLalu.satuanPendidikan)}
-        />
+      <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-3 sm:divide-y-0">
+        {DAFTAR.map((m, i) => (
+          <div
+            key={m.key}
+            className={`${i >= 3 ? "sm:border-t sm:border-gray-100" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${
+              pratinjau && draf[m.key] !== tampil[m.key] ? "bg-blue-50" : ""
+            }`}
+          >
+            <Metrik ikon={m.ikon} label={m.label} kalimat={m.kalimat} angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])} kenaikan={kenaikan(m.key)}
+              belum={!pratinjau && draf[m.key] !== tampil[m.key] ? `${draf[m.key] > tampil[m.key] ? "+" : "−"}${formatAngka(Math.abs(draf[m.key] - tampil[m.key]))}` : undefined}
+            />
+          </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 divide-y divide-gray-100 border-t border-gray-100 bg-gray-50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <Pendukung ikon={<CheckCircle2 className="h-4 w-4" />} angka={formatAngka(lain.program)} label="program kolaborasi berjalan" catatan={`+${formatAngka(lain.rencana.program)} dalam perencanaan`} />
-        <Pendukung ikon={<MapPin className="h-4 w-4" />} angka={lain.daerah} label="daerah terjangkau" catatan={`+${formatAngka(lain.rencana.daerah)} dalam perencanaan`} />
-        <Pendukung ikon={<Handshake className="h-4 w-4" />} angka={formatAngka(lain.mitra)} label="mitra berpartisipasi" catatan={`${formatAngka(lain.mitraPengajuan)} mitra dalam pengajuan`} />
-      </div>
-
-      <p className="mt-auto border-t border-gray-100 px-4 py-2 text-[12px] leading-4 text-gray-600 sm:px-5">
-        Data diperbarui tiap bulan; kenaikan dibanding akhir bulan lalu ({bulanLalu}). Hanya dampak Disetujui atau Disetujui dengan Revisi yang dihitung. Program, daerah, dan mitra masih contoh.
-      </p>
+      {toast && (
+        <div role="status" className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-[15px] leading-[22px] text-white shadow-lg">
+          <CheckCircle2 className="h-4 w-4 text-green-400" />
+          <span>{toast}</span>
+        </div>
+      )}
     </section>
   );
 }

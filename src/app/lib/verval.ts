@@ -376,51 +376,65 @@ export function setujuiMassal(keys: string[], oleh: string): number {
  * Angka dasbor dampak yang sudah tayang sebelum verval ada (hasil input manual).
  * Dipakai sebagai baseline: hanya dampak yang disetujui setelah cut-off ini yang ditambahkan.
  */
-export const BASELINE_DAMPAK = { siswa: 411233, guru: 21981, satuanPendidikan: 113 };
-
-/**
- * Angka lain di dasbor publik yang belum terhubung ke data kontribusi prototipe (nilai tampilan saja):
- * jumlah program, daerah, dan mitra beserta yang masih dalam perencanaan atau pengajuan.
- */
-export const DASBOR_PUBLIK_LAINNYA = {
-  rencana: { program: 15, daerah: 240 },
+export const BASELINE_DAMPAK = {
+  siswa: 411233,
+  guru: 21981,
+  satuanPendidikan: 113,
   program: 29,
-  daerah: "120+",
+  daerah: 120,
   mitra: 92,
-  mitraPengajuan: 28,
 };
 
-export interface RingkasanDashboard {
+/** Enam angka dasbor publik yang ikut berubah saat realisasi disetujui. */
+export interface AngkaPublik {
   siswa: number;
   guru: number;
   satuanPendidikan: number;
-  /** Waktu keputusan setuju terakhir; kosong bila belum ada. */
-  terakhir?: Date;
-  /** Tambahan yang sudah disetujui sampai akhir bulan lalu, pembanding kenaikan bulanan. */
-  sampaiBulanLalu: { siswa: number; guru: number; satuanPendidikan: number };
-  /** Akhir bulan lalu (pembanding); dipakai untuk keterangan. */
-  akhirBulanLalu: Date;
+  /** Kontribusi berbeda yang realisasinya sudah disetujui. */
+  program: number;
+  /** Kabupaten/kota berbeda pada realisasi yang disetujui (dianggap belum ada di baseline). */
+  daerah: number;
+  /** Mitra berbeda yang realisasinya sudah disetujui (dianggap belum ada di baseline). */
+  mitra: number;
 }
 
+export interface RingkasanDashboard extends AngkaPublik {
+  /** Waktu keputusan setuju terakhir; kosong bila belum ada. */
+  terakhir?: Date;
+}
+
+export const ANGKA_PUBLIK_KOSONG: AngkaPublik = { siswa: 0, guru: 0, satuanPendidikan: 0, program: 0, daerah: 0, mitra: 0 };
+
+function hitungAngka(list: AntreanItem[]): AngkaPublik {
+  const jumlah = (k: "siswa" | "guru" | "satuanPendidikan") => list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
+  return {
+    siswa: jumlah("siswa"),
+    guru: jumlah("guru"),
+    satuanPendidikan: jumlah("satuanPendidikan"),
+    program: new Set(list.map((i) => i.contribution.id)).size,
+    daerah: new Set(list.flatMap((i) => splitWilayah(i.dampak.wilayah || ""))).size,
+    mitra: new Set(list.map((i) => i.contribution.namaMitra)).size,
+  };
+}
+
+/** Tambahan dampak dari realisasi yang disetujui sebelum batas waktu (untuk publikasi awal data contoh). */
+export function angkaDisetujuiSebelum(items: AntreanItem[], batas: Date): AngkaPublik {
+  return hitungAngka(
+    items.filter(
+      (i) => (i.verval.status === "disetujui" || i.verval.status === "disetujui-revisi") && new Date(i.verval.diperbaruiPada) < batas
+    )
+  );
+}
+
+/** Publikasi awal data contoh: terjadi sekian hari lalu, oleh Biro Kerja Sama. */
+export const PUBLIKASI_AWAL = { hariLalu: 15, oleh: "Budi Santoso" };
+
 /** Tambahan dampak dari realisasi yang disetujui (dengan atau tanpa revisi), di atas baseline. */
-export function ringkasanDashboard(items: AntreanItem[], sekarang: Date = new Date()): RingkasanDashboard {
+export function ringkasanDashboard(items: AntreanItem[]): RingkasanDashboard {
   const dihitung = items.filter((i) => i.verval.status === "disetujui" || i.verval.status === "disetujui-revisi");
   const waktu = dihitung.map((i) => new Date(i.verval.diperbaruiPada).getTime());
-  // Dasbor publik diasumsikan diperbarui tiap bulan: pembandingnya posisi di akhir bulan lalu
-  const awalBulanIni = new Date(sekarang.getFullYear(), sekarang.getMonth(), 1);
-  const lalu = dihitung.filter((i) => new Date(i.verval.diperbaruiPada) < awalBulanIni);
-  const jumlah = (list: AntreanItem[], k: "siswa" | "guru" | "satuanPendidikan") =>
-    list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
   return {
-    sampaiBulanLalu: {
-      siswa: jumlah(lalu, "siswa"),
-      guru: jumlah(lalu, "guru"),
-      satuanPendidikan: jumlah(lalu, "satuanPendidikan"),
-    },
-    akhirBulanLalu: new Date(awalBulanIni.getTime() - 1),
-    siswa: dihitung.reduce((n, i) => n + (i.dampak.siswa || 0), 0),
-    guru: dihitung.reduce((n, i) => n + (i.dampak.guru || 0), 0),
-    satuanPendidikan: dihitung.reduce((n, i) => n + (i.dampak.satuanPendidikan || 0), 0),
+    ...hitungAngka(dihitung),
     terakhir: waktu.length ? new Date(Math.max(...waktu)) : undefined,
   };
 }

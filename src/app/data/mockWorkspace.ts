@@ -1,5 +1,6 @@
 import type { Contribution, DampakPelaksanaan, PelaksanaanInfo, VervalDampak, VervalKeputusan, VervalRiwayat, VervalStatus } from "../types/contribution";
 import { akumulasiDisetujui } from "../lib/dampak";
+import { resetPublikasi } from "../lib/publikasiDampak";
 
 const now = new Date();
 const d = (daysAgo: number) => new Date(now.getTime() - daysAgo * 86400000);
@@ -612,6 +613,9 @@ export const mockContributions: Contribution[] = [
       dokumentasi: [
         { id: "d024", name: "BAST Final - Bukalapak.pdf", type: "bast", uploadedAt: d(14), uploadedBy: "Budi Santoso" },
       ],
+      // Opsi verval saat selesai: total realisasi sudah disetujui setelah publikasi awal, jadi menunggu dipublikasikan
+      realisasiAkhir: { siswa: 1800, guru: 60, satuanPendidikan: 8, bantuan: 8, wilayah: "Kota Surabaya (Jawa Timur), Kabupaten Sidoarjo (Jawa Timur)" },
+      vervalAkhir: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Budi Santoso", hariLaluAjukan: 6, hariLaluVerval: 3, verifikator: "Andi Pratama", teks: "Mengajukan total realisasi dampak saat kontribusi selesai" }),
     },
   },
   {
@@ -1132,7 +1136,7 @@ export const mockContributions: Contribution[] = [
 ];
 
 // v2: data contoh kini memuat status verval dampak
-const PERSIST_KEY = "pspb_contributions_store_v3";
+const PERSIST_KEY = "pspb_contributions_store_v4";
 
 function reviveVerval(v?: VervalDampak): VervalDampak | undefined {
   if (!v) return v;
@@ -1256,6 +1260,7 @@ export function addContribution(contribution: Contribution): void {
 }
 
 export function resetContributions(): void {
+  resetPublikasi();
   store = [...mockContributions];
   persistAndNotify();
 }
