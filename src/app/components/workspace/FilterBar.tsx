@@ -1,13 +1,14 @@
 import { Search, X } from "lucide-react";
 import { WORKFLOW_STATE_LABELS } from "../../lib/workflow";
-import type { WorkflowState } from "../../types/contribution";
+import type { VervalStatus, WorkflowState } from "../../types/contribution";
+import { VERVAL_STATUS_LABELS } from "../../lib/verval";
 
 export interface FilterState {
   search: string;
   program: string;
   status: WorkflowState | "";
   /** Filter status verval dampak; hanya dipakai pada opsi tanpa menu Verval Dampak. */
-  verval?: "" | "menunggu" | "diverval" | "belum-ada";
+  verval?: "" | VervalStatus;
 }
 
 interface FilterBarProps {
@@ -77,10 +78,10 @@ export function FilterBar({ filters, onChange, programs, tampilVerval = false }:
           aria-label="Filter status verval dampak"
           className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
         >
-          <option value="">Semua Status Verval Dampak</option>
-          <option value="menunggu">Ada yang menunggu verval</option>
-          <option value="diverval">Semua sudah diverval</option>
-          <option value="belum-ada">Belum ada data dampak</option>
+          <option value="">Semua Status Verval</option>
+          {(Object.keys(VERVAL_STATUS_LABELS) as VervalStatus[]).map((s) => (
+            <option key={s} value={s}>{VERVAL_STATUS_LABELS[s]}</option>
+          ))}
         </select>
       )}
 

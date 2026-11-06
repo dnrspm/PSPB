@@ -41,8 +41,10 @@ export default function WorkspacePage() {
           {tampilVerval ? (
             <PapanRingkasan
               contributions={contributions}
-              filterMenunggu={filters.verval === "menunggu"}
-              onToggleMenunggu={() => setFilters((f) => ({ ...f, verval: f.verval === "menunggu" ? "" : "menunggu" }))}
+              // Verval hanya untuk kontribusi yang sudah selesai: tab Verval Realisasi menyetel status ke Selesai
+              onTabChange={(tab) =>
+                setFilters((f) => (tab === "verval" ? { ...f, status: "selesai" } : f.status === "selesai" ? { ...f, status: "" } : f))
+              }
             />
           ) : (
             <MonitoringSummary contributions={contributions} />

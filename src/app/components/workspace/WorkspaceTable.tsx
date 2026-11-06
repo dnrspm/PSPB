@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
-import type { Contribution } from "../../types/contribution";
+import type { Contribution, VervalStatus } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
@@ -23,7 +23,7 @@ function getPicEmail(c: Contribution): string {
 }
 type SortDir = "asc" | "desc";
 
-export type VervalFilter = "" | "menunggu" | "diverval" | "belum-ada";
+export type VervalFilter = "" | VervalStatus;
 
 interface WorkspaceTableProps {
   contributions: Contribution[];
@@ -90,10 +90,14 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
   .filter((g) => {
     if (!tampilVerval || !vervalFilter) return true;
     const r = ringkasVerval(g.items);
-    const ada = r.realisasi.total > 0;
-    if (vervalFilter === "belum-ada") return !ada;
-    if (vervalFilter === "menunggu") return r.menunggu > 0;
-    return ada && r.menunggu === 0;
+    // Cocok bila ada realisasi dengan status verval yang dipilih
+    const jumlah: Record<VervalStatus, number> = {
+      menunggu: r.realisasi.menunggu,
+      disetujui: r.realisasi.disetujui,
+      "disetujui-revisi": r.realisasi.revisi,
+      "tidak-relevan": r.realisasi.tidakRelevan,
+    };
+    return jumlah[vervalFilter] > 0;
   })
   .sort((a, b) => {
     const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
