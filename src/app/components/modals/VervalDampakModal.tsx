@@ -94,12 +94,12 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Verval realisasi dampak"
+        aria-label="Tinjauan realisasi dampak"
         className="flex max-h-[88vh] w-full max-w-xl flex-col rounded-xl bg-white shadow-xl"
       >
         <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-[18px] font-semibold leading-6 text-gray-900">
-            Verval Realisasi Dampak
+            Tinjauan Realisasi Dampak
           </h2>
           <button onClick={onClose} aria-label="Tutup" className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
           </dl>
 
           <fieldset>
-            <legend className="mb-2 text-[15px] font-semibold leading-[22px] text-gray-900">Keputusan verifikasi</legend>
+            <legend className="mb-2 text-[15px] font-semibold leading-[22px] text-gray-900">Keputusan tinjauan</legend>
             <div className="space-y-2">
               {KEPUTUSAN.map((k) => (
                 <label
@@ -259,7 +259,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone }
 
 /** Riwayat verval satu log realisasi, dari pengajuan sampai keputusan terakhir. */
 export function RiwayatVervalModal({ item, onClose }: { item: AntreanItem; onClose: () => void }) {
-  const judul = "Riwayat Verval Realisasi Dampak";
+  const judul = "Riwayat Tinjauan Realisasi Dampak";
   const entri = [...item.verval.riwayat].reverse();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">

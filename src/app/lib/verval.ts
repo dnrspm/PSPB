@@ -25,7 +25,7 @@ export function bolehVerval(role: UserRole): boolean {
 }
 
 export const VERVAL_STATUS_LABELS: Record<VervalStatus, string> = {
-  menunggu: "Menunggu Verval",
+  menunggu: "Perlu Ditinjau",
   disetujui: "Disetujui",
   "disetujui-revisi": "Disetujui dengan Revisi",
   "tidak-relevan": "Tidak Relevan",
@@ -329,7 +329,7 @@ export function terapkanVerval(input: TerapkanVervalInput): TerapkanVervalHasil 
     timestamp: at,
     actor: input.oleh,
     actorRole: VERVAL_ROLE,
-    action: "Verval Realisasi Dampak",
+    action: "Tinjauan Realisasi Dampak",
     notes: catatan || undefined,
     fields: {
       Keputusan: VERVAL_STATUS_LABELS[STATUS_DARI_KEPUTUSAN[input.keputusan]],

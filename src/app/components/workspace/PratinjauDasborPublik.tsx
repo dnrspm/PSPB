@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useOutletContext } from "react-router";
-import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, ChevronDown, Handshake, Info, MapPin, Minus, Send, Users } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, BookOpen, Building2, CheckCircle2, ChevronDown, Handshake, MapPin, Minus, Send, Users } from "lucide-react";
 import { useContributionsSync } from "../../lib/useContributions";
 import { publikasikanDampak, usePublikasi, type PublikasiDampak } from "../../lib/publikasiDampak";
 import type { SessionUser } from "../../lib/auth";
@@ -19,8 +19,15 @@ import {
 
 type Kunci = keyof AngkaPublik;
 
+/** Sedang Tayang (live): yang tayang sekarang. Setelah Publikasi (pratinjau): angka setelah tambahan yang siap masuk dipublikasikan. */
+type Mode = "live" | "pratinjau";
+const MODE_LABEL: { key: Mode; label: string }[] = [
+  { key: "live", label: "Sedang Tayang" },
+  { key: "pratinjau", label: "Setelah Publikasi" },
+];
+
 /** Metrik dampak: label, angka, lalu kenaikan dibanding periode sebelumnya. */
-function Metrik({ ikon, label, kalimat, angka, kenaikan, belum, kartu = false }: { ikon: ReactNode; label: string; kalimat: string; angka: string; kenaikan: ReactNode; belum?: string; kartu?: boolean }) {
+function Metrik({ ikon, label, kalimat, angka, kenaikan, kartu = false }: { ikon: ReactNode; label: string; kalimat: string; angka: string; kenaikan: ReactNode; kartu?: boolean }) {
   return (
     <div className={`min-w-0 ${kartu ? "" : "px-3 py-3"}`} title={kalimat}>
       <div className="flex items-center gap-1.5 whitespace-nowrap text-[12px] leading-4 text-gray-600">
@@ -29,15 +36,6 @@ function Metrik({ ikon, label, kalimat, angka, kenaikan, belum, kartu = false }:
       </div>
       <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
         <p className={`font-semibold tabular-nums ${kartu ? "text-[20px] leading-7 text-black" : "text-[24px] leading-8 text-gray-900"}`}>{angka}</p>
-        {belum && (
-          <span
-            title="Belum dipublikasikan"
-            aria-label={`${belum} belum dipublikasikan`}
-            className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold leading-4 tabular-nums text-amber-800"
-          >
-            {belum}
-          </span>
-        )}
       </div>
       <p className="text-[12px] leading-4">{kenaikan}</p>
     </div>
@@ -52,9 +50,6 @@ const DAFTAR: { key: Kunci; label: string; kalimat: string; ikon: ReactNode }[] 
   { key: "daerah", label: "Daerah", kalimat: "Daerah di Indonesia telah terjangkau program kami", ikon: <MapPin className="h-4 w-4" /> },
   { key: "mitra", label: "Mitra", kalimat: "Mitra telah berpartisipasi dalam program", ikon: <Handshake className="h-4 w-4" /> },
 ];
-
-const CATATAN =
-  "Angka di web publik berubah saat admin menekan Publikasikan. Kenaikan dibandingkan dengan bulan publikasi sebelumnya (atau baseline bila belum ada publikasi sebelumnya). Hanya dampak Disetujui atau Disetujui dengan Revisi yang dihitung. Daerah dan mitra dianggap belum termasuk dalam baseline.";
 
 /** Angka yang tayang, angka draf (seluruh dampak disetujui), dan selisihnya. Dipakai kartu dan penanda di switch. */
 function useStatusPublikasi() {
@@ -90,7 +85,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
   const konteks = useOutletContext<{ currentUser: SessionUser } | undefined>();
   const boleh = konteks ? bolehVerval(konteks.currentUser.role) : false;
   const [toast, setToast] = useState("");
-  const [lihatSetelah, setLihatSetelah] = useState(false);
+  const [mode, setMode] = useState<Mode>("live");
   const [terbukaState, setTerbuka] = useState(awalTerbuka);
   const terbuka = bisaDilipat ? terbukaState : true;
 
@@ -108,7 +103,8 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
     : "Nov 2026";
 
   // Pratinjau visual: angka seandainya Publikasikan diklik, dibandingkan dengan yang sedang tayang
-  const pratinjau = lihatSetelah && belumTerbit.length > 0;
+  const ada = belumTerbit.length > 0;
+  const pratinjau = ada && mode === "pratinjau";
   const bulanTayang = terbit.at.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
   const angkaTampil = pratinjau ? draf : tampil;
   const pembandingTampil = pratinjau ? tampil : pembanding;
@@ -116,14 +112,14 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
 
   const tinjau = () => {
     setTerbuka(true);
-    setLihatSetelah(true);
+    setMode("pratinjau");
   };
 
   const publikasikan = () => {
     if (!konteks) return;
     const { siswa, guru, satuanPendidikan, program, daerah, mitra } = draf;
     publikasikanDampak(konteks.currentUser.name, { siswa, guru, satuanPendidikan, program, daerah, mitra });
-    setLihatSetelah(false);
+    setMode("live");
     setToast("Dasbor publik dipublikasikan.");
   };
 
@@ -160,48 +156,45 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
       className={
         kartuTerpisah
           ? `flex flex-col gap-4 ${className}`
-          : `flex flex-col rounded-lg border bg-white shadow-sm ${pratinjau ? "border-blue-300" : "border-gray-200"} ${className}`
+          : `flex flex-col rounded-lg border bg-white shadow-sm border-gray-200 ${className}`
       }
     >
       <header className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${kartuTerpisah ? "" : `px-4 py-3 ${terbuka ? "border-b border-gray-100" : ""}`}`}>
-        <div className="min-w-0">
-          {!tanpaJudul && (
-            <h3 className="flex items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-gray-900">
-              Dasbor Dampak
-              <span title={CATATAN} className="text-gray-400" aria-label={CATATAN} role="img">
-                <Info className="h-4 w-4" aria-hidden />
-              </span>
-            </h3>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+          {ada && terbuka && (
+            <div role="group" aria-label="Tampilan angka" className="inline-flex overflow-hidden rounded-md border border-gray-300 bg-white">
+              {MODE_LABEL.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  aria-pressed={mode === m.key}
+                  onClick={() => setMode(m.key)}
+                  className={`px-3 py-1.5 text-[13px] font-semibold leading-5 transition-colors ${
+                    mode === m.key ? "bg-blue-50 text-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"
+                  } ${m.key !== "live" ? "border-l border-gray-300" : ""}`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
           )}
-          <p className={`flex items-center gap-1.5 ${tanpaJudul ? "text-[13px] leading-5 text-gray-700" : "text-[12px] leading-4 text-gray-600"}`}>
-            {pratinjau
-              ? "Pratinjau setelah publikasi, belum tayang di web publik"
-              : `Dipublikasikan ${formatWaktuVerval(terbit.at)} oleh ${terbit.oleh}`}
-            {!terbuka && belumTerbit.length > 0 && (
-              <span className="font-semibold text-amber-700"> · {belumTerbit.length} angka belum dipublikasikan</span>
+          <div className="min-w-0">
+            {!tanpaJudul && (
+              <h3 className="text-[15px] font-semibold leading-[22px] text-gray-900">
+                Dasbor Dampak
+              </h3>
             )}
-            {tanpaJudul && (
-              <span title={CATATAN} className="text-gray-400" aria-label={CATATAN} role="img">
-                <Info className="h-4 w-4" aria-hidden />
-              </span>
-            )}
-          </p>
+            <p className={`flex items-center gap-1.5 ${tanpaJudul ? "text-[13px] leading-5 text-gray-700" : "text-[12px] leading-4 text-gray-600"}`}>
+              {pratinjau
+                ? "Angka setelah dipublikasikan, belum tayang di web publik"
+                  : `Dipublikasikan ${formatWaktuVerval(terbit.at)} oleh ${terbit.oleh}`}
+              {!terbuka && belumTerbit.length > 0 && (
+                <span className="font-semibold text-amber-700"> · {belumTerbit.length} angka belum dipublikasikan</span>
+              )}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {belumTerbit.length > 0 && terbuka && (
-            <label className="flex cursor-pointer items-center gap-2 text-[12px] leading-4 text-gray-700">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={pratinjau}
-                onClick={() => setLihatSetelah((v) => !v)}
-                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${pratinjau ? "bg-blue-600" : "bg-gray-300"}`}
-              >
-                <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pratinjau ? "translate-x-4" : ""}`} />
-              </button>
-              Pratinjau Publikasi
-            </label>
-          )}
           {belumTerbit.length > 0 &&
             (boleh ? (
               <button
@@ -235,7 +228,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
           {DAFTAR.map((m) => (
             <div
               key={m.key}
-              className={`rounded-lg border px-4 py-4 shadow-sm ${pratinjau && draf[m.key] !== tampil[m.key] ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white"}`}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-4 shadow-sm"
             >
               <Metrik
                 kartu
@@ -244,7 +237,6 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
                 kalimat={m.kalimat}
                 angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])}
                 kenaikan={kenaikan(m.key)}
-                belum={!pratinjau && draf[m.key] !== tampil[m.key] ? `${draf[m.key] > tampil[m.key] ? "+" : "−"}${formatAngka(Math.abs(draf[m.key] - tampil[m.key]))}` : undefined}
               />
             </div>
           ))}
@@ -256,12 +248,9 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
         {DAFTAR.map((m, i) => (
           <div
             key={m.key}
-            className={`${i >= 3 ? "sm:border-t sm:border-gray-100 xl:border-t-0" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${i === 3 ? "xl:border-l xl:border-gray-100" : ""} ${
-              pratinjau && draf[m.key] !== tampil[m.key] ? "bg-blue-50" : ""
-            }`}
+            className={`${i >= 3 ? "sm:border-t sm:border-gray-100 xl:border-t-0" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${i === 3 ? "xl:border-l xl:border-gray-100" : ""} `}
           >
             <Metrik ikon={m.ikon} label={m.label} kalimat={m.kalimat} angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])} kenaikan={kenaikan(m.key)}
-              belum={!pratinjau && draf[m.key] !== tampil[m.key] ? `${draf[m.key] > tampil[m.key] ? "+" : "−"}${formatAngka(Math.abs(draf[m.key] - tampil[m.key]))}` : undefined}
             />
           </div>
         ))}

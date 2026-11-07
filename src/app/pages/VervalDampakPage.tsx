@@ -26,7 +26,7 @@ type FilterStatus = "semua" | VervalStatus;
 
 const FILTERS: { key: FilterStatus; label: string }[] = [
   { key: "semua", label: "Semua" },
-  { key: "menunggu", label: "Menunggu Verval" },
+  { key: "menunggu", label: "Perlu Ditinjau" },
   { key: "disetujui", label: "Disetujui" },
   { key: "disetujui-revisi", label: "Disetujui dengan Revisi" },
   { key: "tidak-relevan", label: "Tidak Relevan" },
@@ -174,14 +174,14 @@ export default function VervalDampakPage() {
         {!boleh && (
           <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] leading-5 text-blue-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Hanya Biro Kerja Sama yang bisa memverval dampak. Peran Anda dapat melihat daftar dan riwayat verval.</span>
+            <span>Hanya Biro Kerja Sama yang bisa meninjau dampak. Peran Anda dapat melihat daftar dan riwayat tinjauan.</span>
           </div>
         )}
 
         <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
           <h2 className="text-[15px] font-semibold leading-[22px] text-gray-900">Realisasi Dampak</h2>
           {menunggu.total > 0 && (
-            <span className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 text-amber-800" title="Menunggu verval">
+            <span className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 text-amber-800" title="Perlu ditinjau">
               {menunggu.total}
             </span>
           )}
@@ -254,7 +254,7 @@ export default function VervalDampakPage() {
                       {boleh && (
                         <input
                           type="checkbox"
-                          aria-label="Pilih semua data yang menunggu verval"
+                          aria-label="Pilih semua data yang menunggu tinjauan"
                           checked={semuaDipilih}
                           disabled={bisaDipilih.length === 0}
                           onChange={toggleSemua}

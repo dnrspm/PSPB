@@ -28,8 +28,8 @@ function KartuAngka({ label, jumlah, warna }: { label: string; jumlah: number; w
 
 /**
  * Opsi tanpa menu: ringkasan di atas tabel dibagi dua tab agar tidak menumpuk.
- * "Operasional" berisi card Status workflow dan Verval realisasi;
- * "Dasbor Dampak" berisi angka dampak untuk ditinjau dan dipublikasikan.
+ * "Status Workflow" berisi card tahapan workflow, "Tinjauan Realisasi" berisi status tinjauan;
+ * "Publikasi Dampak" berisi angka dampak untuk ditinjau dan dipublikasikan.
  */
 export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanProps) {
   const [tab, setTab] = useState<Tab>("operasional");
@@ -45,22 +45,22 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
   const hitung = (s: string) => antrean.filter((i) => i.verval.status === s).length;
   const menunggu = hitung("menunggu");
   const statusVerval = [
-    { label: "Menunggu verval", n: menunggu, warna: "#F59E0B" },
+    { label: "Perlu ditinjau", n: menunggu, warna: "#F59E0B" },
     { label: "Disetujui", n: hitung("disetujui"), warna: "#16A34A" },
     { label: "Disetujui dengan revisi", n: hitung("disetujui-revisi"), warna: "#0EA5E9" },
     { label: "Tidak relevan", n: hitung("tidak-relevan"), warna: "#9CA3AF" },
   ];
 
-  const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: "operasional", label: "Operasional" },
-    { key: "verval", label: "Verval Realisasi", badge: menunggu },
-    { key: "dampak", label: "Dasbor Dampak", badge: belumDipublikasikan },
+  const tabs: { key: Tab; label: string; badge?: number; badgeTitle?: string }[] = [
+    { key: "operasional", label: "Status Workflow" },
+    { key: "verval", label: "Tinjauan Realisasi", badge: menunggu, badgeTitle: "Realisasi perlu ditinjau" },
+    { key: "dampak", label: "Publikasi Dampak", badge: belumDipublikasikan, badgeTitle: "Angka belum dipublikasikan" },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[24px] font-semibold leading-8 text-gray-900">Ringkasan Operasional</h2>
+        <h2 className="text-[24px] font-semibold leading-8 text-gray-900">Ringkasan Kontribusi</h2>
         <span className="text-[13px] leading-5 text-gray-600">{groups.length} total kontribusi</span>
       </div>
 
@@ -81,8 +81,8 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
             {t.label}
             {t.badge ? (
               <span
-                title="Angka belum dipublikasikan"
-                className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 tabular-nums text-amber-800"
+                title={t.badgeTitle}
+                className="rounded-full bg-red-600 px-2 text-[12px] font-semibold leading-5 tabular-nums text-white"
               >
                 {t.badge}
               </span>

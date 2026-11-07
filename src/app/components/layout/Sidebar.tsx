@@ -41,7 +41,7 @@ export function Sidebar({}: SidebarProps) {
           }
         >
           <TableProperties className="h-4 w-4" />
-          Dasbor Operasional
+          Ringkasan Kontribusi
         </NavLink>
         {adaMenuVerval && (
           <NavLink
@@ -58,7 +58,7 @@ export function Sidebar({}: SidebarProps) {
             <span className="flex-1">Verval Dampak</span>
             {menunggu > 0 && (
               <span
-                title="Menunggu verval"
+                title="Perlu ditinjau"
                 className="rounded-full bg-amber-400 px-1.5 text-xs font-semibold leading-5 text-[#103178]"
               >
                 {menunggu}

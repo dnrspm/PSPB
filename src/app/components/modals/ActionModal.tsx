@@ -237,7 +237,7 @@ const MODAL_CONFIGS: Partial<Record<WorkflowAction, ModalConfig>> = {
       { key: "deskripsi", label: "Deskripsi Progress Bantuan", type: "textarea", required: true, placeholder: "Jelaskan perkembangan penyaluran bantuan..." },
       { key: "tanggal", label: "Tanggal Kejadian", type: "date", required: true },
       { key: "file", label: "Dokumentasi atau Dokumen Pendukung", type: "file", multiple: true },
-      { key: "realisasiHeader", label: "Realisasi Dampak (opsional, akan diverval Biro Kerja Sama)", type: "section-header" },
+      { key: "realisasiHeader", label: "Realisasi Dampak (opsional, akan ditinjau Biro Kerja Sama)", type: "section-header" },
       { key: "siswa", label: "Siswa Terdampak", type: "number", placeholder: "0", inline: true },
       { key: "guru", label: "Guru Terdampak", type: "number", placeholder: "0", inline: true },
       { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak", type: "number", placeholder: "0" },
@@ -317,7 +317,7 @@ function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Co
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
           <p className="text-xs leading-relaxed text-blue-800">
             Akumulasi {jumlahLog.toLocaleString("id-ID")} log penyaluran bantuan
-            {perLog && menungguVerval > 0 && `, ${menungguVerval.toLocaleString("id-ID")} di antaranya masih menunggu verval Biro Kerja Sama`}
+            {perLog && menungguVerval > 0 && `, ${menungguVerval.toLocaleString("id-ID")} di antaranya masih menunggu tinjauan Biro Kerja Sama`}
             . Perubahan realisasi dicatat lewat aksi{" "}
             {updateProgressLink}.
           </p>
@@ -417,7 +417,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
                   ...f,
                   label: eksisting
                     ? "Realisasi Dampak (opsional, isi bila sudah ada realisasi)"
-                    : "Realisasi Dampak (opsional, diverval Biro Kerja Sama setelah kontribusi selesai)",
+                    : "Realisasi Dampak (opsional, ditinjau Biro Kerja Sama setelah kontribusi selesai)",
                 }
               : f
           ),

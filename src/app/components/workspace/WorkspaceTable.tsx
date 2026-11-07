@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useNavigate } from "react-router";
 import type { Contribution, VervalStatus } from "../../types/contribution";
 import { StatusBadge } from "./StatusBadge";
 import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 import { VERVAL_STATUS_LABELS, bangunAntrean, formatAngka, ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { VervalStatusBadge } from "./VervalStatusBadge";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
@@ -93,7 +94,7 @@ function AngkaTerbesar({ angka }: { angka: AngkaRealisasi }) {
 /** Sel realisasi: titik warna status verval gabungan, lalu angka realisasi yang diajukan. */
 function SelVerval({ h, angka, onOpen }: { h: HitungStatus; angka?: AngkaRealisasi; onOpen: () => void }) {
   const status = statusGabungan(h);
-  if (!status) return <span className="text-sm text-gray-400">–</span>;
+  if (!status) return <span className="whitespace-nowrap text-sm leading-5 text-gray-500">Belum Ada Realisasi</span>;
   const label = VERVAL_STATUS_LABELS[status];
   return (
     <button
@@ -165,6 +166,10 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     setPage(1);
   };
 
+  const adaKolomVerval = tampilVerval || kolomRingkas;
+  const menungguVervalGrup = (g: ContributionGroup) =>
+    adaKolomVerval && statusGabungan(ringkasVerval(g.items).realisasi) === "menunggu";
+
   const sorted = groupContributions(
     contributions.filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
   ).filter((g) => !statusFilter || g.workflowStatus === statusFilter)
@@ -181,9 +186,12 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     return jumlah[vervalFilter] > 0;
   })
   .sort((a, b) => {
-    const aMasuk = a.workflowStatus === "kontribusi-masuk" ? 1 : 0;
-    const bMasuk = b.workflowStatus === "kontribusi-masuk" ? 1 : 0;
-    if (aMasuk !== bMasuk) return bMasuk - aMasuk;
+    // Baris bergaris selalu di atas: merah (kontribusi masuk), lalu kuning (menunggu verval)
+    const prioritas = (g: ContributionGroup) =>
+      g.workflowStatus === "kontribusi-masuk" ? 2 : menungguVervalGrup(g) ? 1 : 0;
+    const aPrio = prioritas(a);
+    const bPrio = prioritas(b);
+    if (aPrio !== bPrio) return bPrio - aPrio;
 
     if (sortKey === "lastUpdate") {
       const diff = a.lastUpdate.getTime() - b.lastUpdate.getTime();
@@ -229,9 +237,9 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     ...(tampilVerval
-      ? [{ key: null, label: "Realisasi" }]
+      ? [{ key: null, label: "Status Realisasi" }]
       : kolomRingkas
-      ? [{ key: null, label: "Status Verval" }]
+      ? [{ key: null, label: "Status Realisasi" }]
       : []),
     { key: "lastUpdate", label: "Last Update" },
     { key: "pic", label: "PIC" },
@@ -273,31 +281,47 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
           <tbody className="divide-y divide-gray-200">
             {paginated.map((g) => {
               const isNew = g.workflowStatus === "kontribusi-masuk";
+              // Garis kuning untuk baris yang masih menunggu verval realisasi
+              const menungguVerval = menungguVervalGrup(g);
+              const garis = isNew
+                ? "border-l-4 border-l-red-500"
+                : menungguVerval
+                  ? "border-l-4 border-l-amber-400"
+                  : "";
               return (
                 <tr
                   key={g.key}
                   onClick={() => navigate(`/workspace/${g.primary.id}`)}
-                  className={`cursor-pointer transition-colors ${isNew ? "border-l-4 border-l-red-500 hover:bg-gray-100" : "hover:bg-gray-100"}`}
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 ${garis}`}
                 >
                   <td className="px-4 py-3">
-                    <div className="flex flex-col items-start gap-1">
-                      {g.items.length > 1 && (
-                        <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700 whitespace-nowrap">
-                          Demo flow multiple kontribusi
-                        </span>
-                      )}
-                      {g.instansi === "PT Mitra Digital Nusantara" && (
-                        <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 whitespace-nowrap">
-                          Demo flow per kontribusi
-                        </span>
-                      )}
-                      <div className="text-sm font-medium text-gray-800 leading-snug">{g.instansi}</div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-800 leading-snug">{g.instansi}</div>
                   </td>
                   <td className="px-4 py-3">
-                    {g.items.map((c) => (
-                      <div key={c.id} className="text-sm text-gray-800 leading-snug">{c.program}</div>
-                    ))}
+                    {g.items.map((c, i) => {
+                      const kata = c.program.split(" ");
+                      const akhir = kata.pop();
+                      const ikon = i === g.items.length - 1 && g.items.length > 1;
+                      return (
+                        <div key={c.id} className="text-sm text-gray-800 leading-snug">
+                          {kata.length > 0 && `${kata.join(" ")} `}
+                          {/* Ikon menempel di kata terakhir agar tidak turun baris sendirian */}
+                          <span className="whitespace-nowrap text-sm leading-snug">
+                            {akhir}
+                            {ikon && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="ml-1 inline-flex align-text-bottom text-gray-400 hover:text-gray-600" aria-label="Contoh demo multiple kontribusi">
+                                    <Info className="h-3.5 w-3.5" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="bg-gray-900 text-white" arrowClassName="bg-gray-900 fill-gray-900">Contoh untuk demo flow multiple kontribusi</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{getGroupUnitKerja(g)}</td>
                   <td className="px-4 py-3">

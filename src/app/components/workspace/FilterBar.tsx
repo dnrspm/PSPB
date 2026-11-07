@@ -65,7 +65,7 @@ export function FilterBar({ filters, onChange, programs, tampilVerval = false }:
         onChange={(e) => set("status", e.target.value as WorkflowState | "")}
         className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
       >
-        <option value="">Semua Status</option>
+        <option value="">Semua Status Workflow</option>
         {ALL_STATES.map((s) => (
           <option key={s} value={s}>{WORKFLOW_STATE_LABELS[s]}</option>
         ))}
@@ -75,10 +75,10 @@ export function FilterBar({ filters, onChange, programs, tampilVerval = false }:
         <select
           value={filters.verval || ""}
           onChange={(e) => onChange({ ...filters, verval: e.target.value as FilterState["verval"] })}
-          aria-label="Filter status verval dampak"
+          aria-label="Filter status realisasi dampak"
           className="rounded-md border border-gray-200 bg-white py-1.5 px-3 text-sm outline-none focus:border-blue-400"
         >
-          <option value="">Semua Status Verval</option>
+          <option value="">Semua Status Realisasi</option>
           {(Object.keys(VERVAL_STATUS_LABELS) as VervalStatus[]).map((s) => (
             <option key={s} value={s}>{VERVAL_STATUS_LABELS[s]}</option>
           ))}

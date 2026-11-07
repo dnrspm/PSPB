@@ -58,7 +58,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
         <div className="text-center">
           <p className="text-gray-500">Kontribusi tidak ditemukan.</p>
           <button onClick={() => navigate("/workspace")} className="mt-3 text-sm text-blue-600 hover:underline">
-            Kembali ke Dasbor Operasional
+            Kembali ke Ringkasan Kontribusi
           </button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           className="mb-2 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Kembali ke Dasbor Operasional
+          Kembali ke Ringkasan Kontribusi
         </button>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">
@@ -1359,14 +1359,14 @@ function VervalPanel({
       </div>
       {v.catatan && !pending && (
         <p className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
-          <span className="font-medium">{v.status === "tidak-relevan" ? "Alasan tidak relevan" : v.status === "disetujui-revisi" ? "Catatan revisi" : "Catatan verval"}:</span>{" "}
+          <span className="font-medium">{v.status === "tidak-relevan" ? "Alasan tidak relevan" : v.status === "disetujui-revisi" ? "Catatan revisi" : "Catatan tinjauan"}:</span>{" "}
           {v.catatan}
         </p>
       )}
       {pending && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
           <span className="text-sm text-amber-900">
-            {boleh ? `${subjek} ini menunggu verifikasi Anda.` : `${subjek} ini menunggu verval Biro Kerja Sama.`}
+            {boleh ? `${subjek} ini menunggu tinjauan Anda.` : `${subjek} ini menunggu tinjauan Biro Kerja Sama.`}
           </span>
           {boleh && (
             <div className="flex gap-2">
@@ -1377,7 +1377,7 @@ function VervalPanel({
           )}
         </div>
       )}
-      <button onClick={onRiwayat} className="text-xs font-medium text-blue-600 hover:text-blue-700">Lihat riwayat verval</button>
+      <button onClick={onRiwayat} className="text-xs font-medium text-blue-600 hover:text-blue-700">Lihat riwayat tinjauan</button>
     </div>
   );
 }
@@ -1436,7 +1436,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            {akhir ? "Total realisasi kontribusi ini menunggu verval Biro Kerja Sama." : `${jumlahMenunggu.toLocaleString("id-ID")} data dampak pada kontribusi ini menunggu verval Biro Kerja Sama.`}{" "}
+            {akhir ? "Total realisasi kontribusi ini menunggu tinjauan Biro Kerja Sama." : `${jumlahMenunggu.toLocaleString("id-ID")} data dampak pada kontribusi ini menunggu tinjauan Biro Kerja Sama.`}{" "}
             Dampak baru dihitung di dasbor setelah disetujui.
           </span>
         </div>
@@ -1486,9 +1486,9 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
               {eksisting
                 ? "Akumulasi seluruh log penyaluran bantuan"
                 : akhir
-                ? "Akumulasi seluruh log penyaluran. Diverval Biro Kerja Sama sekali saat kontribusi selesai"
+                ? "Akumulasi seluruh log penyaluran. Ditinjau Biro Kerja Sama sekali saat kontribusi selesai"
                 : "Akumulasi log penyaluran yang sudah disetujui"}
-              {logPending > 0 && `. ${logPending.toLocaleString("id-ID")} log masih menunggu verval dan belum dihitung`}
+              {logPending > 0 && `. ${logPending.toLocaleString("id-ID")} log masih menunggu tinjauan dan belum dihitung`}
             </p>
             <DampakGrid dampak={realisasi} />
           </div>
