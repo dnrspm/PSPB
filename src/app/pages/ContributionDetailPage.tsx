@@ -1284,38 +1284,6 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
 
 /* ────────────── Realisasi Dampak + riwayat (tab Informasi, opsi Tabel) ────────────── */
 
-/** Daftar riwayat ringkas: entri terbaru selalu tampil, sisanya dilipat di "Riwayat selengkapnya". */
-function RiwayatRingkas<T>({ items, render }: { items: T[]; render: (item: T, terbaru: boolean) => React.ReactNode }) {
-  const [buka, setBuka] = useState(false);
-  const [terbaru, ...sisa] = items;
-  if (items.length === 0) return null;
-  return (
-    <div>
-      <ul>{<li>{render(terbaru, true)}</li>}</ul>
-      {sisa.length > 0 && (
-        <>
-          <button
-            type="button"
-            onClick={() => setBuka((v) => !v)}
-            aria-expanded={buka}
-            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
-            {buka ? "Sembunyikan riwayat" : `Riwayat selengkapnya (${sisa.length.toLocaleString("id-ID")})`}
-          </button>
-          {buka && (
-            <ul className="mt-3 space-y-3 border-t border-gray-100 pt-3">
-              {sisa.map((item, i) => (
-                <li key={i}>{render(item, false)}</li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 const KAB_POPOVER_PROVINSI = 6;
 
 /**
@@ -1603,22 +1571,23 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
   const nilaiDampak = (d: DampakPelaksanaan | undefined, key: (typeof baris)[number]["key"]) =>
     key === "wilayah" ? jumlahWilayah(d?.wilayah) : d?.[key];
 
-  const meta = !v
-    ? selesai
-      ? "Belum ada realisasi dampak yang diajukan untuk ditinjau."
-      : ""
-    : v.status === "tidak-relevan"
-    ? `Ditandai tidak relevan oleh ${v.diperbaruiOleh} pada ${formatWaktuVerval(v.diperbaruiPada)}.`
-    : menunggu
-    ? ""
-    : `Ditinjau oleh ${v.diperbaruiOleh} pada ${formatWaktuVerval(v.diperbaruiPada)}.`;
-  const catatanLabel = v?.status === "tidak-relevan" ? "Alasan tidak relevan" : v?.status === "disetujui-revisi" ? "Catatan revisi" : "Catatan tinjauan";
+  // Keterangan hanya saat belum ada realisasi yang diajukan; hasil tinjauan ada di bagian Hasil Tinjauan
+  const meta = !v && selesai ? "Belum ada realisasi dampak yang diajukan untuk ditinjau." : "";
 
   const logs = [...(p.progressUpdates || [])].sort((x, y) => new Date(y.tanggal).getTime() - new Date(x.tanggal).getTime());
   // Penomoran menurut urutan waktu: yang paling lama adalah penyaluran ke-1
   const nomorPenyaluran = (id: string) => logs.length - logs.findIndex((l) => l.id === id);
-  // Hanya keputusan tinjauan; catatan pengajuan bukan hasil tinjauan
-  const tinjauan = v ? [...v.riwayat].filter((e) => e.jenis !== "ajukan").reverse() : [];
+  // Hasil tinjauan = keputusan terakhir; catatan pengajuan bukan hasil tinjauan
+  const diputuskan = !!v && v.status !== "menunggu";
+  // Perubahan nilai pada revisi: nilai semula menjadi nilai hasil revisi
+  const perubahan = semula
+    ? [
+        ...([["siswa", "Siswa"], ["guru", "Guru"], ["satuanPendidikan", "Satdik"]] as const)
+          .filter(([k]) => Object.prototype.hasOwnProperty.call(semula, k))
+          .map(([k, l]) => `${l} ${formatAngka(semula[k])} → ${formatAngka(angka?.[k])}`),
+        ...(Object.prototype.hasOwnProperty.call(semula, "wilayah") ? [`Kab/Kota ${formatAngka(jumlahWilayah(semula.wilayah))} → ${formatAngka(jumlahWilayah(angka?.wilayah))}`] : []),
+      ].join(", ")
+    : "";
   const judulSegmen = "flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-gray-400";
 
   const subjudul = "flex items-center gap-1.5 text-sm font-semibold text-gray-700";
@@ -1662,12 +1631,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
           })}
         </dl>
 
-        {(meta || (v?.catatan && !menunggu)) && (
-          <p className="mt-3 text-xs text-gray-500">
-            {meta}
-            {v?.catatan && !menunggu && <span className="text-gray-600"> {catatanLabel}: {v.catatan}</span>}
-          </p>
-        )}
+        {meta && <p className="mt-3 text-xs text-gray-500">{meta}</p>}
       </div>
 
       {/* Riwayat Pelaksanaan */}
@@ -1720,10 +1684,10 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
         )}
       </div>
 
-      {/* Riwayat Tinjauan */}
+      {/* Hasil Tinjauan: satu keputusan saat kontribusi Selesai, bukan riwayat */}
       <div className="mt-4 border-t border-gray-100 pt-4">
-        <h4 className={`mb-3 ${subjudul}`}>Riwayat Tinjauan</h4>
-        {tinjauan.length === 0 ? (
+        <h4 className={`mb-3 ${subjudul}`}>Hasil Tinjauan</h4>
+        {!diputuskan || !v ? (
           <div className="rounded-md border border-dashed border-gray-200 px-4 py-5 text-center">
             <p className="text-sm font-medium text-gray-500">Belum Ditinjau</p>
             <p className="mt-0.5 text-xs text-gray-400">
@@ -1747,23 +1711,17 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
             </p>
           </div>
         ) : (
-          <RiwayatRingkas
-            items={tinjauan}
-            render={(e) => (
-              <div className="flex gap-3">
-                <span
-                  className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                    e.jenis === "ajukan" ? "bg-amber-500" : e.jenis === "tidak-relevan" ? "bg-gray-500" : e.jenis === "revisi" ? "bg-sky-500" : "bg-green-600"
-                  }`}
-                />
-                <div className="min-w-0">
-                  <p className="text-base text-gray-900">{e.text}</p>
-                  <p className="text-xs text-gray-500">{e.by}, {formatWaktuVerval(e.at)}</p>
-                  {e.note && <p className="mt-1 rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-700">Catatan: {e.note}</p>}
-                </div>
-              </div>
+          <div className="space-y-1">
+            <p className="text-sm leading-relaxed text-gray-900">
+              {VERVAL_STATUS_LABELS[v.status]} oleh {v.diperbaruiOleh} pada {formatWaktuVerval(v.diperbaruiPada)}
+              {perubahan && ` (${perubahan})`}.
+            </p>
+            {v.catatan && (
+              <p className="text-sm leading-relaxed text-gray-900">
+                {v.status === "tidak-relevan" ? "Alasan" : "Catatan"}: {v.catatan}
+              </p>
             )}
-          />
+          </div>
         )}
       </div>
 
