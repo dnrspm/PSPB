@@ -40,7 +40,7 @@ export const VERVAL_STATUS_VARIANT: Record<VervalStatus, "warning" | "success" |
 
 export const VERVAL_KEPUTUSAN_LABELS: Record<VervalKeputusan, string> = {
   setuju: "Setuju",
-  revisi: "Setuju dengan revisi",
+  revisi: "Revisi",
   "tidak-relevan": "Tidak relevan",
 };
 
