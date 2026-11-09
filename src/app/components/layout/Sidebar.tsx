@@ -55,7 +55,7 @@ export function Sidebar({}: SidebarProps) {
             }
           >
             <ClipboardCheck className="h-4 w-4" />
-            <span className="flex-1">Verval Dampak</span>
+            <span className="flex-1 text-sm">Verval Dampak</span>
             {menunggu > 0 && (
               <span
                 title="Perlu ditinjau"
