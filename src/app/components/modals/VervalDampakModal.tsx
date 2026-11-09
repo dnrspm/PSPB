@@ -11,6 +11,34 @@ import {
   type AntreanItem,
 } from "../../lib/verval";
 import { groupWilayah } from "../../lib/dampak";
+import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
+import { WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
+
+const baku = (t: string) => t.trim().toLowerCase().replace(/^(kota|kabupaten|kab\.)\s+/, "");
+const kunciRow = (r: WilayahRow) => `${r.provinsi}|${r.kabupaten}`;
+
+/** Uraikan "Kab (Prov), Kab (Prov)" menjadi baris pemilih wilayah. Entri yang tidak dikenali disimpan apa adanya. */
+function uraikanWilayah(w: string): { rows: WilayahRow[]; sisa: string[]; asal: Record<string, string> } {
+  const rows: WilayahRow[] = [];
+  const sisa: string[] = [];
+  const asal: Record<string, string> = {};
+  for (const m of w.matchAll(/([^,()]+?)\s*\(([^()]+)\)/g)) {
+    const kabLabel = m[1].trim();
+    const provLabel = m[2].trim();
+    const prov = PROVINSI_OPTIONS.find((o) => baku(o.label) === baku(provLabel));
+    const kab = prov && (KABUPATEN_BY_PROVINSI[prov.value] || []).find((o) => baku(o.label) === baku(kabLabel));
+    if (prov && kab) {
+      const row = { provinsi: prov.value, kabupaten: kab.value };
+      if (!rows.some((r) => kunciRow(r) === kunciRow(row))) {
+        rows.push(row);
+        // Pertahankan penulisan asli (mis. "Kota Bekasi") selama baris masih dipilih
+        asal[kunciRow(row)] = `${kabLabel} (${provLabel})`;
+      }
+    } else sisa.push(`${kabLabel} (${provLabel})`);
+  }
+  if (rows.length === 0 && sisa.length === 0 && w.trim()) sisa.push(...w.split(",").map((x) => x.trim()).filter(Boolean));
+  return { rows, sisa, asal };
+}
 
 interface VervalDampakModalProps {
   item: AntreanItem;
@@ -26,12 +54,6 @@ interface VervalDampakModalProps {
 }
 
 const KEPUTUSAN: VervalKeputusan[] = ["setuju", "revisi", "tidak-relevan"];
-
-const TOMBOL: Record<VervalKeputusan, string> = {
-  setuju: "Setujui",
-  revisi: "Simpan revisi",
-  "tidak-relevan": "Tandai tidak relevan",
-};
 
 function awalEdit(d: DampakPelaksanaan): Record<string, string> {
   return {
@@ -80,6 +102,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
   const [catatan, setCatatan] = useState("");
   const [error, setError] = useState("");
   const [wilayahBuka, setWilayahBuka] = useState(false);
+  const [pemilihBuka, setPemilihBuka] = useState(false);
+  const [awalWilayah] = useState(() => uraikanWilayah(dampak.wilayah || ""));
+  const [wilayahRows, setWilayahRows] = useState<WilayahRow[]>(awalWilayah.rows);
 
   const wajibCatatan = keputusan !== "setuju";
 
@@ -123,6 +148,15 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
   ];
 
   const revisi = keputusan === "revisi";
+  const teksWilayah = (rows: WilayahRow[]) =>
+    [
+      ...rows.map((r) => {
+        const prov = PROVINSI_OPTIONS.find((o) => o.value === r.provinsi)?.label || r.provinsi;
+        const kab = (KABUPATEN_BY_PROVINSI[r.provinsi] || []).find((o) => o.value === r.kabupaten)?.label || r.kabupaten;
+        return awalWilayah.asal[kunciRow(r)] ?? `${kab} (${prov})`;
+      }),
+      ...awalWilayah.sisa,
+    ].join(", ");
   const target = c.pelaksanaan?.targetDampak;
   // Kab/Kota ditampilkan sebagai jumlah; daftar lengkap dibuka lewat "Lihat semua"
   const teksSel = (d: DampakPelaksanaan | undefined, key: (typeof DAMPAK_FIELDS)[number]["key"]) => {
@@ -145,6 +179,25 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
     if (r === undefined || t === undefined) return null;
     return r - t;
   };
+
+  if (pemilihBuka) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">
+        <div role="dialog" aria-modal="true" aria-label="Pilih kabupaten/kota" className="flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl">
+          <WilayahPickerPanel
+            initial={wilayahRows}
+            onCancel={() => setPemilihBuka(false)}
+            onApply={(rows) => {
+              setWilayahRows(rows);
+              setEdits((prev) => ({ ...prev, wilayah: teksWilayah(rows) }));
+              setPemilihBuka(false);
+              setError("");
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">
@@ -241,27 +294,29 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
                       className="w-full rounded-md border border-gray-300 px-2 py-0.5 text-[14px] outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   ) : (
-                    <textarea
+                    <button
                       id={`rev-${f.key}`}
-                      onClick={(e) => e.stopPropagation()}
-                      rows={2}
-                      value={edits[f.key]}
-                      onChange={(e) => {
-                        setEdits((prev) => ({ ...prev, [f.key]: e.target.value }));
-                        setError("");
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPemilihBuka(true);
                       }}
-                      placeholder="Pisahkan dengan koma"
-                      className="w-full rounded-md border border-gray-300 px-2 py-1 text-[14px] outline-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
+                      className="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-2 py-0.5 text-left text-[14px] leading-6 hover:border-blue-500"
+                    >
+                      <span className="text-[14px] leading-6 text-gray-900">
+                        {(wilayahRows.length + awalWilayah.sisa.length).toLocaleString("id-ID")} kab/kota
+                      </span>
+                      <span className="text-[13px] font-medium leading-6 text-blue-600">Ubah</span>
+                    </button>
                   ))}
               </div>
             ))}
             {wilayahBuka && (
-              <div className={`grid items-start gap-3 border-t border-gray-100 bg-gray-50 px-3 py-2 ${kolom}`}>
+              <div className={`grid max-h-52 items-start gap-3 overflow-y-auto border-t border-gray-100 bg-gray-50 px-3 py-2 ${kolom}`}>
                 <div className="text-[14px] leading-6 text-gray-700">Kab/Kota</div>
                 <WilayahPerProvinsi wilayah={target?.wilayah} />
                 <WilayahPerProvinsi wilayah={dampak.wilayah} />
-                {revisi && <div />}
+                {revisi && <WilayahPerProvinsi wilayah={edits.wilayah} />}
               </div>
             )}
           </div>
@@ -336,11 +391,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
             </button>
             <button
               onClick={konfirmasi}
-              className={`rounded-md px-3 py-1.5 text-[14px] font-semibold text-white ${
-                keputusan === "tidak-relevan" ? "bg-gray-800 hover:bg-gray-900" : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-blue-700"
             >
-              {TOMBOL[keputusan]}
+              Simpan keputusan
             </button>
           </div>
         )}

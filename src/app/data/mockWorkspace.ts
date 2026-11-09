@@ -540,14 +540,21 @@ export const mockContributions: Contribution[] = [
         {
           id: "pu-c012-1", judul: "Toilet SDN 1 Bekasi selesai dibangun",
           deskripsi: "Tiga unit toilet baru di tiga sekolah Kota Bekasi sudah dipakai.",
-          tanggal: d(40), actor: "Andi Pratama", dokumen: [],
+          tanggal: d(40), actor: "Andi Pratama",
+          dokumen: [
+            { id: "d021a", name: "BA_Penyaluran_Toilet_Bekasi.pdf", type: "dokumentasi", uploadedAt: d(40), uploadedBy: "Andi Pratama" },
+            { id: "d021b", name: "Foto_Toilet_SDN1_Bekasi.pdf", type: "dokumentasi", uploadedAt: d(40), uploadedBy: "Andi Pratama" },
+          ],
           realisasi: { siswa: 1200, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kota Bekasi (Jawa Barat)" },
           verval: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Andi Pratama", hariLaluAjukan: 40, hariLaluVerval: 38, verifikator: "Budi Santoso" }),
         },
         {
           id: "pu-c012-2", judul: "Toilet tiga sekolah di Karawang selesai",
           deskripsi: "Tiga unit toilet di Karawang selesai dan diserahterimakan.",
-          tanggal: d(20), actor: "Andi Pratama", dokumen: [],
+          tanggal: d(20), actor: "Andi Pratama",
+          dokumen: [
+            { id: "d021c", name: "BAST_Toilet_Karawang.pdf", type: "bast", uploadedAt: d(20), uploadedBy: "Andi Pratama" },
+          ],
           realisasi: { siswa: 1180, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kabupaten Karawang (Jawa Barat)" },
           verval: seedVerval({
             jenis: "realisasi", status: "disetujui-revisi", oleh: "Andi Pratama", hariLaluAjukan: 20,
@@ -558,7 +565,10 @@ export const mockContributions: Contribution[] = [
         {
           id: "pu-c012-3", judul: "Serah terima toilet Karawang (catatan ganda)",
           deskripsi: "Serah terima yang sama tercatat dua kali.",
-          tanggal: d(19), actor: "Andi Pratama", dokumen: [],
+          tanggal: d(19), actor: "Andi Pratama",
+          dokumen: [
+            { id: "d021d", name: "BAST_Toilet_Karawang_salinan.pdf", type: "bast", uploadedAt: d(19), uploadedBy: "Andi Pratama" },
+          ],
           realisasi: { siswa: 1180, guru: 48, satuanPendidikan: 3, bantuan: 3, wilayah: "Kabupaten Karawang (Jawa Barat)" },
           verval: seedVerval({
             jenis: "realisasi", status: "tidak-relevan", oleh: "Andi Pratama", hariLaluAjukan: 19,

@@ -77,10 +77,10 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Informasi" },
     // Tetap tampil setelah tahap pelaksanaan lewat, agar realisasi & timeline masih bisa dilihat
-    // Opsi 4: riwayat pelaksanaan dibuka sebagai pop up dari tab Informasi, bukan tab sendiri
+    // Opsi Tabel: riwayat pelaksanaan dibuka sebagai pop up dari tab Informasi, bukan tab sendiri
     ...(layout !== "tabel" && (c.workflowStatus.startsWith("pelaksanaan-") || c.pelaksanaan) ? [{ key: "pelaksanaan" as Tab, label: "Pelaksanaan" }] : []),
   ];
-  // Opsi 4: tombol Tinjau Realisasi sejajar aksi utama di header, bagi Biro Kerja Sama saat total realisasi menunggu tinjauan
+  // Opsi Tabel: tombol Tinjau Realisasi sejajar aksi utama di header, bagi Biro Kerja Sama saat total realisasi menunggu tinjauan
   const itemTinjau = layout === "tabel" && c.pelaksanaan && bolehVerval(currentUser.role)
     ? antreanKontribusi(c.id).find((i) => !i.logId && i.verval.status === "menunggu")
     : undefined;
@@ -117,6 +117,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
               <span className="text-gray-300">|</span>
               <span>Diperbarui: <strong>{formatDate(c.lastUpdate)}</strong></span>
             </div>
+            {layout === "tabel" && c.pelaksanaan?.targetDampak && <DampakVsRealisasi contribution={c} />}
           </div>
 
           {/* Action buttons */}
@@ -230,6 +231,35 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           </div>
         </div>
     </div>
+  );
+}
+
+/** Ringkasan di hero (opsi Tabel): realisasi dibanding target dampak, satu baris. */
+function DampakVsRealisasi({ contribution: c }: { contribution: Contribution }) {
+  const p = c.pelaksanaan;
+  if (!p?.targetDampak) return null;
+  const target = p.targetDampak;
+  const angka = antreanKontribusi(c.id).find((i) => !i.logId)?.dampak ?? realisasiTerkini(p);
+  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
+  const baris: { label: string; real?: number; target?: number }[] = [
+    { label: "Siswa", real: angka?.siswa, target: target.siswa },
+    { label: "Guru", real: angka?.guru, target: target.guru },
+    { label: "Satdik", real: angka?.satuanPendidikan, target: target.satuanPendidikan },
+    { label: "Penerima bantuan", real: angka?.bantuan, target: target.bantuan },
+    { label: "Kab/Kota", real: kab(angka), target: kab(target) },
+  ];
+  return (
+    <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-1" aria-label="Realisasi dibanding target dampak">
+      {baris.map((r) => (
+        <div key={r.label} className="flex items-baseline gap-1.5">
+          <dt className="text-xs text-gray-500">{r.label}</dt>
+          <dd className="text-sm font-semibold tabular-nums text-gray-900">
+            {r.real === undefined ? "-" : formatAngka(r.real)}
+            {r.target !== undefined && r.target > 0 && <> <span className="text-xs font-normal text-gray-400">/ {formatAngka(r.target)}</span></>}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -684,7 +714,7 @@ function InfoTab({ contribution: c, bantuanList, onDokumenChange, currentUser, o
             </div>
           </div>
         )}
-      {/* Ringkasan realisasi dampak (opsi 4): pintasan ke tab Pelaksanaan */}
+      {/* Ringkasan realisasi dampak (opsi Tabel): pintasan ke tab Pelaksanaan */}
       {c.pelaksanaan && <RingkasanRealisasiBlock contribution={c} currentUser={currentUser} onChanged={onDokumenChange} onTinjau={onTinjau} />}
 
       {/* Informasi Mitra */}
@@ -1281,7 +1311,7 @@ function DocumentUpload({ contribution: c, onDokumenChange }: { contribution: Co
   );
 }
 
-/* ────────────── Realisasi Dampak + riwayat (tab Informasi, opsi 4) ────────────── */
+/* ────────────── Realisasi Dampak + riwayat (tab Informasi, opsi Tabel) ────────────── */
 
 /** Daftar riwayat ringkas: entri terbaru selalu tampil, sisanya dilipat di "Riwayat selengkapnya". */
 function RiwayatRingkas<T>({ items, render }: { items: T[]; render: (item: T, terbaru: boolean) => React.ReactNode }) {
@@ -1315,8 +1345,273 @@ function RiwayatRingkas<T>({ items, render }: { items: T[]; render: (item: T, te
   );
 }
 
+const WILAYAH_LANGSUNG = 4;
+
 /**
- * Tab Informasi pada opsi 4: kartu Realisasi Dampak (angka + status), lalu dua segmen
+ * Wilayah per provinsi (teks), awalan Kabupaten disingkat.
+ * Daftar pendek langsung tampil; daftar panjang dilipat dan dibuka lewat tautan, dengan area gulir.
+ */
+function WilayahTeks({ wilayah, judul }: { wilayah: string; judul?: string }) {
+  const { groups, lainnya, totalKabupaten } = groupWilayah(wilayah);
+  const panjang = totalKabupaten > WILAYAH_LANGSUNG;
+  const [buka, setBuka] = useState(!panjang);
+  const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
+  if (groups.length === 0 && lainnya.length === 0) return null;
+  const nama = judul || "Kab/Kota";
+  return (
+    <div className="mt-2">
+      {panjang ? (
+        <button
+          type="button"
+          onClick={() => setBuka((v) => !v)}
+          aria-expanded={buka}
+          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
+          {buka ? `Sembunyikan ${nama}` : `Lihat ${nama} (${totalKabupaten.toLocaleString("id-ID")} di ${groups.length.toLocaleString("id-ID")} provinsi)`}
+        </button>
+      ) : (
+        judul && <p className="mb-1 text-xs text-gray-500">{judul}</p>
+      )}
+      {buka && (
+        <div className={`space-y-0.5 ${panjang ? "mt-2 max-h-56 overflow-y-auto rounded-md border border-gray-100 p-3" : ""}`}>
+          {groups.map((g) => (
+            <p key={g.provinsi} className="text-sm leading-5 text-gray-600">
+              <strong className="font-medium text-gray-700">{g.provinsi} ({g.kabupaten.length}):</strong> {g.kabupaten.map(singkat).join(", ")}
+            </p>
+          ))}
+          {lainnya.length > 0 && <p className="text-sm leading-5 text-gray-600">{lainnya.map(singkat).join(", ")}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Lima angka dampak dalam kontainer abu-abu, sama dengan kartu Realisasi Dampak. Dengan target: "x / y". */
+function MetrikDampak({ dampak, target, judulWilayah }: { dampak?: DampakPelaksanaan; target?: DampakPelaksanaan; judulWilayah?: string }) {
+  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
+  const item: [string, number | undefined, number | undefined][] = [
+    ["Siswa", dampak?.siswa, target?.siswa],
+    ["Guru", dampak?.guru, target?.guru],
+    ["Satdik", dampak?.satuanPendidikan, target?.satuanPendidikan],
+    ["Penerima bantuan", dampak?.bantuan, target?.bantuan],
+    ["Kab/Kota", kab(dampak), kab(target)],
+  ];
+  return (
+    <div>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-gray-100 bg-gray-50 p-4 sm:grid-cols-5">
+        {item.map(([label, nilai, t]) => (
+          <div key={label}>
+            <dt className="text-xs text-gray-500">{label}</dt>
+            <dd className="flex items-baseline gap-1.5">
+              <span className="text-lg font-semibold tabular-nums text-gray-900">{nilai === undefined ? "-" : formatAngka(nilai)}</span>
+              {t !== undefined && t > 0 && <span className="text-xs text-gray-400">/ {formatAngka(t)}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {dampak?.wilayah && <WilayahTeks wilayah={dampak.wilayah} judul={judulWilayah} />}
+    </div>
+  );
+}
+
+/** Perbandingan total realisasi dengan target: tabel angka dengan selisih. */
+function TabelTotalVsTarget({ total, target }: { total?: DampakPelaksanaan; target?: DampakPelaksanaan }) {
+  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
+  const baris: [string, number | undefined, number | undefined][] = [
+    ["Siswa", target?.siswa, total?.siswa],
+    ["Guru", target?.guru, total?.guru],
+    ["Satdik", target?.satuanPendidikan, total?.satuanPendidikan],
+    ["Penerima bantuan", target?.bantuan, total?.bantuan],
+    ["Kab/Kota", kab(target), kab(total)],
+  ];
+  const kolom = "grid-cols-[1fr_6rem_6rem_6rem]";
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className={`grid gap-3 bg-[#F1F1F1] px-3 py-1.5 text-[13px] font-semibold text-[#323232] ${kolom}`}>
+        <div>Data</div>
+        <div className="text-right">Target</div>
+        <div className="text-right">Realisasi</div>
+        <div className="text-right">Selisih</div>
+      </div>
+      {baris.map(([label, t, r]) => {
+        const sel = t !== undefined && r !== undefined ? r - t : null;
+        return (
+          <div key={label} className={`grid items-center gap-3 border-t border-gray-100 px-3 py-1.5 ${kolom}`}>
+            <div className="text-sm text-gray-700">{label}</div>
+            <div className="text-right text-sm tabular-nums text-gray-600">{t === undefined ? "-" : formatAngka(t)}</div>
+            <div className="text-right text-sm font-semibold tabular-nums text-gray-900">{r === undefined ? "-" : formatAngka(r)}</div>
+            <div className="flex justify-end">
+              {sel === null ? (
+                <div className="text-sm text-gray-400">-</div>
+              ) : (
+                <div className={`rounded-full border px-2 text-[12px] font-medium leading-5 ${sel > 0 ? "border-green-200 bg-green-50 text-green-700" : sel < 0 ? "border-red-200 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                  {sel > 0 ? "+" : sel < 0 ? "−" : ""}
+                  {Math.abs(sel).toLocaleString("id-ID")}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Kab/Kota target dan realisasi berdampingan per provinsi; selisihnya diberi penanda. */
+function BandingWilayah({ target, realisasi }: { target?: string; realisasi?: string }) {
+  const gt = groupWilayah(target || "");
+  const gr = groupWilayah(realisasi || "");
+  const norm = (n: string) => n.trim().toLowerCase().replace(/^kab\.\s+/, "kabupaten ");
+  const tSet = new Set(gt.groups.flatMap((g) => g.kabupaten.map((k) => `${g.provinsi}|${norm(k)}`)));
+  const rSet = new Set(gr.groups.flatMap((g) => g.kabupaten.map((k) => `${g.provinsi}|${norm(k)}`)));
+  const jumlahT = gt.totalKabupaten;
+  const jumlahR = gr.totalKabupaten;
+  const panjang = Math.max(jumlahT, jumlahR) > WILAYAH_LANGSUNG;
+  const [buka, setBuka] = useState(!panjang);
+  if (jumlahT === 0 && jumlahR === 0) return null;
+  const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
+  const belum = [...tSet].filter((k) => !rSet.has(k)).length;
+  const tambahan = [...rSet].filter((k) => !tSet.has(k)).length;
+
+  const kolom = (judul: string, jumlah: number, g: ReturnType<typeof groupWilayah>, lawan: Set<string>, jenis: "target" | "realisasi") => (
+    <div className="min-w-0">
+      <p className="mb-1.5 text-[13px] font-semibold text-gray-700">{judul} ({jumlah.toLocaleString("id-ID")})</p>
+      {g.groups.length === 0 && g.lainnya.length === 0 && <p className="text-sm text-gray-400">-</p>}
+      <div className="space-y-1.5">
+        {g.groups.map((grp) => (
+          <div key={grp.provinsi}>
+            <p className="text-xs font-semibold leading-5 text-gray-500">{grp.provinsi} ({grp.kabupaten.length})</p>
+            <ul>
+              {grp.kabupaten.map((k) => {
+                const beda = !lawan.has(`${grp.provinsi}|${norm(k)}`);
+                return (
+                  <li key={k} className={`flex items-center gap-1.5 text-sm leading-5 ${beda ? (jenis === "target" ? "text-amber-700" : "text-green-700") : "text-gray-800"}`}>
+                    <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${beda ? (jenis === "target" ? "bg-amber-500" : "bg-green-600") : "bg-gray-300"}`} />
+                    {singkat(k)}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+        {g.lainnya.length > 0 && <p className="text-sm leading-5 text-gray-600">{g.lainnya.map(singkat).join(", ")}</p>}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-3">
+      {panjang && (
+        <button
+          type="button"
+          onClick={() => setBuka((v) => !v)}
+          aria-expanded={buka}
+          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
+          {buka ? "Sembunyikan perbandingan Kab/Kota" : `Lihat perbandingan Kab/Kota (target ${jumlahT.toLocaleString("id-ID")}, realisasi ${jumlahR.toLocaleString("id-ID")})`}
+        </button>
+      )}
+      {buka && (
+        <div className={panjang ? "mt-2" : ""}>
+          {(belum > 0 || tambahan > 0) && (
+            <p className="mb-1.5 flex flex-wrap gap-x-4 text-xs text-gray-500">
+              {belum > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Target belum terealisasi ({belum.toLocaleString("id-ID")})
+                </span>
+              )}
+              {tambahan > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                  Di luar target ({tambahan.toLocaleString("id-ID")})
+                </span>
+              )}
+            </p>
+          )}
+          <div className={`grid grid-cols-2 gap-x-6 rounded-md border border-gray-100 p-3 ${panjang ? "max-h-64 overflow-y-auto" : ""}`}>
+            {kolom("Target", jumlahT, gt, rSet, "target")}
+            {kolom("Realisasi", jumlahR, gr, tSet, "realisasi")}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Isi pop up Cek Detail: periode, target, dan seluruh penyaluran beserta realisasi dan dokumennya. */
+function DetailPelaksanaan({ contribution: c }: { contribution: Contribution }) {
+  const p = c.pelaksanaan;
+  if (!p) return null;
+  const logs = [...(p.progressUpdates || [])].sort((x, y) => new Date(y.tanggal).getTime() - new Date(x.tanggal).getTime());
+  const total = antreanKontribusi(c.id).find((i) => !i.logId)?.dampak ?? realisasiTerkini(p);
+  const sub = "mb-3 flex items-center gap-1.5 text-sm font-semibold text-gray-700";
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-gray-500">
+        Mulai {p.startDate ? formatTanggal(p.startDate) : "-"} · Selesai {p.completionDate ? formatTanggal(p.completionDate) : "-"}
+      </p>
+
+      {(total || p.targetDampak) && (
+        <div>
+          <h4 className={sub}>Total Realisasi terhadap Target</h4>
+          <TabelTotalVsTarget total={total} target={p.targetDampak} />
+          <BandingWilayah target={p.targetDampak?.wilayah} realisasi={total?.wilayah} />
+        </div>
+      )}
+
+      <div className="border-t border-gray-100 pt-5">
+        <h4 className={sub}>Penyaluran Bantuan</h4>
+        {logs.length === 0 ? (
+          <p className="text-sm text-gray-400">Belum ada update penyaluran bantuan.</p>
+        ) : (
+          <ul className="relative space-y-4">
+            <div aria-hidden="true" className="absolute bottom-6 left-[7px] top-6 w-0.5 bg-gray-200" />
+            {logs.map((u, i) => (
+              <li key={u.id} className="relative flex gap-3">
+                <div aria-hidden="true" className="relative z-10 mt-5 shrink-0">
+                  <div className={`h-4 w-4 rounded-full border-2 bg-white ${i === 0 ? "border-blue-600" : "border-gray-300"}`} />
+                </div>
+                <div className="min-w-0 flex-1 rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                  <p className="text-base font-semibold text-gray-900">Penyaluran ke-{logs.length - i}</p>
+                  <p className="text-xs text-gray-500">{formatTanggal(u.tanggal)} · {u.actor}</p>
+                </div>
+                {u.judul && <p className="mt-0.5 text-sm font-medium text-gray-800">{u.judul}</p>}
+                {u.deskripsi && <p className="mt-1 text-sm leading-relaxed text-gray-600">{u.deskripsi}</p>}
+                {u.realisasi && (
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-xs text-gray-500">Realisasi</p>
+                    <MetrikDampak dampak={u.realisasi} />
+                  </div>
+                )}
+                {u.dokumen.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {u.dokumen.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm">
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                        <p className="flex-1 truncate text-sm text-gray-700">{doc.name}</p>
+                        <a href={doc.url || "#"} target="_blank" rel="noopener noreferrer" className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
+                          Lihat
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Tab Informasi pada opsi Tabel: kartu Realisasi Dampak (angka + status), lalu dua segmen
  * Riwayat Pelaksanaan dan Riwayat Tinjauan. Aksi Tinjau Realisasi ada di header halaman.
  */
 function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTinjau }: { contribution: Contribution; currentUser: SessionUser; onChanged?: () => void; onTinjau?: () => void }) {
@@ -1524,17 +1819,17 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
             role="dialog"
             aria-modal="true"
             aria-label="Riwayat Pelaksanaan"
-            className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-[#fafafa] shadow-xl"
+            className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between rounded-t-lg border-b border-gray-100 bg-white px-5 py-3">
+            <div className="flex items-center justify-between rounded-t-lg border-b border-gray-100 px-5 py-3">
               <h2 className="text-base font-semibold text-gray-900">Riwayat Pelaksanaan</h2>
               <button type="button" onClick={() => setDetailBuka(false)} aria-label="Tutup" className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="overflow-y-auto p-5">
-              <PelaksanaanTab contribution={c} currentUser={currentUser} onChanged={() => onChanged?.()} riwayat />
+              <DetailPelaksanaan contribution={c} />
             </div>
           </div>
         </div>
@@ -1685,8 +1980,7 @@ function VervalPanel({
   );
 }
 
-/** `riwayat`: tampilan baca-saja di pop up (opsi 4); total realisasi dan aksi tinjauan ada di tab Informasi. */
-function PelaksanaanTab({ contribution: c, currentUser, onChanged, riwayat: modeRiwayat = false }: { contribution: Contribution; currentUser: SessionUser; onChanged: () => void; riwayat?: boolean }) {
+function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribution: Contribution; currentUser: SessionUser; onChanged: () => void }) {
   const p = c.pelaksanaan;
   const layout = useVervalLayout();
   const eksisting = layout === "eksisting";
@@ -1736,7 +2030,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged, riwayat: mode
 
   return (
     <div className="max-w-3xl space-y-4">
-      {!modeRiwayat && jumlahMenunggu > 0 && (
+      {jumlahMenunggu > 0 && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
@@ -1767,7 +2061,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged, riwayat: mode
           </div>
         )}
 
-        {!modeRiwayat && itemAkhir && (
+        {itemAkhir && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Total Realisasi Dampak Saat Selesai</p>
             <p className="mb-2 text-xs text-green-700/80">
@@ -1783,7 +2077,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged, riwayat: mode
           </div>
         )}
 
-        {!modeRiwayat && !itemAkhir && realisasi && (
+        {!itemAkhir && realisasi && (
           <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Realisasi Dampak Terkini</p>
             <p className="mb-2 text-xs text-green-700/80">
@@ -1798,7 +2092,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged, riwayat: mode
           </div>
         )}
 
-        {!modeRiwayat && !eksisting && targetDihitung && realisasi && (
+        {!eksisting && targetDihitung && realisasi && (
           <div className="mt-3 rounded-md border border-gray-100 p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Capaian terhadap target</p>
             <div className="space-y-3">
