@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate, useOutletContext } from "react-router";
 import { CheckCircle2, ChevronLeft, ChevronRight, Info, Search } from "lucide-react";
 import { useContributionsSync } from "../lib/useContributions";
-import { PratinjauDasborPublik } from "../components/workspace/PratinjauDasborPublik";
 import { punyaMenuVerval, useVervalLayout } from "../lib/vervalLayout";
 import type { SessionUser } from "../lib/auth";
 import type { VervalKeputusan, VervalStatus } from "../types/contribution";
@@ -147,11 +146,11 @@ export default function VervalDampakPage() {
   };
 
   const kolomNilai: { key: DampakKey; label: string }[] = [
-    { key: "siswa", label: "Realisasi Siswa Terdampak" },
-    { key: "guru", label: "Realisasi Guru Terdampak" },
-    { key: "satuanPendidikan", label: "Realisasi Satuan Pendidikan Terdampak" },
-    { key: "bantuan", label: "Realisasi Satuan Pendidikan Penerima Bantuan" },
-    { key: "wilayah", label: "Realisasi Kabupaten/Kota yang Dibantu" },
+    { key: "siswa", label: "Siswa Terdampak" },
+    { key: "guru", label: "Guru Terdampak" },
+    { key: "satuanPendidikan", label: "Satuan Pendidikan Terdampak" },
+    { key: "bantuan", label: "Satuan Pendidikan Penerima Bantuan" },
+    { key: "wilayah", label: "Kabupaten/Kota yang Dibantu" },
   ];
 
   // Hanya dipakai pada opsi dengan menu Verval Dampak
@@ -163,13 +162,10 @@ export default function VervalDampakPage() {
         <div>
           <h1 className="text-[22px] font-semibold leading-7 text-gray-900">Verval Dampak</h1>
           <p className="mt-1 max-w-3xl text-[15px] leading-[22px] text-gray-600">
-            Periksa realisasi dampak dari log penyaluran yang diajukan, lalu setujui, setujui dengan revisi, atau tandai tidak relevan.
+            Periksa target dampak dan realisasi dampak dari log penyaluran yang diajukan, lalu setujui, setujui dengan revisi, atau tandai tidak relevan.
             Keputusan di halaman ini langsung tercatat di tab Pelaksanaan pada detail kontribusi.
           </p>
         </div>
-
-        {/* Pratinjau dasbor publik: tujuan verval adalah memperbarui angka dampak di web publik */}
-        <PratinjauDasborPublik />
 
         {!boleh && (
           <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] leading-5 text-blue-800">
@@ -179,7 +175,7 @@ export default function VervalDampakPage() {
         )}
 
         <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
-          <h2 className="text-[15px] font-semibold leading-[22px] text-gray-900">Realisasi Dampak</h2>
+          <h2 className="text-[15px] font-semibold leading-[22px] text-gray-900">Target dan Realisasi Dampak</h2>
           {menunggu.total > 0 && (
             <span className="rounded-full bg-amber-100 px-2 text-[12px] font-semibold leading-5 text-amber-800" title="Perlu ditinjau">
               {menunggu.total}
@@ -246,7 +242,7 @@ export default function VervalDampakPage() {
         {/* Tabel */}
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full" style={{ borderCollapse: "collapse" }} aria-label="Daftar realisasi dampak">
+            <table className="w-full" style={{ borderCollapse: "collapse" }} aria-label="Daftar target dan realisasi dampak">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className={`${TH} min-w-[260px]`}>
@@ -266,7 +262,7 @@ export default function VervalDampakPage() {
                   </th>
                   <th className={`${TH} min-w-[200px]`}>Paket Dukungan</th>
                   <th className={`${TH} min-w-[130px]`}>Unit Kerja</th>
-                  <th className={`${TH} min-w-[220px]`}>Log Penyaluran</th>
+                  <th className={`${TH} min-w-[220px]`}>Data yang Ditinjau</th>
                   {kolomNilai.map((k) => (
                     <th key={k.key} className={`${TH} ${k.key === "wilayah" ? "min-w-[200px]" : "min-w-[120px] text-right"}`}>
                       {k.label}
@@ -317,10 +313,10 @@ export default function VervalDampakPage() {
                       <td className="px-4 py-3 align-top text-[15px] leading-[22px] text-gray-900">{unitKerjaOf(c)}</td>
                       <td className="px-4 py-3 align-top">
                         <div className="text-[15px] leading-[22px] text-gray-900">
-                          {i.logId ? i.logJudul : i.jumlahLog ? `Total dari ${i.jumlahLog.toLocaleString("id-ID")} log penyaluran` : "Total realisasi kontribusi"}
+                          {i.jenis === "target" ? "Target dampak" : i.logId ? i.logJudul : i.jumlahLog ? `Total dari ${i.jumlahLog.toLocaleString("id-ID")} log penyaluran` : "Total realisasi kontribusi"}
                         </div>
                         <div className="text-[13px] leading-5 text-gray-600">
-                          {i.logId ? "Tanggal kejadian" : "Kontribusi selesai"}: {formatTanggal(i.logTanggal)}
+                          {i.jenis === "target" ? "Diajukan saat Lanjut Pelaksanaan" : i.logId ? "Tanggal kejadian" : "Kontribusi selesai"}: {formatTanggal(i.logTanggal)}
                         </div>
                         {i.logDokumen && <div className="truncate text-[13px] leading-5 text-gray-600" title={i.logDokumen}>{i.logDokumen}</div>}
                       </td>

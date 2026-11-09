@@ -127,6 +127,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
     const hasil = terapkanVerval({
       contributionId: c.id,
       logId: item.logId,
+      jenis: item.jenis,
       keputusan,
       catatan,
       nilaiRevisi,
@@ -144,7 +145,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
     { label: "Paket dukungan", value: `${c.program}: ${c.paketBantuan}` },
     { label: "Unit kerja", value: unitKerjaOf(c) },
     { label: "Diajukan oleh", value: `${verval.diajukanOleh}, ${formatWaktuVerval(verval.diajukanPada)}` },
-    item.logId
+    item.jenis === "target"
+      ? { label: "Cakupan", value: "Target dampak kontribusi, diajukan saat Lanjut Pelaksanaan" }
+      : item.logId
       ? { label: "Log penyaluran", value: item.logJudul || "-" }
       : { label: "Cakupan", value: item.jumlahLog ? `Total realisasi dari ${item.jumlahLog.toLocaleString("id-ID")} log penyaluran` : "Total realisasi kontribusi" },
     ...(item.logDokumen ? [{ label: "Dokumen pendukung", value: item.logDokumen }] : []),
@@ -160,7 +163,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
       }),
       ...awalWilayah.sisa,
     ].join(", ");
-  const target = c.pelaksanaan?.targetDampak;
+  // Saat yang ditinjau adalah target dampak itu sendiri, tidak ada pembanding target dan selisih
+  const adalahTarget = item.jenis === "target";
+  const target = adalahTarget ? undefined : c.pelaksanaan?.targetDampak;
   // Kab/Kota ditampilkan sebagai jumlah; daftar lengkap dibuka lewat "Lihat semua"
   const teksSel = (d: DampakPelaksanaan | undefined, key: (typeof DAMPAK_FIELDS)[number]["key"]) => {
     if (!d) return "–";
@@ -169,7 +174,9 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
     return n > 0 ? n.toLocaleString("id-ID") : "–";
   };
   const bisaBuka = (f: (typeof DAMPAK_FIELDS)[number]) => !f.angka && !!(dampak.wilayah || target?.wilayah);
-  const kolom = revisi ? "grid-cols-[1fr_7rem_8rem_1fr]" : "grid-cols-[1fr_7rem_8rem]";
+  const kolom = adalahTarget
+    ? revisi ? "grid-cols-[1fr_9rem_1fr]" : "grid-cols-[1fr_9rem]"
+    : revisi ? "grid-cols-[1fr_7rem_8rem_1fr]" : "grid-cols-[1fr_7rem_8rem]";
   // Nilai numerik per field (Kab/Kota dihitung dari jumlahnya) untuk selisih terhadap target
   const angkaDari = (d: DampakPelaksanaan | undefined, key: (typeof DAMPAK_FIELDS)[number]["key"]): number | undefined => {
     if (!d) return undefined;
@@ -212,7 +219,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
       >
         <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-5 py-3">
           <h2 className="text-[18px] font-semibold leading-6 text-gray-900">
-            Tinjauan Realisasi Dampak
+            {adalahTarget ? "Tinjauan Target Dampak" : "Tinjauan Realisasi Dampak"}
           </h2>
           <button onClick={onClose} aria-label="Tutup" className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
@@ -238,8 +245,8 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
           <div className="overflow-hidden rounded-lg border border-gray-200">
             <div className={`grid gap-3 bg-[#F1F1F1] px-3 py-1.5 text-[13px] font-semibold text-[#323232] ${kolom}`}>
               <div>Data</div>
-              <div>Target</div>
-              <div>Realisasi</div>
+              {!adalahTarget && <div>Target</div>}
+              <div>{adalahTarget ? "Target diajukan" : "Realisasi"}</div>
               {revisi && <div>Hasil revisi</div>}
             </div>
             {fields.map((f) => (
@@ -265,7 +272,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
                 <label htmlFor={`rev-${f.key}`} className="text-[14px] leading-6 text-gray-700">
                   {f.singkat}
                 </label>
-                <div className="flex items-center text-[14px] leading-6 text-gray-900">{teksSel(target, f.key)}</div>
+                {!adalahTarget && <div className="flex items-center text-[14px] leading-6 text-gray-900">{teksSel(target, f.key)}</div>}
                 <div className="flex items-center gap-2 text-[14px] leading-6 text-gray-900">
                   <div>{teksSel(dampak, f.key)}</div>
                   {(() => {
@@ -317,7 +324,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
             {wilayahBuka && (
               <div className={`grid max-h-52 items-start gap-3 overflow-y-auto border-t border-gray-100 bg-gray-50 px-3 py-2 ${kolom}`}>
                 <div className="text-[14px] leading-6 text-gray-700">Kab/Kota</div>
-                <WilayahPerProvinsi wilayah={target?.wilayah} />
+                {!adalahTarget && <WilayahPerProvinsi wilayah={target?.wilayah} />}
                 <WilayahPerProvinsi wilayah={dampak.wilayah} />
                 {revisi && <WilayahPerProvinsi wilayah={edits.wilayah} />}
               </div>
@@ -407,7 +414,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
 
 /** Riwayat verval satu log realisasi, dari pengajuan sampai keputusan terakhir. */
 export function RiwayatVervalModal({ item, onClose }: { item: AntreanItem; onClose: () => void }) {
-  const judul = "Riwayat Tinjauan Realisasi Dampak";
+  const judul = item.jenis === "target" ? "Riwayat Tinjauan Target Dampak" : "Riwayat Tinjauan Realisasi Dampak";
   const entri = [...item.verval.riwayat].reverse();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">

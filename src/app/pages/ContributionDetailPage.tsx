@@ -1878,7 +1878,7 @@ function VervalPanel({
 }) {
   const v = item.verval;
   const pending = v.status === "menunggu";
-  const subjek = "Realisasi";
+  const subjek = item.jenis === "target" ? "Target" : "Realisasi";
   const meta = pending
     ? `Diajukan oleh ${v.diajukanOleh} pada ${formatWaktuVerval(v.diajukanPada)}.`
     : v.status === "tidak-relevan"
@@ -1940,7 +1940,9 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
 
   // Kondisi eksisting: tanpa status maupun aksi verval
   const antrean = eksisting ? [] : antreanKontribusi(c.id);
-  const itemAkhir = akhir ? antrean.find((i) => !i.logId) : undefined;
+  // Opsi Sesuai PRD: target dampak juga ditinjau (item bertanda jenis target)
+  const itemTarget = antrean.find((i) => i.jenis === "target");
+  const itemAkhir = akhir ? antrean.find((i) => !i.logId && i.jenis === "realisasi") : undefined;
   const itemLog = (id: string) => antrean.find((i) => i.key === kunciAntrean(c.id, id));
   const jumlahMenunggu = antrean.filter((i) => i.verval.status === "menunggu").length;
   const modalItem = modal ? antrean.find((i) => i.key === modal.key) : undefined;
@@ -1992,7 +1994,15 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
         {p.targetDampak && (
           <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Target Dampak</p>
-            <DampakGrid dampak={p.targetDampak} />
+            <DampakGrid dampak={p.targetDampak} semula={itemTarget ? p.vervalTarget?.nilaiSemula : undefined} />
+            {itemTarget && (
+              <VervalPanel
+                item={itemTarget}
+                boleh={boleh}
+                onAksi={(k) => setModal({ key: itemTarget.key, keputusan: k })}
+                onRiwayat={() => setRiwayat(itemTarget.key)}
+              />
+            )}
           </div>
         )}
 

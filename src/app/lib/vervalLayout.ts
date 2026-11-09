@@ -11,7 +11,7 @@ export type VervalLayout = "eksisting" | "menu-ringkas" | "tabel";
 
 export const VERVAL_LAYOUTS: { value: VervalLayout; label: string; hint: string }[] = [
   { value: "eksisting", label: "Kondisi eksisting (tanpa verval dampak)", hint: "Seperti sebelum fitur verval dampak: target dan realisasi tidak diverval" },
-  { value: "menu-ringkas", label: "Sesuai PRD", hint: "Antrean di menu Verval Dampak; tabel Ringkasan Kontribusi tidak berubah" },
+  { value: "menu-ringkas", label: "Sesuai PRD", hint: "Antrean di menu Verval Dampak memuat target dan realisasi per log; tabel Ringkasan Kontribusi tidak berubah" },
   { value: "tabel", label: "Diskusi 5 Nov", hint: "Status verval tampil di tabel Dasbor Operasional; total realisasi diverval sekali saat kontribusi Selesai" },
 ];
 
@@ -58,6 +58,11 @@ export function useVervalLayout(): VervalLayout {
 
 /** Opsi yang menampilkan menu Verval Dampak di sidebar. */
 export function punyaMenuVerval(layout: VervalLayout): boolean {
+  return layout === "menu-ringkas";
+}
+
+/** Target dampak ikut ditinjau Biro Kerja Sama (diajukan saat Lanjut Pelaksanaan) hanya di opsi Sesuai PRD. */
+export function punyaVervalTarget(layout: VervalLayout): boolean {
   return layout === "menu-ringkas";
 }
 

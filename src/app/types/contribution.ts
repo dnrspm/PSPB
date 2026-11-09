@@ -101,8 +101,10 @@ export interface PelaksanaanInfo {
   latestUpdate?: string;
   dokumentasi: Document[];
   progressUpdates?: ProgressUpdate[];
-  /** Target dampak dicatat saat Lanjut Pelaksanaan dan tidak diverval. */
+  /** Target dampak dicatat saat Lanjut Pelaksanaan. Hanya diverval pada opsi Sesuai PRD (vervalTarget). */
   targetDampak?: DampakPelaksanaan;
+  /** Status verval target dampak; hanya dipakai pada opsi Sesuai PRD. */
+  vervalTarget?: VervalDampak;
   realisasiDampak?: DampakPelaksanaan;
   /** Opsi verval saat selesai: total realisasi yang diajukan ketika kontribusi ditandai Terlaksana. */
   realisasiAkhir?: DampakPelaksanaan;

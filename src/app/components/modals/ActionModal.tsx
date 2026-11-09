@@ -7,7 +7,7 @@ import { useStakeholders } from "../../lib/useStakeholders";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { akumulasiRealisasi, groupWilayah, realisasiTercatat } from "../../lib/dampak";
 import { vervalBaru } from "../../lib/verval";
-import { punyaPenerimaBantuan, useVervalLayout, vervalSaatSelesai } from "../../lib/vervalLayout";
+import { punyaPenerimaBantuan, punyaVervalTarget, useVervalLayout, vervalSaatSelesai } from "../../lib/vervalLayout";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
@@ -402,26 +402,30 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
   const layout = useVervalLayout();
   const eksisting = layout === "eksisting";
   const adaBantuan = punyaPenerimaBantuan(layout);
+  const adaVervalTarget = punyaVervalTarget(layout);
   const vervalAkhir = vervalSaatSelesai(layout);
   // Verval per log hanya pada opsi menu + kolom ringkas dan opsi tanpa menu
   const perLog = !eksisting && !vervalAkhir;
   const configAsal = MODAL_CONFIGS[action];
   // Kondisi eksisting: tanpa field Satuan Pendidikan Penerima Bantuan dan tanpa keterangan verval
-  const config = configAsal && (eksisting || vervalAkhir)
+  const config = configAsal && (eksisting || vervalAkhir || adaVervalTarget)
     ? {
         ...configAsal,
         fields: configAsal.fields
           .filter((f) => adaBantuan || f.key !== "bantuan")
-          .map((f) =>
-            f.key === "realisasiHeader"
-              ? {
-                  ...f,
-                  label: eksisting
-                    ? "Realisasi Dampak (opsional, isi bila sudah ada realisasi)"
-                    : "Realisasi Dampak (opsional, ditinjau Biro Kerja Sama setelah kontribusi selesai)",
-                }
-              : f
-          ),
+          .map((f) => {
+            if (f.key === "realisasiHeader" && (eksisting || vervalAkhir)) {
+              return {
+                ...f,
+                label: eksisting
+                  ? "Realisasi Dampak (opsional, isi bila sudah ada realisasi)"
+                  : "Realisasi Dampak (opsional, ditinjau Biro Kerja Sama setelah kontribusi selesai)",
+              };
+            }
+            // Opsi Sesuai PRD: target dampak juga ditinjau Biro Kerja Sama
+            if (f.key === "targetHeader" && adaVervalTarget) return { ...f, label: "Target Dampak (akan ditinjau Biro Kerja Sama)" };
+            return f;
+          }),
       }
     : configAsal;
   const [values, setValues] = useState<Record<string, string | boolean>>(() => {
@@ -737,6 +741,8 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           updated.pelaksanaan = {
             ...base,
             targetDampak: readDampak(),
+            // Opsi Sesuai PRD: target diajukan ke antrean tinjauan saat Lanjut Pelaksanaan
+            ...(adaVervalTarget ? { vervalTarget: vervalBaru(currentUser.name, now, "Mengajukan target dampak saat Lanjut Pelaksanaan") } : {}),
             startDate: base.startDate || now,
           };
         } else {
