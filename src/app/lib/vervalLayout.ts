@@ -61,6 +61,11 @@ export function punyaMenuVerval(layout: VervalLayout): boolean {
   return layout === "menu-ringkas";
 }
 
+/** Field "Satuan pendidikan penerima bantuan" hanya ada di opsi Sesuai PRD; kondisi eksisting dan opsi lain tanpa field ini. */
+export function punyaPenerimaBantuan(layout: VervalLayout): boolean {
+  return layout === "menu-ringkas";
+}
+
 /** Opsi yang memverval total realisasi sekali saat kontribusi Selesai, bukan per log penyaluran. */
 export function vervalSaatSelesai(layout: VervalLayout): boolean {
   return layout === "tabel";

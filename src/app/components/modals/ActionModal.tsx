@@ -7,7 +7,7 @@ import { useStakeholders } from "../../lib/useStakeholders";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { akumulasiRealisasi, groupWilayah, realisasiTercatat } from "../../lib/dampak";
 import { vervalBaru } from "../../lib/verval";
-import { useVervalLayout, vervalSaatSelesai } from "../../lib/vervalLayout";
+import { punyaPenerimaBantuan, useVervalLayout, vervalSaatSelesai } from "../../lib/vervalLayout";
 import { KabupatenMultiSelect, WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
 interface ActionModalProps {
@@ -401,6 +401,7 @@ function RealisasiSummary({ contribution, onUpdateProgress }: { contribution: Co
 export function ActionModal({ action, contribution, currentUser, onClose, onSuccess }: ActionModalProps) {
   const layout = useVervalLayout();
   const eksisting = layout === "eksisting";
+  const adaBantuan = punyaPenerimaBantuan(layout);
   const vervalAkhir = vervalSaatSelesai(layout);
   // Verval per log hanya pada opsi menu + kolom ringkas dan opsi tanpa menu
   const perLog = !eksisting && !vervalAkhir;
@@ -410,7 +411,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
     ? {
         ...configAsal,
         fields: configAsal.fields
-          .filter((f) => !eksisting || f.key !== "bantuan")
+          .filter((f) => adaBantuan || f.key !== "bantuan")
           .map((f) =>
             f.key === "realisasiHeader"
               ? {
@@ -701,7 +702,7 @@ export function ActionModal({ action, contribution, currentUser, onClose, onSucc
           siswa: parseInt((values.siswa as string) || "0", 10) || 0,
           guru: parseInt((values.guru as string) || "0", 10) || 0,
           satuanPendidikan: parseInt((values.satuanPendidikan as string) || "0", 10) || 0,
-          ...(eksisting ? {} : { bantuan: parseInt((values.bantuan as string) || "0", 10) || 0 }),
+          ...(!adaBantuan ? {} : { bantuan: parseInt((values.bantuan as string) || "0", 10) || 0 }),
           wilayah: ((values.wilayah as string) || "").split(" || ").filter(Boolean).join(", "),
         });
 

@@ -11,6 +11,7 @@ import {
   type AntreanItem,
 } from "../../lib/verval";
 import { groupWilayah } from "../../lib/dampak";
+import { punyaPenerimaBantuan, useVervalLayout } from "../../lib/vervalLayout";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../../data/regionData";
 import { WilayahPickerPanel, type WilayahRow } from "./KabupatenMultiSelect";
 
@@ -66,7 +67,7 @@ function awalEdit(d: DampakPelaksanaan): Record<string, string> {
 }
 
 /** Daftar kab/kota dikelompokkan menurut provinsi. */
-function WilayahPerProvinsi({ wilayah }: { wilayah?: string }) {
+export function WilayahPerProvinsi({ wilayah }: { wilayah?: string }) {
   if (!wilayah) return <div className="text-[14px] leading-6 text-gray-900">–</div>;
   const { groups, lainnya } = groupWilayah(wilayah);
   const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
@@ -97,6 +98,8 @@ function WilayahPerProvinsi({ wilayah }: { wilayah?: string }) {
 
 export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, tampilkanKonteks = true }: VervalDampakModalProps) {
   const { contribution: c, dampak, verval } = item;
+  const adaBantuan = punyaPenerimaBantuan(useVervalLayout());
+  const fields = DAMPAK_FIELDS.filter((f) => adaBantuan || f.key !== "bantuan");
   const [keputusan, setKeputusan] = useState<VervalKeputusan | null>(keputusanAwal ?? null);
   const [edits, setEdits] = useState<Record<string, string>>(() => awalEdit(dampak));
   const [catatan, setCatatan] = useState("");
@@ -239,7 +242,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
               <div>Realisasi</div>
               {revisi && <div>Hasil revisi</div>}
             </div>
-            {DAMPAK_FIELDS.map((f) => (
+            {fields.map((f) => (
               <div
                 key={f.key}
                 className={`grid items-start gap-3 border-t border-gray-100 px-3 py-1.5 ${kolom} ${bisaBuka(f) ? "cursor-pointer hover:bg-gray-50" : ""}`}

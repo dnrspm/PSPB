@@ -1,7 +1,7 @@
 import { LembagaPenyalurSection } from "../components/LembagaPenyalurSection";
 import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../lib/pksGenerateScenario";
 import { StatusDokumenPksBadge, DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type KeyboardEvent } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock, CheckCircle2, ClipboardCheck, History, ChevronDown, TrendingUp } from "lucide-react";
 import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
@@ -15,11 +15,11 @@ import type { SessionUser } from "../lib/auth";
 import type { Contribution, DampakPelaksanaan, Document, WorkflowAction, WorkflowState } from "../types/contribution";
 import { PROVINSI_OPTIONS, KABUPATEN_BY_PROVINSI } from "../data/regionData";
 import { groupWilayah, realisasiTerkini } from "../lib/dampak";
-import { useVervalLayout, vervalSaatSelesai } from "../lib/vervalLayout";
+import { punyaPenerimaBantuan, useVervalLayout, vervalSaatSelesai } from "../lib/vervalLayout";
 import { VERVAL_STATUS_LABELS, VERVAL_STATUS_VARIANT, antreanKontribusi, bolehVerval, formatAngka, formatWaktuVerval, kunciAntrean, type AntreanItem } from "../lib/verval";
 import type { VervalKeputusan } from "../types/contribution";
 import { VervalStatusBadge } from "../components/workspace/VervalStatusBadge";
-import { RiwayatVervalModal, VervalDampakModal } from "../components/modals/VervalDampakModal";
+import { RiwayatVervalModal, VervalDampakModal, WilayahPerProvinsi } from "../components/modals/VervalDampakModal";
 
 interface ContributionDetailPageProps {
   currentUser: SessionUser;
@@ -117,7 +117,6 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
               <span className="text-gray-300">|</span>
               <span>Diperbarui: <strong>{formatDate(c.lastUpdate)}</strong></span>
             </div>
-            {layout === "tabel" && c.pelaksanaan?.targetDampak && <DampakVsRealisasi contribution={c} />}
           </div>
 
           {/* Action buttons */}
@@ -231,35 +230,6 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           </div>
         </div>
     </div>
-  );
-}
-
-/** Ringkasan di hero (opsi Tabel): realisasi dibanding target dampak, satu baris. */
-function DampakVsRealisasi({ contribution: c }: { contribution: Contribution }) {
-  const p = c.pelaksanaan;
-  if (!p?.targetDampak) return null;
-  const target = p.targetDampak;
-  const angka = antreanKontribusi(c.id).find((i) => !i.logId)?.dampak ?? realisasiTerkini(p);
-  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
-  const baris: { label: string; real?: number; target?: number }[] = [
-    { label: "Siswa", real: angka?.siswa, target: target.siswa },
-    { label: "Guru", real: angka?.guru, target: target.guru },
-    { label: "Satdik", real: angka?.satuanPendidikan, target: target.satuanPendidikan },
-    { label: "Penerima bantuan", real: angka?.bantuan, target: target.bantuan },
-    { label: "Kab/Kota", real: kab(angka), target: kab(target) },
-  ];
-  return (
-    <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-1" aria-label="Realisasi dibanding target dampak">
-      {baris.map((r) => (
-        <div key={r.label} className="flex items-baseline gap-1.5">
-          <dt className="text-xs text-gray-500">{r.label}</dt>
-          <dd className="text-sm font-semibold tabular-nums text-gray-900">
-            {r.real === undefined ? "-" : formatAngka(r.real)}
-            {r.target !== undefined && r.target > 0 && <> <span className="text-xs font-normal text-gray-400">/ {formatAngka(r.target)}</span></>}
-          </dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 
@@ -1345,196 +1315,130 @@ function RiwayatRingkas<T>({ items, render }: { items: T[]; render: (item: T, te
   );
 }
 
-const WILAYAH_LANGSUNG = 4;
-
 /**
- * Wilayah per provinsi (teks), awalan Kabupaten disingkat.
- * Daftar pendek langsung tampil; daftar panjang dilipat dan dibuka lewat tautan, dengan area gulir.
+ * Angka realisasi satu penyaluran dalam kontainer ber-border (tanpa isian warna).
+ * Kab/Kota berupa jumlah dengan chevron; daftar per provinsinya terbuka di dalam kontainer yang sama.
  */
-function WilayahTeks({ wilayah, judul }: { wilayah: string; judul?: string }) {
-  const { groups, lainnya, totalKabupaten } = groupWilayah(wilayah);
-  const panjang = totalKabupaten > WILAYAH_LANGSUNG;
-  const [buka, setBuka] = useState(!panjang);
+function MetrikDampak({ dampak }: { dampak?: DampakPelaksanaan }) {
+  const [buka, setBuka] = useState(false);
+  const wilayah = dampak?.wilayah ? groupWilayah(dampak.wilayah) : undefined;
   const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
-  if (groups.length === 0 && lainnya.length === 0) return null;
-  const nama = judul || "Kab/Kota";
+  const bisaBuka = !!wilayah && (wilayah.groups.length > 0 || wilayah.lainnya.length > 0);
+  const item: [string, number | undefined][] = [
+    ["Siswa", dampak?.siswa],
+    ["Guru", dampak?.guru],
+    ["Satdik", dampak?.satuanPendidikan],
+  ];
   return (
-    <div className="mt-2">
-      {panjang ? (
-        <button
-          type="button"
-          onClick={() => setBuka((v) => !v)}
-          aria-expanded={buka}
-          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
-        >
-          <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
-          {buka ? `Sembunyikan ${nama}` : `Lihat ${nama} (${totalKabupaten.toLocaleString("id-ID")} di ${groups.length.toLocaleString("id-ID")} provinsi)`}
-        </button>
-      ) : (
-        judul && <p className="mb-1 text-xs text-gray-500">{judul}</p>
-      )}
-      {buka && (
-        <div className={`space-y-0.5 ${panjang ? "mt-2 max-h-56 overflow-y-auto rounded-md border border-gray-100 p-3" : ""}`}>
-          {groups.map((g) => (
+    <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <dl className="flex flex-wrap items-center gap-x-8 gap-y-2">
+          {item.map(([label, nilai]) => (
+            <div key={label}>
+              <dt className="text-xs text-gray-500">{label}</dt>
+              <dd className="text-sm font-medium tabular-nums text-gray-900">{nilai === undefined ? "-" : formatAngka(nilai)}</dd>
+            </div>
+          ))}
+          <div>
+            <dt className="text-xs text-gray-500">Kab/Kota</dt>
+            <dd className="text-sm font-medium tabular-nums text-gray-900">{wilayah ? formatAngka(wilayah.totalKabupaten) : "-"}</dd>
+          </div>
+        </dl>
+        {bisaBuka && (
+          <button
+            type="button"
+            onClick={() => setBuka((v) => !v)}
+            aria-expanded={buka}
+            aria-label={buka ? "Sembunyikan daftar kab/kota" : "Lihat daftar kab/kota"}
+            title={buka ? "Sembunyikan daftar kab/kota" : "Lihat daftar kab/kota"}
+            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
+          </button>
+        )}
+      </div>
+      {bisaBuka && buka && wilayah && (
+        <div className="mt-2 max-h-40 space-y-0.5 overflow-y-auto border-t border-gray-100 pt-2">
+          {wilayah.groups.map((g) => (
             <p key={g.provinsi} className="text-sm leading-5 text-gray-600">
               <strong className="font-medium text-gray-700">{g.provinsi} ({g.kabupaten.length}):</strong> {g.kabupaten.map(singkat).join(", ")}
             </p>
           ))}
-          {lainnya.length > 0 && <p className="text-sm leading-5 text-gray-600">{lainnya.map(singkat).join(", ")}</p>}
+          {wilayah.lainnya.length > 0 && <p className="text-sm leading-5 text-gray-600">{wilayah.lainnya.map(singkat).join(", ")}</p>}
         </div>
       )}
     </div>
   );
 }
 
-/** Lima angka dampak dalam kontainer abu-abu, sama dengan kartu Realisasi Dampak. Dengan target: "x / y". */
-function MetrikDampak({ dampak, target, judulWilayah }: { dampak?: DampakPelaksanaan; target?: DampakPelaksanaan; judulWilayah?: string }) {
-  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
-  const item: [string, number | undefined, number | undefined][] = [
-    ["Siswa", dampak?.siswa, target?.siswa],
-    ["Guru", dampak?.guru, target?.guru],
-    ["Satdik", dampak?.satuanPendidikan, target?.satuanPendidikan],
-    ["Penerima bantuan", dampak?.bantuan, target?.bantuan],
-    ["Kab/Kota", kab(dampak), kab(target)],
-  ];
-  return (
-    <div>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-gray-100 bg-gray-50 p-4 sm:grid-cols-5">
-        {item.map(([label, nilai, t]) => (
-          <div key={label}>
-            <dt className="text-xs text-gray-500">{label}</dt>
-            <dd className="flex items-baseline gap-1.5">
-              <span className="text-lg font-semibold tabular-nums text-gray-900">{nilai === undefined ? "-" : formatAngka(nilai)}</span>
-              {t !== undefined && t > 0 && <span className="text-xs text-gray-400">/ {formatAngka(t)}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {dampak?.wilayah && <WilayahTeks wilayah={dampak.wilayah} judul={judulWilayah} />}
-    </div>
-  );
-}
-
-/** Perbandingan total realisasi dengan target: tabel angka dengan selisih. */
+/**
+ * Perbandingan total realisasi dengan target, bergaya sama dengan tabel di pop up tinjauan:
+ * selisih berupa pill di samping realisasi, dan baris Kabupaten/kota bisa dibuka untuk melihat daftarnya.
+ */
 function TabelTotalVsTarget({ total, target }: { total?: DampakPelaksanaan; target?: DampakPelaksanaan }) {
-  const kab = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
-  const baris: [string, number | undefined, number | undefined][] = [
-    ["Siswa", target?.siswa, total?.siswa],
-    ["Guru", target?.guru, total?.guru],
-    ["Satdik", target?.satuanPendidikan, total?.satuanPendidikan],
-    ["Penerima bantuan", target?.bantuan, total?.bantuan],
-    ["Kab/Kota", kab(target), kab(total)],
+  const [buka, setBuka] = useState(false);
+  const jumlah = (d?: DampakPelaksanaan) => (d?.wilayah ? groupWilayah(d.wilayah).totalKabupaten : undefined);
+  const bisaBuka = !!(total?.wilayah || target?.wilayah);
+  const baris: { label: string; t?: number; r?: number; kab?: boolean }[] = [
+    { label: "Siswa", t: target?.siswa, r: total?.siswa },
+    { label: "Guru", t: target?.guru, r: total?.guru },
+    { label: "Satuan pendidikan", t: target?.satuanPendidikan, r: total?.satuanPendidikan },
+    { label: "Kabupaten/kota", t: jumlah(target), r: jumlah(total), kab: true },
   ];
-  const kolom = "grid-cols-[1fr_6rem_6rem_6rem]";
+  const kolom = "grid-cols-[1.2fr_1fr_1fr]";
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div className={`grid gap-3 bg-[#F1F1F1] px-3 py-1.5 text-[13px] font-semibold text-[#323232] ${kolom}`}>
         <div>Data</div>
-        <div className="text-right">Target</div>
-        <div className="text-right">Realisasi</div>
-        <div className="text-right">Selisih</div>
+        <div>Target</div>
+        <div>Realisasi</div>
       </div>
-      {baris.map(([label, t, r]) => {
+      {baris.map(({ label, t, r, kab }) => {
         const sel = t !== undefined && r !== undefined ? r - t : null;
+        const dapatDibuka = !!kab && bisaBuka;
         return (
-          <div key={label} className={`grid items-center gap-3 border-t border-gray-100 px-3 py-1.5 ${kolom}`}>
-            <div className="text-sm text-gray-700">{label}</div>
-            <div className="text-right text-sm tabular-nums text-gray-600">{t === undefined ? "-" : formatAngka(t)}</div>
-            <div className="text-right text-sm font-semibold tabular-nums text-gray-900">{r === undefined ? "-" : formatAngka(r)}</div>
-            <div className="flex justify-end">
-              {sel === null ? (
-                <div className="text-sm text-gray-400">-</div>
-              ) : (
-                <div className={`rounded-full border px-2 text-[12px] font-medium leading-5 ${sel > 0 ? "border-green-200 bg-green-50 text-green-700" : sel < 0 ? "border-red-200 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
+          <div
+            key={label}
+            className={`grid items-start gap-3 border-t border-gray-100 px-3 py-1.5 ${kolom} ${dapatDibuka ? "cursor-pointer hover:bg-gray-50" : ""}`}
+            {...(dapatDibuka
+              ? {
+                  role: "button",
+                  tabIndex: 0,
+                  "aria-expanded": buka,
+                  "aria-label": `${label}: ${buka ? "sembunyikan" : "lihat"} daftar kab/kota`,
+                  onClick: () => setBuka((v) => !v),
+                  onKeyDown: (e: KeyboardEvent) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setBuka((v) => !v);
+                    }
+                  },
+                }
+              : {})}
+          >
+            <div className="text-[14px] leading-6 text-gray-700">{label}</div>
+            <div className="text-[14px] leading-6 text-gray-900">{t === undefined ? "–" : formatAngka(t)}</div>
+            <div className="flex items-center gap-2 text-[14px] leading-6 text-gray-900">
+              <div>{r === undefined ? "–" : formatAngka(r)}</div>
+              {sel !== null && (
+                <div
+                  className={`rounded-full border px-2 text-[12px] font-medium leading-5 ${sel > 0 ? "border-green-200 bg-green-50 text-green-700" : sel < 0 ? "border-red-200 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-600"}`}
+                  title="Selisih terhadap target"
+                >
                   {sel > 0 ? "+" : sel < 0 ? "−" : ""}
                   {Math.abs(sel).toLocaleString("id-ID")}
                 </div>
               )}
+              {dapatDibuka && <ChevronDown aria-hidden="true" className={`ml-auto h-4 w-4 shrink-0 text-gray-500 transition-transform ${buka ? "rotate-180" : ""}`} />}
             </div>
           </div>
         );
       })}
-    </div>
-  );
-}
-
-/** Kab/Kota target dan realisasi berdampingan per provinsi; selisihnya diberi penanda. */
-function BandingWilayah({ target, realisasi }: { target?: string; realisasi?: string }) {
-  const gt = groupWilayah(target || "");
-  const gr = groupWilayah(realisasi || "");
-  const norm = (n: string) => n.trim().toLowerCase().replace(/^kab\.\s+/, "kabupaten ");
-  const tSet = new Set(gt.groups.flatMap((g) => g.kabupaten.map((k) => `${g.provinsi}|${norm(k)}`)));
-  const rSet = new Set(gr.groups.flatMap((g) => g.kabupaten.map((k) => `${g.provinsi}|${norm(k)}`)));
-  const jumlahT = gt.totalKabupaten;
-  const jumlahR = gr.totalKabupaten;
-  const panjang = Math.max(jumlahT, jumlahR) > WILAYAH_LANGSUNG;
-  const [buka, setBuka] = useState(!panjang);
-  if (jumlahT === 0 && jumlahR === 0) return null;
-  const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
-  const belum = [...tSet].filter((k) => !rSet.has(k)).length;
-  const tambahan = [...rSet].filter((k) => !tSet.has(k)).length;
-
-  const kolom = (judul: string, jumlah: number, g: ReturnType<typeof groupWilayah>, lawan: Set<string>, jenis: "target" | "realisasi") => (
-    <div className="min-w-0">
-      <p className="mb-1.5 text-[13px] font-semibold text-gray-700">{judul} ({jumlah.toLocaleString("id-ID")})</p>
-      {g.groups.length === 0 && g.lainnya.length === 0 && <p className="text-sm text-gray-400">-</p>}
-      <div className="space-y-1.5">
-        {g.groups.map((grp) => (
-          <div key={grp.provinsi}>
-            <p className="text-xs font-semibold leading-5 text-gray-500">{grp.provinsi} ({grp.kabupaten.length})</p>
-            <ul>
-              {grp.kabupaten.map((k) => {
-                const beda = !lawan.has(`${grp.provinsi}|${norm(k)}`);
-                return (
-                  <li key={k} className={`flex items-center gap-1.5 text-sm leading-5 ${beda ? (jenis === "target" ? "text-amber-700" : "text-green-700") : "text-gray-800"}`}>
-                    <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${beda ? (jenis === "target" ? "bg-amber-500" : "bg-green-600") : "bg-gray-300"}`} />
-                    {singkat(k)}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-        {g.lainnya.length > 0 && <p className="text-sm leading-5 text-gray-600">{g.lainnya.map(singkat).join(", ")}</p>}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="mt-3">
-      {panjang && (
-        <button
-          type="button"
-          onClick={() => setBuka((v) => !v)}
-          aria-expanded={buka}
-          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
-        >
-          <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform ${buka ? "rotate-180" : ""}`} />
-          {buka ? "Sembunyikan perbandingan Kab/Kota" : `Lihat perbandingan Kab/Kota (target ${jumlahT.toLocaleString("id-ID")}, realisasi ${jumlahR.toLocaleString("id-ID")})`}
-        </button>
-      )}
-      {buka && (
-        <div className={panjang ? "mt-2" : ""}>
-          {(belum > 0 || tambahan > 0) && (
-            <p className="mb-1.5 flex flex-wrap gap-x-4 text-xs text-gray-500">
-              {belum > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  Target belum terealisasi ({belum.toLocaleString("id-ID")})
-                </span>
-              )}
-              {tambahan > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-green-600" />
-                  Di luar target ({tambahan.toLocaleString("id-ID")})
-                </span>
-              )}
-            </p>
-          )}
-          <div className={`grid grid-cols-2 gap-x-6 rounded-md border border-gray-100 p-3 ${panjang ? "max-h-64 overflow-y-auto" : ""}`}>
-            {kolom("Target", jumlahT, gt, rSet, "target")}
-            {kolom("Realisasi", jumlahR, gr, tSet, "realisasi")}
-          </div>
+      {bisaBuka && buka && (
+        <div className={`grid max-h-52 items-start gap-3 overflow-y-auto border-t border-gray-100 bg-white px-3 py-2 ${kolom}`}>
+          <div />
+          <WilayahPerProvinsi wilayah={target?.wilayah} />
+          <WilayahPerProvinsi wilayah={total?.wilayah} />
         </div>
       )}
     </div>
@@ -1549,20 +1453,22 @@ function DetailPelaksanaan({ contribution: c }: { contribution: Contribution }) 
   const total = antreanKontribusi(c.id).find((i) => !i.logId)?.dampak ?? realisasiTerkini(p);
   const sub = "mb-3 flex items-center gap-1.5 text-sm font-semibold text-gray-700";
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-gray-500">
-        Mulai {p.startDate ? formatTanggal(p.startDate) : "-"} · Selesai {p.completionDate ? formatTanggal(p.completionDate) : "-"}
-      </p>
+    <>
+      {/* Bagian 1: Total Realisasi, latar putih penuh tanpa kontainer */}
+      <section className="space-y-4 bg-white px-5 pb-5 pt-4">
+        <p className="text-sm text-gray-500">
+          Mulai {p.startDate ? formatTanggal(p.startDate) : "-"} · Selesai {p.completionDate ? formatTanggal(p.completionDate) : "-"}
+        </p>
+        {(total || p.targetDampak) && (
+          <div>
+            <h4 className={sub}>Total Realisasi terhadap Target</h4>
+            <TabelTotalVsTarget total={total} target={p.targetDampak} />
+          </div>
+        )}
+      </section>
 
-      {(total || p.targetDampak) && (
-        <div>
-          <h4 className={sub}>Total Realisasi terhadap Target</h4>
-          <TabelTotalVsTarget total={total} target={p.targetDampak} />
-          <BandingWilayah target={p.targetDampak?.wilayah} realisasi={total?.wilayah} />
-        </div>
-      )}
-
-      <div className="border-t border-gray-100 pt-5">
+      {/* Bagian 2: Penyaluran Bantuan, latar abu pucat */}
+      <section className="border-t border-gray-200 bg-gray-50 p-5">
         <h4 className={sub}>Penyaluran Bantuan</h4>
         {logs.length === 0 ? (
           <p className="text-sm text-gray-400">Belum ada update penyaluran bantuan.</p>
@@ -1574,39 +1480,43 @@ function DetailPelaksanaan({ contribution: c }: { contribution: Contribution }) 
                 <div aria-hidden="true" className="relative z-10 mt-5 shrink-0">
                   <div className={`h-4 w-4 rounded-full border-2 bg-white ${i === 0 ? "border-blue-600" : "border-gray-300"}`} />
                 </div>
-                <div className="min-w-0 flex-1 rounded-lg border border-gray-200 p-4">
+                <div className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                   <p className="text-base font-semibold text-gray-900">Penyaluran ke-{logs.length - i}</p>
-                  <p className="text-xs text-gray-500">{formatTanggal(u.tanggal)} · {u.actor}</p>
+                  <p className="text-xs text-gray-500">{formatTanggal(u.tanggal)}</p>
                 </div>
                 {u.judul && <p className="mt-0.5 text-sm font-medium text-gray-800">{u.judul}</p>}
                 {u.deskripsi && <p className="mt-1 text-sm leading-relaxed text-gray-600">{u.deskripsi}</p>}
                 {u.realisasi && (
-                  <div className="mt-3">
-                    <p className="mb-1.5 text-xs text-gray-500">Realisasi</p>
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs text-gray-500">Realisasi</p>
                     <MetrikDampak dampak={u.realisasi} />
                   </div>
                 )}
                 {u.dokumen.length > 0 && (
-                  <div className="mt-3 space-y-1.5">
-                    {u.dokumen.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm">
-                        <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                        <p className="flex-1 truncate text-sm text-gray-700">{doc.name}</p>
-                        <a href={doc.url || "#"} target="_blank" rel="noopener noreferrer" className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
-                          Lihat
-                        </a>
-                      </div>
-                    ))}
+                  <div className="mt-3">
+                    <p className="mb-1 text-xs text-gray-500">Dokumen lampiran</p>
+                    <ul className="divide-y divide-gray-100">
+                      {u.dokumen.map((doc) => (
+                        <li key={doc.id} className="flex items-center gap-2 py-1.5 text-sm first:pt-0 last:pb-0">
+                          <FileText className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                          <p className="flex-1 truncate text-sm text-gray-700">{doc.name}</p>
+                          <a href={doc.url || "#"} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                            Lihat
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
+                <p className="mt-3 text-xs text-gray-500">Disalurkan oleh {u.actor}</p>
                 </div>
               </li>
             ))}
           </ul>
         )}
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
 
@@ -1629,11 +1539,10 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
   const target = p.targetDampak;
   const semula = p.vervalAkhir?.nilaiSemula;
 
-  const baris: { label: string; key: "siswa" | "guru" | "satuanPendidikan" | "bantuan" | "wilayah" }[] = [
+  const baris: { label: string; key: "siswa" | "guru" | "satuanPendidikan" | "wilayah" }[] = [
     { label: "Siswa", key: "siswa" },
     { label: "Guru", key: "guru" },
     { label: "Satdik", key: "satuanPendidikan" },
-    { label: "Penerima bantuan", key: "bantuan" },
     { label: "Kab/Kota", key: "wilayah" },
   ];
   // Kab/Kota ditampilkan sebagai jumlah, dihitung dari daftar wilayah
@@ -1687,7 +1596,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
         </div>
 
         <h4 className={`mb-3 mt-4 ${subjudul}`}><Users className="h-4 w-4 text-gray-400" /> Total Realisasi terhadap Target</h4>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-gray-100 bg-gray-50 p-4 sm:grid-cols-5">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-gray-100 bg-gray-50 p-4 sm:grid-cols-4">
           {baris.map((r) => {
             const nilai = nilaiDampak(angka, r.key);
             const t = nilaiDampak(target, r.key);
@@ -1741,7 +1650,6 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
                     <th className="px-3 py-2 text-right">Siswa</th>
                     <th className="px-3 py-2 text-right">Guru</th>
                     <th className="px-3 py-2 text-right">Satdik</th>
-                    <th className="px-3 py-2 text-right">Penerima bantuan</th>
                     <th className="px-3 py-2 text-left">Kab/Kota</th>
                   </tr>
                 </thead>
@@ -1753,7 +1661,6 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.siswa) : "-"}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.guru) : "-"}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.satuanPendidikan) : "-"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.bantuan) : "-"}</td>
                       <td className="min-w-[12rem] px-3 py-2 text-gray-600" title={namaKabupaten(u.realisasi?.wilayah).join(", ") || undefined}>
                         {ringkasKabupaten(namaKabupaten(u.realisasi?.wilayah))}
                       </td>
@@ -1819,16 +1726,16 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
             role="dialog"
             aria-modal="true"
             aria-label="Riwayat Pelaksanaan"
-            className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl"
+            className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-lg bg-gray-50 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between rounded-t-lg border-b border-gray-100 px-5 py-3">
+            <div className="flex items-center justify-between rounded-t-lg border-b border-gray-100 bg-white px-5 py-3">
               <h2 className="text-base font-semibold text-gray-900">Riwayat Pelaksanaan</h2>
               <button type="button" onClick={() => setDetailBuka(false)} aria-label="Tutup" className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="overflow-y-auto p-5">
+            <div className="overflow-y-auto">
               <DetailPelaksanaan contribution={c} />
             </div>
           </div>
@@ -1901,7 +1808,9 @@ function WilayahBreakdown({ wilayah }: { wilayah: string }) {
 }
 
 function DampakGrid({ dampak, semula }: { dampak: DampakPelaksanaan; semula?: Partial<DampakPelaksanaan> }) {
-  const eksisting = useVervalLayout() === "eksisting";
+  const layout = useVervalLayout();
+  const eksisting = layout === "eksisting";
+  const adaBantuan = punyaPenerimaBantuan(layout);
   const sel = (label: string, key: "siswa" | "guru" | "satuanPendidikan" | "bantuan") => {
     const direvisi = !!semula && Object.prototype.hasOwnProperty.call(semula, key);
     return (
@@ -1915,11 +1824,11 @@ function DampakGrid({ dampak, semula }: { dampak: DampakPelaksanaan; semula?: Pa
   const wilayahDirevisi = !eksisting && !!semula && Object.prototype.hasOwnProperty.call(semula, "wilayah");
   return (
     <div className="space-y-3">
-      <dl className={`grid gap-x-8 gap-y-3 text-sm ${eksisting ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
+      <dl className={`grid gap-x-8 gap-y-3 text-sm ${adaBantuan ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
         {sel("Siswa Terdampak", "siswa")}
         {sel("Guru Terdampak", "guru")}
         {sel("Satuan Pendidikan", "satuanPendidikan")}
-        {!eksisting && sel("Penerima Bantuan", "bantuan")}
+        {adaBantuan && sel("Penerima Bantuan", "bantuan")}
       </dl>
       <div className="border-t border-gray-200 pt-3 text-sm">
         <p className="mb-1.5 text-sm text-gray-400">Kabupaten/Kota</p>
@@ -2025,7 +1934,7 @@ function PelaksanaanTab({ contribution: c, currentUser, onChanged }: { contribut
     { label: "Siswa terdampak", real: realisasi?.siswa ?? 0, target: targetDihitung?.siswa },
     { label: "Guru terdampak", real: realisasi?.guru ?? 0, target: targetDihitung?.guru },
     { label: "Satuan pendidikan terdampak", real: realisasi?.satuanPendidikan ?? 0, target: targetDihitung?.satuanPendidikan },
-    { label: "Satuan pendidikan penerima bantuan", real: realisasi?.bantuan ?? 0, target: targetDihitung?.bantuan },
+    ...(punyaPenerimaBantuan(layout) ? [{ label: "Satuan pendidikan penerima bantuan", real: realisasi?.bantuan ?? 0, target: targetDihitung?.bantuan }] : []),
   ];
 
   return (
