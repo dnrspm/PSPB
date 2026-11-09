@@ -2,8 +2,9 @@ import { LembagaPenyalurSection } from "../components/LembagaPenyalurSection";
 import { resolvePksDocState, retryPksGenerate, usePksScenario } from "../lib/pksGenerateScenario";
 import { StatusDokumenPksBadge, DokumenPksList, type DokumenPksItem } from "../components/DokumenPksList";
 import { useState, useCallback, useMemo, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate, useLocation } from "react-router";
-import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock, CheckCircle2, ClipboardCheck, History, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Building2, Package, Route, Users, Upload, X, Plus, Trash2, Pencil, Clock, CheckCircle2, ClipboardCheck, ChevronDown, TrendingUp } from "lucide-react";
 import { getContributionById, getContributions, updateContribution } from "../data/mockWorkspace";
 import { getSubmissionSiblings, resolvePaketBantuan } from "../lib/contributionGroups";
 import { StatusBadge } from "../components/workspace/StatusBadge";
@@ -1315,6 +1316,58 @@ function RiwayatRingkas<T>({ items, render }: { items: T[]; render: (item: T, te
   );
 }
 
+const KAB_POPOVER_PROVINSI = 6;
+
+/**
+ * Jumlah kab/kota yang menampilkan daftarnya per provinsi sebagai popover saat di-hover atau difokus.
+ * Popover dirender di body (posisi tetap) agar tidak terpotong area gulir tabel.
+ */
+function KabHover({ wilayah }: { wilayah: string }) {
+  const [pos, setPos] = useState<{ kanan: number; atas?: number; bawah?: number } | null>(null);
+  const { groups, lainnya, totalKabupaten } = groupWilayah(wilayah);
+  const singkat = (n: string) => n.replace(/^Kabupaten\s+/i, "Kab. ");
+  const tampil = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    const kanan = Math.max(8, window.innerWidth - r.right);
+    // Buka ke bawah; bila ruang kurang, buka ke atas
+    setPos(window.innerHeight - r.bottom < 240 ? { kanan, bawah: window.innerHeight - r.top + 6 } : { kanan, atas: r.bottom + 6 });
+  };
+  const sisa = Math.max(0, groups.length - KAB_POPOVER_PROVINSI);
+  return (
+    <>
+      <div
+        tabIndex={0}
+        aria-label={`${totalKabupaten} kab/kota, arahkan untuk melihat daftar`}
+        onMouseEnter={(e) => tampil(e.currentTarget)}
+        onMouseLeave={() => setPos(null)}
+        onFocus={(e) => tampil(e.currentTarget)}
+        onBlur={() => setPos(null)}
+        className="inline-block cursor-help underline decoration-gray-300 decoration-dotted underline-offset-4 outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        {formatAngka(totalKabupaten)}
+      </div>
+      {pos &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{ position: "fixed", right: pos.kanan, top: pos.atas, bottom: pos.bawah }}
+            className="z-[80] w-72 space-y-1.5 rounded-md border border-gray-200 bg-white p-3 text-left shadow-lg"
+          >
+            {groups.slice(0, KAB_POPOVER_PROVINSI).map((g) => (
+              <div key={g.provinsi}>
+                <p className="text-xs font-semibold leading-5 text-gray-500">{g.provinsi} ({g.kabupaten.length})</p>
+                <p className="text-sm font-normal leading-5 text-gray-800">{g.kabupaten.map(singkat).join(", ")}</p>
+              </div>
+            ))}
+            {lainnya.length > 0 && <p className="text-sm font-normal leading-5 text-gray-800">{lainnya.map(singkat).join(", ")}</p>}
+            {sisa > 0 && <p className="text-xs leading-5 text-gray-500">+{sisa.toLocaleString("id-ID")} provinsi lainnya</p>}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
+
 /**
  * Angka realisasi satu penyaluran dalam kontainer ber-border (tanpa isian warna).
  * Kab/Kota berupa jumlah dengan chevron; daftar per provinsinya terbuka di dalam kontainer yang sama.
@@ -1562,12 +1615,6 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
   const catatanLabel = v?.status === "tidak-relevan" ? "Alasan tidak relevan" : v?.status === "disetujui-revisi" ? "Catatan revisi" : "Catatan tinjauan";
 
   const logs = [...(p.progressUpdates || [])].sort((x, y) => new Date(y.tanggal).getTime() - new Date(x.tanggal).getTime());
-  const namaKabupaten = (wilayah?: string) => {
-    const { groups, lainnya } = groupWilayah(wilayah || "");
-    return [...groups.flatMap((g) => g.kabupaten), ...lainnya].map((n) => n.replace(/^Kabupaten\s+/i, "Kab. "));
-  };
-  const ringkasKabupaten = (nama: string[]) =>
-    nama.length === 0 ? "-" : nama.length <= 2 ? nama.join(", ") : `${nama.slice(0, 2).join(", ")} +${nama.length - 2} lainnya`;
   // Penomoran menurut urutan waktu: yang paling lama adalah penyaluran ke-1
   const nomorPenyaluran = (id: string) => logs.length - logs.findIndex((l) => l.id === id);
   // Hanya keputusan tinjauan; catatan pengajuan bukan hasil tinjauan
@@ -1595,7 +1642,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
           )}
         </div>
 
-        <h4 className={`mb-3 mt-4 ${subjudul}`}><Users className="h-4 w-4 text-gray-400" /> Total Realisasi terhadap Target</h4>
+        <h4 className={`mb-3 mt-4 ${subjudul}`}>Total Realisasi terhadap Target</h4>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-gray-100 bg-gray-50 p-4 sm:grid-cols-4">
           {baris.map((r) => {
             const nilai = nilaiDampak(angka, r.key);
@@ -1626,7 +1673,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
       {/* Riwayat Pelaksanaan */}
       <div className="mt-4 border-t border-gray-100 pt-4">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h4 className={subjudul}><History className="h-4 w-4 text-gray-400" /> Riwayat Pelaksanaan</h4>
+          <h4 className={subjudul}>Riwayat Pelaksanaan</h4>
           {logs.length > 0 && (
             <button
               type="button"
@@ -1650,7 +1697,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
                     <th className="px-3 py-2 text-right">Siswa</th>
                     <th className="px-3 py-2 text-right">Guru</th>
                     <th className="px-3 py-2 text-right">Satdik</th>
-                    <th className="px-3 py-2 text-left">Kab/Kota</th>
+                    <th className="px-3 py-2 text-right">Kab/Kota</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1661,8 +1708,8 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.siswa) : "-"}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.guru) : "-"}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-gray-900">{u.realisasi ? formatAngka(u.realisasi.satuanPendidikan) : "-"}</td>
-                      <td className="min-w-[12rem] px-3 py-2 text-gray-600" title={namaKabupaten(u.realisasi?.wilayah).join(", ") || undefined}>
-                        {ringkasKabupaten(namaKabupaten(u.realisasi?.wilayah))}
+                      <td className="px-3 py-2 text-right tabular-nums text-gray-900">
+                        {u.realisasi?.wilayah ? <KabHover wilayah={u.realisasi.wilayah} /> : "-"}
                       </td>
                     </tr>
                   ))}
@@ -1675,7 +1722,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
 
       {/* Riwayat Tinjauan */}
       <div className="mt-4 border-t border-gray-100 pt-4">
-        <h4 className={`mb-3 ${subjudul}`}><ClipboardCheck className="h-4 w-4 text-gray-400" /> Riwayat Tinjauan</h4>
+        <h4 className={`mb-3 ${subjudul}`}>Riwayat Tinjauan</h4>
         {tinjauan.length === 0 ? (
           <div className="rounded-md border border-dashed border-gray-200 px-4 py-5 text-center">
             <p className="text-sm font-medium text-gray-500">Belum Ditinjau</p>
