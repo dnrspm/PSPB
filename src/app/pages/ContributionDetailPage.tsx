@@ -1580,14 +1580,16 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
   // Hasil tinjauan = keputusan terakhir; catatan pengajuan bukan hasil tinjauan
   const diputuskan = !!v && v.status !== "menunggu";
   // Perubahan nilai pada revisi: nilai semula menjadi nilai hasil revisi
-  const perubahan = semula
+  const perubahan: { label: string; dari: string; ke: string }[] = semula
     ? [
         ...([["siswa", "Siswa"], ["guru", "Guru"], ["satuanPendidikan", "Satdik"]] as const)
           .filter(([k]) => Object.prototype.hasOwnProperty.call(semula, k))
-          .map(([k, l]) => `${l} ${formatAngka(semula[k])} → ${formatAngka(angka?.[k])}`),
-        ...(Object.prototype.hasOwnProperty.call(semula, "wilayah") ? [`Kab/Kota ${formatAngka(jumlahWilayah(semula.wilayah))} → ${formatAngka(jumlahWilayah(angka?.wilayah))}`] : []),
-      ].join(", ")
-    : "";
+          .map(([k, l]) => ({ label: l, dari: formatAngka(semula[k]), ke: formatAngka(angka?.[k]) })),
+        ...(Object.prototype.hasOwnProperty.call(semula, "wilayah")
+          ? [{ label: "Kab/Kota", dari: formatAngka(jumlahWilayah(semula.wilayah)), ke: formatAngka(jumlahWilayah(angka?.wilayah)) }]
+          : []),
+      ]
+    : [];
   const judulSegmen = "flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-gray-400";
 
   const subjudul = "flex items-center gap-1.5 text-sm font-semibold text-gray-700";
@@ -1617,15 +1619,13 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
             const nilai = nilaiDampak(angka, r.key);
             const t = nilaiDampak(target, r.key);
             const pct = t && t > 0 && nilai !== undefined ? Math.min(100, Math.round((nilai / t) * 100)) : null;
-            const direvisi = !!semula && Object.prototype.hasOwnProperty.call(semula, r.key);
             return (
               <div key={r.key} title={pct !== null ? `${pct}% dari target ${formatAngka(t)}` : undefined}>
                 <dt className="text-xs text-gray-500">{r.label}</dt>
                 <dd className="flex items-baseline gap-1.5">
-                  <span className={`text-lg font-semibold tabular-nums ${direvisi ? "text-sky-800" : "text-gray-900"}`}>{angka ? formatAngka(nilai) : "-"}</span>
+                  <span className="text-lg font-semibold tabular-nums text-gray-900">{angka ? formatAngka(nilai) : "-"}</span>
                   {t !== undefined && t > 0 && <span className="text-xs text-gray-400">/ {formatAngka(t)}</span>}
                 </dd>
-                {direvisi && <dd className="text-xs text-gray-500">semula {formatAngka(r.key === "wilayah" ? jumlahWilayah(semula!.wilayah) : (semula![r.key] as number | undefined))}</dd>}
               </div>
             );
           })}
@@ -1711,15 +1711,36 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-3">
             <p className="text-sm leading-relaxed text-gray-900">
-              {VERVAL_STATUS_LABELS[v.status]} oleh {v.diperbaruiOleh} pada {formatWaktuVerval(v.diperbaruiPada)}
-              {perubahan && ` (${perubahan})`}.
+              {VERVAL_STATUS_LABELS[v.status]} oleh {v.diperbaruiOleh} pada {formatWaktuVerval(v.diperbaruiPada)}.
             </p>
-            {v.catatan && (
-              <p className="text-sm leading-relaxed text-gray-900">
-                {v.status === "tidak-relevan" ? "Alasan" : "Catatan"}: {v.catatan}
-              </p>
+            {(perubahan.length > 0 || v.catatan) && (
+              <dl className="space-y-3">
+                {perubahan.length > 0 && (
+                  <div>
+                    <dt className="text-sm text-gray-400">Revisi</dt>
+                    <dd>
+                      <ul className="mt-0.5 space-y-0.5">
+                        {perubahan.map((r) => (
+                          <li key={r.label} className="flex items-baseline gap-3 text-sm text-gray-900">
+                            <div className="w-20 shrink-0 text-gray-600">{r.label}</div>
+                            <div className="tabular-nums">
+                              {r.dari} <span className="text-sm text-gray-400">→</span> <strong className="font-semibold">{r.ke}</strong>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                )}
+                {v.catatan && (
+                  <div>
+                    <dt className="text-sm text-gray-400">{v.status === "tidak-relevan" ? "Alasan" : "Catatan"}</dt>
+                    <dd className="text-sm text-gray-900">{v.catatan}</dd>
+                  </div>
+                )}
+              </dl>
             )}
           </div>
         )}
