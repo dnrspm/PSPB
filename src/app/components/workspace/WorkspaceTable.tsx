@@ -7,7 +7,6 @@ import { groupContributions, type ContributionGroup } from "../../lib/contributi
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 import { VERVAL_STATUS_LABELS, bangunAntrean, formatAngka, ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { VervalStatusBadge } from "./VervalStatusBadge";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
 
@@ -31,8 +30,6 @@ interface WorkspaceTableProps {
   statusFilter?: string;
   /** Tampilkan kolom status verval dampak (opsi tanpa menu Verval Dampak). */
   tampilVerval?: boolean;
-  /** Opsi menu + kolom ringkas: satu kolom lencana Status Verval tanpa aksi. */
-  kolomRingkas?: boolean;
   vervalFilter?: VervalFilter;
 }
 
@@ -154,7 +151,7 @@ function EmailBertingkat({ email }: { email: string }) {
 
 const PAGE_SIZE = 10;
 
-export function WorkspaceTable({ contributions, statusFilter, tampilVerval = false, kolomRingkas = false, vervalFilter = "" }: WorkspaceTableProps) {
+export function WorkspaceTable({ contributions, statusFilter, tampilVerval = false, vervalFilter = "" }: WorkspaceTableProps) {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("lastUpdate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -166,9 +163,8 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     setPage(1);
   };
 
-  const adaKolomVerval = tampilVerval || kolomRingkas;
   const menungguVervalGrup = (g: ContributionGroup) =>
-    adaKolomVerval && statusGabungan(ringkasVerval(g.items).realisasi) === "menunggu";
+    tampilVerval && statusGabungan(ringkasVerval(g.items).realisasi) === "menunggu";
 
   const sorted = groupContributions(
     contributions.filter(c => c.pic || c.workflowStatus === "kontribusi-masuk")
@@ -236,11 +232,7 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     { key: "program", label: "Paket Dukungan" },
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
-    ...(tampilVerval
-      ? [{ key: null, label: "Status Realisasi" }]
-      : kolomRingkas
-      ? [{ key: null, label: "Status Realisasi" }]
-      : []),
+    ...(tampilVerval ? [{ key: null, label: "Status Realisasi" }] : []),
     { key: "lastUpdate", label: "Last Update" },
     { key: "pic", label: "PIC" },
     { key: null, label: "" },
@@ -334,25 +326,6 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
                     const buka = () => navigate(`/workspace/${target.id}`, { state: { tab: "pelaksanaan" } });
                     return (
                       <td className="px-4 py-3 align-top"><SelVerval h={r.realisasi} angka={angkaRealisasi(g.items)} onOpen={buka} /></td>
-                    );
-                  })()}
-                  {kolomRingkas && (() => {
-                    const r = ringkasVerval(g.items);
-                    const gabung: HitungStatus = r.realisasi;
-                    const status = statusGabungan(gabung);
-                    return (
-                      <td className="px-4 py-3 align-top">
-                        {status ? (
-                          <div className="flex flex-col items-start gap-0.5">
-                            <VervalStatusBadge status={status} />
-                            {gabung.menunggu > 0 && (
-                              <span className="text-[12px] leading-4 text-gray-600">{gabung.menunggu} menunggu</span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">–</span>
-                        )}
-                      </td>
                     );
                   })()}
                   <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">

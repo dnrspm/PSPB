@@ -163,7 +163,7 @@ export default function VervalDampakPage() {
         <div>
           <h1 className="text-[22px] font-semibold leading-7 text-gray-900">Verval Dampak</h1>
           <p className="mt-1 max-w-3xl text-[15px] leading-[22px] text-gray-600">
-            {layout === "menu-akhir" ? "Periksa total realisasi dampak setiap kontribusi yang sudah selesai, lalu setujui" : "Periksa realisasi dampak dari log penyaluran yang diajukan, lalu setujui"}, setujui dengan revisi, atau tandai tidak relevan.
+            Periksa realisasi dampak dari log penyaluran yang diajukan, lalu setujui, setujui dengan revisi, atau tandai tidak relevan.
             Keputusan di halaman ini langsung tercatat di tab Pelaksanaan pada detail kontribusi.
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function VervalDampakPage() {
                   </th>
                   <th className={`${TH} min-w-[200px]`}>Paket Dukungan</th>
                   <th className={`${TH} min-w-[130px]`}>Unit Kerja</th>
-                  <th className={`${TH} min-w-[220px]`}>{layout === "menu-akhir" ? "Cakupan" : "Log Penyaluran"}</th>
+                  <th className={`${TH} min-w-[220px]`}>Log Penyaluran</th>
                   {kolomNilai.map((k) => (
                     <th key={k.key} className={`${TH} ${k.key === "wilayah" ? "min-w-[200px]" : "min-w-[120px] text-right"}`}>
                       {k.label}
