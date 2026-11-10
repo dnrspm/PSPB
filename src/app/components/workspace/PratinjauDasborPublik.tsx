@@ -8,6 +8,7 @@ import {
   ANGKA_PUBLIK_KOSONG,
   BASELINE_DAMPAK,
   PUBLIKASI_AWAL,
+  angkaDalamPerencanaan,
   angkaDisetujuiSebelum,
   bangunAntrean,
   bolehVerval,
@@ -27,7 +28,7 @@ const MODE_LABEL: { key: Mode; label: string }[] = [
 ];
 
 /** Metrik dampak: label, angka, lalu kenaikan dibanding periode sebelumnya. */
-function Metrik({ ikon, label, kalimat, angka, kenaikan, kartu = false }: { ikon: ReactNode; label: string; kalimat: string; angka: string; kenaikan: ReactNode; kartu?: boolean }) {
+function Metrik({ ikon, label, kalimat, angka, kenaikan, perencanaan, kartu = false }: { ikon: ReactNode; label: string; kalimat: string; angka: string; kenaikan: ReactNode; perencanaan?: number; kartu?: boolean }) {
   return (
     <div className={`min-w-0 ${kartu ? "" : "px-3 py-3"}`} title={kalimat}>
       <div className="flex items-center gap-1.5 whitespace-nowrap text-[12px] leading-4 text-gray-600">
@@ -38,6 +39,13 @@ function Metrik({ ikon, label, kalimat, angka, kenaikan, kartu = false }: { ikon
         <p className={`font-semibold tabular-nums ${kartu ? "text-[20px] leading-7 text-black" : "text-[24px] leading-8 text-gray-900"}`}>{angka}</p>
       </div>
       <p className="text-[12px] leading-4">{kenaikan}</p>
+      {perencanaan !== undefined && (
+        <p className="mt-2 flex items-center gap-1 whitespace-nowrap border-t border-gray-100 pt-2 text-[12px] leading-4 text-gray-600" title={`+${formatAngka(perencanaan)} lainnya dalam perencanaan`}>
+          <span className="truncate">
+            <span className="font-semibold text-gray-900">+{formatAngka(perencanaan)}</span> lainnya dalam perencanaan
+          </span>
+        </p>
+      )}
     </div>
   );
 }
@@ -70,7 +78,8 @@ function useStatusPublikasi() {
 
   // Perubahan yang sudah disetujui tetapi belum dipublikasikan
   const belumTerbit = DAFTAR.map((m) => ({ ...m, selisih: draf[m.key] - tampil[m.key] })).filter((m) => m.selisih !== 0);
-  return { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit };
+  const perencanaan = angkaDalamPerencanaan(antrean);
+  return { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit, perencanaan };
 }
 
 /** Jumlah angka dampak yang sudah disetujui tetapi belum dipublikasikan. */
@@ -95,7 +104,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
     return () => clearTimeout(t);
   }, [toast]);
 
-  const { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit } = useStatusPublikasi();
+  const { draf, terbit, sebelumnya, tampil, pembanding, belumTerbit, perencanaan } = useStatusPublikasi();
 
   // Pembanding dilabeli bulan publikasi sebelumnya; tanpa publikasi sebelumnya (baseline) memakai label tetap data contoh
   const labelPembanding = sebelumnya
@@ -237,6 +246,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
                 kalimat={m.kalimat}
                 angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])}
                 kenaikan={kenaikan(m.key)}
+                perencanaan={perencanaan[m.key]}
               />
             </div>
           ))}
@@ -250,7 +260,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
             key={m.key}
             className={`${i >= 3 ? "sm:border-t sm:border-gray-100 xl:border-t-0" : ""} ${i % 3 !== 0 ? "sm:border-l sm:border-gray-100" : ""} ${i === 3 ? "xl:border-l xl:border-gray-100" : ""} `}
           >
-            <Metrik ikon={m.ikon} label={m.label} kalimat={m.kalimat} angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])} kenaikan={kenaikan(m.key)}
+            <Metrik ikon={m.ikon} label={m.label} kalimat={m.kalimat} angka={formatAngka(BASELINE_DAMPAK[m.key] + angkaTampil[m.key])} kenaikan={kenaikan(m.key)} perencanaan={perencanaan[m.key]}
             />
           </div>
         ))}

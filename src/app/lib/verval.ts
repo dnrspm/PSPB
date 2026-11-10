@@ -447,6 +447,32 @@ export function angkaDisetujuiSebelum(items: AntreanItem[], batas: Date): AngkaP
   );
 }
 
+/**
+ * Dampak yang masih dalam perencanaan: sisa target dampak kontribusi yang belum direalisasikan
+ * (target dikurangi realisasi yang sudah disetujui). Kontribusi yang total realisasinya sudah disetujui tidak dihitung.
+ */
+export function angkaDalamPerencanaan(items: AntreanItem[], list: Contribution[] = getContributions()): AngkaPublik {
+  const disetujui = (i: AntreanItem) => i.jenis === "realisasi" && (i.verval.status === "disetujui" || i.verval.status === "disetujui-revisi");
+  const aktif = list.filter((c) => {
+    const p = c.pelaksanaan;
+    if (!p?.targetDampak) return false;
+    return !(p.vervalAkhir && (p.vervalAkhir.status === "disetujui" || p.vervalAkhir.status === "disetujui-revisi"));
+  });
+  const sisa = (c: Contribution, k: "siswa" | "guru" | "satuanPendidikan") => {
+    const realisasi = items.filter((i) => i.contribution.id === c.id && disetujui(i)).reduce((n, i) => n + (i.dampak[k] || 0), 0);
+    return Math.max(0, (c.pelaksanaan?.targetDampak?.[k] || 0) - realisasi);
+  };
+  const terealisasi = new Set(items.filter(disetujui).flatMap((i) => splitWilayah(i.dampak.wilayah || "")));
+  return {
+    siswa: aktif.reduce((n, c) => n + sisa(c, "siswa"), 0),
+    guru: aktif.reduce((n, c) => n + sisa(c, "guru"), 0),
+    satuanPendidikan: aktif.reduce((n, c) => n + sisa(c, "satuanPendidikan"), 0),
+    program: aktif.length,
+    daerah: new Set(aktif.flatMap((c) => splitWilayah(c.pelaksanaan?.targetDampak?.wilayah || "")).filter((w) => !terealisasi.has(w))).size,
+    mitra: new Set(aktif.map((c) => c.namaMitra)).size,
+  };
+}
+
 /** Publikasi awal data contoh: terjadi sekian hari lalu, oleh Biro Kerja Sama. */
 export const PUBLIKASI_AWAL = { hariLalu: 15, oleh: "Budi Santoso" };
 
