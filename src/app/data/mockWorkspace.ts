@@ -1153,6 +1153,73 @@ export const mockContributions: Contribution[] = [
       { id: "a061", timestamp: d(3), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Audiensi Terlaksana", notes: "Audiensi terlaksana. Mitra menyetujui lanjut ke tahap PKS.", fromState: "audiensi-terjadwal", toState: "audiensi-terjadwal", fields: { "Notulen & Dokumen Audiensi": "Notulen Audiensi Mitra Digital Nusantara.pdf" } },
     ],
   },
+  {
+    id: "c027",
+    namaMitra: "Tokopedia Peduli",
+    instansi: "PT Tokopedia Edukasi Nusantara",
+    narahubung: "Rina Kusumawati",
+    kontak: "081377712345",
+    email: "rina.kusumawati@tokopedia.com",
+    program: "Pendampingan Pelatihan GTK",
+    paketBantuan: "Pelatihan Guru Digital",
+    workflowStatus: "selesai",
+    pic: "Budi Santoso",
+    lastUpdate: d(4),
+    submissionDate: d(130),
+    targetPenerima: "Guru SD dan SMP",
+    wilayah: "Jawa Tengah",
+    sekolah: ["SDN 1 Semarang", "SMPN 2 Surakarta"],
+    jumlahPenerima: 1500,
+    nilaiKontribusi: "Rp 1.350.000.000",
+    badanHukum: "PT",
+    statusMitra: "Aktif",
+    jabatan: "Head of Social Impact",
+    unitKerja: "Ditjen GTK",
+    untukSiapa: "Guru",
+    dokumen: [
+      { id: "d900", name: "Proposal Tokopedia Peduli.pdf", type: "proposal", uploadedAt: d(130), uploadedBy: "Rina Kusumawati" },
+      { id: "d901", name: "BAST - Tokopedia Peduli.pdf", type: "bast", uploadedAt: d(4), uploadedBy: "Budi Santoso" },
+    ],
+    aktivitas: [
+      { id: "a900", timestamp: d(130), actor: "Rina Kusumawati", actorRole: "biro-perencanaan", action: "Kontribusi masuk", toState: "kontribusi-masuk" },
+      { id: "a901", timestamp: d(4), actor: "Budi Santoso", actorRole: "biro-perencanaan", action: "Terlaksana", fromState: "pelaksanaan-dalam-proses", toState: "pelaksanaan-dalam-proses" },
+    ],
+    pelaksanaan: denganTotal({
+      progress: 100,
+      startDate: d(70),
+      completionDate: d(4),
+      dokumentasi: [
+        { id: "d901", name: "BAST - Tokopedia Peduli.pdf", type: "bast", uploadedAt: d(4), uploadedBy: "Budi Santoso" },
+      ],
+      targetDampak: { siswa: 600, guru: 1500, satuanPendidikan: 40, bantuan: 40, wilayah: "Kota Semarang (Jawa Tengah), Kota Surakarta (Jawa Tengah)" },
+      vervalTarget: seedVerval({ jenis: "target", status: "disetujui", oleh: "Budi Santoso", hariLaluAjukan: 72, hariLaluVerval: 70, verifikator: "Andi Pratama" }),
+      progressUpdates: [
+        {
+          id: "pu-c027-1", judul: "Pelatihan guru digital angkatan 1 selesai",
+          deskripsi: "Pelatihan pemanfaatan perangkat ajar digital untuk guru SD dan SMP di Kota Semarang.",
+          tanggal: d(30), actor: "Budi Santoso",
+          dokumen: [
+            { id: "d901a", name: "Laporan_Pelatihan_Angkatan1.pdf", type: "dokumentasi", uploadedAt: d(30), uploadedBy: "Budi Santoso" },
+          ],
+          realisasi: { siswa: 310, guru: 820, satuanPendidikan: 22, bantuan: 22, wilayah: "Kota Semarang (Jawa Tengah)" },
+          verval: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Budi Santoso", hariLaluAjukan: 30, hariLaluVerval: 28, verifikator: "Andi Pratama" }),
+        },
+        {
+          id: "pu-c027-2", judul: "Pelatihan guru digital angkatan 2 selesai",
+          deskripsi: "Angkatan kedua di Kota Surakarta selesai dan sertifikat sudah diserahkan.",
+          tanggal: d(10), actor: "Budi Santoso",
+          dokumen: [
+            { id: "d901b", name: "Laporan_Pelatihan_Angkatan2.pdf", type: "dokumentasi", uploadedAt: d(10), uploadedBy: "Budi Santoso" },
+          ],
+          realisasi: { siswa: 280, guru: 760, satuanPendidikan: 18, bantuan: 18, wilayah: "Kota Surakarta (Jawa Tengah)" },
+          verval: seedVerval({ jenis: "realisasi", status: "disetujui", oleh: "Budi Santoso", hariLaluAjukan: 10, hariLaluVerval: 8, verifikator: "Andi Pratama" }),
+        },
+      ],
+      // Opsi verval saat selesai: total realisasi diajukan ketika Terlaksana dan menunggu tinjauan
+      realisasiAkhir: { siswa: 590, guru: 1580, satuanPendidikan: 40, bantuan: 40, wilayah: "Kota Semarang (Jawa Tengah), Kota Surakarta (Jawa Tengah)" },
+      vervalAkhir: seedVerval({ jenis: "realisasi", status: "menunggu", oleh: "Budi Santoso", hariLaluAjukan: 4, teks: "Mengajukan total realisasi dampak saat kontribusi selesai" }),
+    }),
+  },
 ];
 
 // v5: data contoh kini memuat status verval target dampak (opsi Sesuai PRD)

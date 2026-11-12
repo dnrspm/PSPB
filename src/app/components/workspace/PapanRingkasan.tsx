@@ -41,6 +41,8 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
     count: groups.filter((g) => p.states.includes(g.workflowStatus)).length,
   }));
 
+  const kontribusiMasuk = groups.filter((g) => g.workflowStatus === "kontribusi-masuk").length;
+
   const antrean = bangunAntrean(contributions);
   const hitung = (s: string) => antrean.filter((i) => i.verval.status === s).length;
   const menunggu = hitung("menunggu");
@@ -52,7 +54,7 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
   ];
 
   const tabs: { key: Tab; label: string; badge?: number; badgeTitle?: string }[] = [
-    { key: "operasional", label: "Status Workflow" },
+    { key: "operasional", label: "Status Workflow", badge: kontribusiMasuk, badgeTitle: "Kontribusi masuk" },
     { key: "verval", label: "Tinjau Realisasi", badge: menunggu, badgeTitle: "Realisasi perlu ditinjau" },
     { key: "dampak", label: "Publikasi Dampak", badge: belumDipublikasikan, badgeTitle: "Angka belum dipublikasikan" },
   ];

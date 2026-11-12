@@ -6,6 +6,7 @@ import { StatusBadge } from "./StatusBadge";
 import { groupContributions, type ContributionGroup } from "../../lib/contributionGroups";
 import { PROGRAM_UNIT_KERJA_DEFAULTS, SUB_TYPE_UNIT_KERJA_MAP } from "../../lib/workflow";
 import { VERVAL_STATUS_LABELS, bangunAntrean, formatAngka, ringkasVerval, statusGabungan, type HitungStatus } from "../../lib/verval";
+import { groupWilayah } from "../../lib/dampak";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type SortKey = "instansi" | "program" | "workflowStatus" | "paketBantuan" | "lastUpdate" | "pic";
@@ -37,6 +38,7 @@ interface AngkaRealisasi {
   siswa: number;
   guru: number;
   satuanPendidikan: number;
+  kabKota: number;
 }
 
 const WARNA_VERVAL: Record<VervalStatus, string> = {
@@ -56,9 +58,9 @@ function AngkaTerbesar({ angka }: { angka: AngkaRealisasi }) {
     { nama: "guru", n: angka.guru },
     { nama: "satdik", n: angka.satuanPendidikan },
   ];
-  // Jumlah sama: urutan siswa, guru, satdik
+  // Jumlah sama: urutan siswa, guru, satdik; kab/kota selalu di popover karena bukan jumlah penerima
   const utama = semua.reduce((a, b) => (b.n > a.n ? b : a));
-  const lainnya = semua.filter((x) => x !== utama);
+  const lainnya = [...semua.filter((x) => x !== utama), { nama: "kab/kota", n: angka.kabKota }];
   const ringkas = lainnya.map((x) => `${x.nama} ${formatAngka(x.n)}`).join(", ");
   return (
     <span className="flex items-center gap-2 text-sm leading-5">
@@ -117,8 +119,10 @@ function SelVerval({ h, angka, onOpen }: { h: HitungStatus; angka?: AngkaRealisa
 function angkaRealisasi(items: Contribution[]): AngkaRealisasi | undefined {
   const list = bangunAntrean(items).filter((i) => i.verval.status !== "tidak-relevan");
   if (list.length === 0) return undefined;
-  const jumlah = (k: keyof AngkaRealisasi) => list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
-  return { siswa: jumlah("siswa"), guru: jumlah("guru"), satuanPendidikan: jumlah("satuanPendidikan") };
+  const jumlah = (k: "siswa" | "guru" | "satuanPendidikan") => list.reduce((n, i) => n + (i.dampak[k] || 0), 0);
+  // Kab/kota dihitung dari gabungan wilayah semua log, tanpa hitung ganda
+  const wilayah = list.map((i) => i.dampak.wilayah).filter(Boolean).join(", ");
+  return { siswa: jumlah("siswa"), guru: jumlah("guru"), satuanPendidikan: jumlah("satuanPendidikan"), kabKota: wilayah ? groupWilayah(wilayah).totalKabupaten : 0 };
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
