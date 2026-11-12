@@ -195,7 +195,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
             )}
             <p className={`flex items-center gap-1.5 ${tanpaJudul ? "text-[13px] leading-5 text-gray-700" : "text-[12px] leading-4 text-gray-600"}`}>
               {pratinjau && !ada
-                ? "Belum ada pembaruan data dibandingkan publikasi terakhir, jadi belum ada yang perlu dipublikasikan."
+                ? "Belum ada data terbaru untuk dipublikasikan."
                 : pratinjau
                 ? "Data di bawah hanya akan muncul di laman PSPB setelah Anda klik tombol \"Publikasikan\"."
                   : `Dipublikasikan di laman PSPB oleh ${terbit.oleh} pada ${formatWaktuVerval(terbit.at)}`}
