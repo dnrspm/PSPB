@@ -42,7 +42,7 @@ export function FilterBar({ filters, onChange, programs, tampilVerval = false }:
         <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          placeholder="Cari nama mitra, program..."
+          placeholder="Cari nama instansi atau program"
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"

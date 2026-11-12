@@ -1656,7 +1656,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500">
-                    <th className="px-3 py-2 text-left">Penyaluran ke-</th>
+                    <th className="px-3 py-2 text-left">Tahap Penyaluran</th>
                     <th className="px-3 py-2 text-left">Tanggal</th>
                     <th className="px-3 py-2 text-right">Siswa</th>
                     <th className="px-3 py-2 text-right">Guru</th>
@@ -1689,11 +1689,11 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
         <h4 className={`mb-3 ${subjudul}`}>Hasil Tinjauan</h4>
         {!diputuskan || !v ? (
           <div className="rounded-md border border-dashed border-gray-200 px-4 py-5 text-center">
-            <p className="text-sm font-medium text-gray-500">Belum Ditinjau</p>
+            <p className="text-sm font-medium text-gray-500">Belum Ada Data</p>
             <p className="mt-0.5 text-xs text-gray-400">
               {menunggu
                 ? onTinjau
-                  ? "Total realisasi sudah diajukan dan menunggu tinjauan Anda."
+                  ? "Mohon tinjau realisasi kontribusi untuk verifikasi datanya."
                   : "Total realisasi sudah diajukan dan menunggu tinjauan Biro Kerja Sama."
                 : "Total realisasi ditinjau Biro Kerja Sama sekali saat kontribusi Selesai."}
               {onTinjau && (
@@ -1713,7 +1713,7 @@ function RingkasanRealisasiBlock({ contribution: c, currentUser, onChanged, onTi
         ) : (
           <div className="space-y-3">
             <p className="text-sm leading-relaxed text-gray-900">
-              {VERVAL_STATUS_LABELS[v.status]} oleh {v.diperbaruiOleh} pada {formatWaktuVerval(v.diperbaruiPada)}.
+              {v.status === "disetujui" ? "Diverifikasi" : VERVAL_STATUS_LABELS[v.status]} oleh {v.diperbaruiOleh} {v.status === "disetujui" ? "" : "pada "}{formatWaktuVerval(v.diperbaruiPada)}.
             </p>
             {(perubahan.length > 0 || v.catatan) && (
               <dl className="space-y-3">

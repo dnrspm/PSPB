@@ -23,8 +23,8 @@ type Kunci = keyof AngkaPublik;
 /** Sedang Tayang (live): yang tayang sekarang. Setelah Publikasi (pratinjau): angka setelah tambahan yang siap masuk dipublikasikan. */
 type Mode = "live" | "pratinjau";
 const MODE_LABEL: { key: Mode; label: string }[] = [
-  { key: "live", label: "Sedang Tayang" },
-  { key: "pratinjau", label: "Setelah Publikasi" },
+  { key: "live", label: "Terakhir Dipublikasi" },
+  { key: "pratinjau", label: "Pratinjau Publikasi" },
 ];
 
 /** Metrik dampak: label, angka, lalu kenaikan dibanding periode sebelumnya. */
@@ -113,7 +113,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
 
   // Pratinjau visual: angka seandainya Publikasikan diklik, dibandingkan dengan yang sedang tayang
   const ada = belumTerbit.length > 0;
-  const pratinjau = ada && mode === "pratinjau";
+  const pratinjau = mode === "pratinjau";
   const bulanTayang = terbit.at.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
   const angkaTampil = pratinjau ? draf : tampil;
   const pembandingTampil = pratinjau ? tampil : pembanding;
@@ -170,7 +170,7 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
     >
       <header className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${kartuTerpisah ? "" : `px-4 py-3 ${terbuka ? "border-b border-gray-100" : ""}`}`}>
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-          {ada && terbuka && (
+          {terbuka && (
             <div role="group" aria-label="Tampilan angka" className="inline-flex overflow-hidden rounded-md border border-gray-300 bg-white">
               {MODE_LABEL.map((m) => (
                 <button
@@ -194,9 +194,11 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
               </h3>
             )}
             <p className={`flex items-center gap-1.5 ${tanpaJudul ? "text-[13px] leading-5 text-gray-700" : "text-[12px] leading-4 text-gray-600"}`}>
-              {pratinjau
-                ? "Angka setelah dipublikasikan, belum tayang di web publik"
-                  : `Dipublikasikan ${formatWaktuVerval(terbit.at)} oleh ${terbit.oleh}`}
+              {pratinjau && !ada
+                ? "Belum ada pembaruan data dibandingkan publikasi terakhir, jadi belum ada yang perlu dipublikasikan."
+                : pratinjau
+                ? "Data di bawah hanya akan muncul di laman PSPB setelah Anda klik tombol \"Publikasikan\"."
+                  : `Dipublikasikan di laman PSPB oleh ${terbit.oleh} pada ${formatWaktuVerval(terbit.at)}`}
               {!terbuka && belumTerbit.length > 0 && (
                 <span className="font-semibold text-amber-700"> · {belumTerbit.length} angka belum dipublikasikan</span>
               )}
@@ -204,13 +206,16 @@ export function PratinjauDasborPublik({ className = "", awalTerbuka = true, bisa
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {belumTerbit.length > 0 &&
+          {(boleh || belumTerbit.length > 0) &&
             (boleh ? (
               <button
                 type="button"
                 // Saat tertutup, tombol hanya membuka kartu dengan pratinjau; publikasi dilakukan setelah angkanya ditinjau
                 onClick={terbuka ? publikasikan : tinjau}
-                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-[13px] font-semibold leading-5 text-white hover:bg-blue-700"
+                // Tombol tetap tampil setelah publikasi; nonaktif selama tidak ada angka baru untuk dipublikasikan
+                disabled={!ada}
+                title={ada ? undefined : "Tidak ada perubahan untuk dipublikasikan"}
+                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-[13px] font-semibold leading-5 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:bg-gray-200"
               >
                 <Send className="h-3.5 w-3.5" aria-hidden />
                 {terbuka ? "Publikasikan" : "Tinjau publikasi"}

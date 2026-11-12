@@ -28,7 +28,7 @@ function KartuAngka({ label, jumlah, warna }: { label: string; jumlah: number; w
 
 /**
  * Opsi tanpa menu: ringkasan di atas tabel dibagi dua tab agar tidak menumpuk.
- * "Status Workflow" berisi card tahapan workflow, "Tinjauan Realisasi" berisi status tinjauan;
+ * "Status Workflow" berisi card tahapan workflow, "Tinjau Realisasi" berisi status tinjauan;
  * "Publikasi Dampak" berisi angka dampak untuk ditinjau dan dipublikasikan.
  */
 export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanProps) {
@@ -53,14 +53,14 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
 
   const tabs: { key: Tab; label: string; badge?: number; badgeTitle?: string }[] = [
     { key: "operasional", label: "Status Workflow" },
-    { key: "verval", label: "Tinjauan Realisasi", badge: menunggu, badgeTitle: "Realisasi perlu ditinjau" },
+    { key: "verval", label: "Tinjau Realisasi", badge: menunggu, badgeTitle: "Realisasi perlu ditinjau" },
     { key: "dampak", label: "Publikasi Dampak", badge: belumDipublikasikan, badgeTitle: "Angka belum dipublikasikan" },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[24px] font-semibold leading-8 text-gray-900">Ringkasan Kontribusi</h2>
+        <h2 className="text-[24px] font-semibold leading-8 text-gray-900">Alur Kontribusi</h2>
         <span className="text-[13px] leading-5 text-gray-600">{groups.length} total kontribusi</span>
       </div>
 

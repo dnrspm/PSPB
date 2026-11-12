@@ -219,7 +219,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
       >
         <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-5 py-3">
           <h2 className="text-[18px] font-semibold leading-6 text-gray-900">
-            {adalahTarget ? "Tinjauan Target Dampak" : "Tinjauan Realisasi Dampak"}
+            {adalahTarget ? "Tinjau Target Dampak" : "Tinjau Realisasi Kontribusi"}
           </h2>
           <button onClick={onClose} aria-label="Tutup" className="text-gray-400 hover:text-gray-600">
             <X className="h-4 w-4" />
@@ -332,7 +332,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
           </div>
 
           <fieldset>
-            <legend className="mb-1 text-[14px] font-semibold leading-5 text-gray-900">Keputusan</legend>
+            <legend className="mb-1 text-[14px] font-semibold leading-5 text-gray-900">{adalahTarget ? "Verifikasi data target di atas?" : "Verifikasi data realisasi di atas?"}</legend>
             <div className="grid grid-cols-3 gap-2">
               {KEPUTUSAN.map((k) => (
                 <label
@@ -371,13 +371,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
                   setCatatan(e.target.value);
                   setError("");
                 }}
-                placeholder={
-                  keputusan === "tidak-relevan"
-                    ? "cth. Data tercatat ganda untuk paket yang sama"
-                    : keputusan === "revisi"
-                    ? "cth. Jumlah siswa disesuaikan dengan data Dapodik"
-                    : "cth. Sudah sesuai dengan dokumen pendukung"
-                }
+                placeholder="Tulis catatan terkait verifikasi data jika ada"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-[14px] leading-5 outline-none placeholder:text-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
               />
             </div>
@@ -403,7 +397,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
               onClick={konfirmasi}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-blue-700"
             >
-              Simpan keputusan
+              Simpan
             </button>
           </div>
         )}

@@ -233,7 +233,7 @@ export function WorkspaceTable({ contributions, statusFilter, tampilVerval = fal
     { key: null, label: "Unit Kerja" },
     { key: "workflowStatus", label: "Status Workflow" },
     ...(tampilVerval ? [{ key: null, label: "Status Realisasi" }] : []),
-    { key: "lastUpdate", label: "Last Update" },
+    { key: "lastUpdate", label: "Terakhir Diperbarui" },
     { key: "pic", label: "PIC" },
     { key: null, label: "" },
   ];
