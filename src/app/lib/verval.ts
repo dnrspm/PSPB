@@ -26,9 +26,9 @@ export function bolehVerval(role: UserRole): boolean {
 
 export const VERVAL_STATUS_LABELS: Record<VervalStatus, string> = {
   menunggu: "Perlu Ditinjau",
-  disetujui: "Disetujui",
-  "disetujui-revisi": "Disetujui dengan Revisi",
-  "tidak-relevan": "Tidak Relevan",
+  disetujui: "Terverifikasi",
+  "disetujui-revisi": "Terverifikasi dengan Revisi",
+  "tidak-relevan": "Tidak Valid",
 };
 
 export const VERVAL_STATUS_VARIANT: Record<VervalStatus, "warning" | "success" | "informational" | "neutral"> = {
@@ -40,7 +40,7 @@ export const VERVAL_STATUS_VARIANT: Record<VervalStatus, "warning" | "success" |
 
 export const VERVAL_KEPUTUSAN_LABELS: Record<VervalKeputusan, string> = {
   setuju: "Ya, Verifikasi",
-  revisi: "Data Perlu Perbaikan",
+  revisi: "Data Perlu Revisi",
   "tidak-relevan": "Data Tidak Valid",
 };
 

@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 /**
  * Kontrol prototipe: kondisi eksisting dan dua opsi penempatan verval dampak di dasbor operasional.
  * - "eksisting": kondisi sebelum fitur verval dampak (tanpa status verval, menu, maupun field baru).
- * - "menu-ringkas": menu Verval Dampak (antrean); tabel Ringkasan Kontribusi tidak berubah.
+ * - "menu-ringkas": menu Verval Dampak (antrean); tabel Alur Kontribusi tidak berubah.
  * - "tabel": tanpa menu tambahan; tabel dasbor kontribusi dilengkapi status verval. Verval juga hanya saat status Selesai.
  * Aksi verval di tab Pelaksanaan (detail kontribusi) tersedia di kedua opsi.
  */
@@ -11,7 +11,7 @@ export type VervalLayout = "eksisting" | "menu-ringkas" | "tabel";
 
 export const VERVAL_LAYOUTS: { value: VervalLayout; label: string; hint: string }[] = [
   { value: "eksisting", label: "Kondisi eksisting (tanpa verval dampak)", hint: "Seperti sebelum fitur verval dampak: target dan realisasi tidak diverval" },
-  { value: "menu-ringkas", label: "Sesuai PRD", hint: "Antrean di menu Verval Dampak memuat target dan realisasi per log; tabel Ringkasan Kontribusi tidak berubah" },
+  { value: "menu-ringkas", label: "Sesuai PRD", hint: "Antrean di menu Verval Dampak memuat target dan realisasi per log; tabel Alur Kontribusi tidak berubah" },
   { value: "tabel", label: "Diskusi 5 Nov", hint: "Status verval tampil di tabel Dasbor Operasional; total realisasi diverval sekali saat kontribusi Selesai" },
 ];
 

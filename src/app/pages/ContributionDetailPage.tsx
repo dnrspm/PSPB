@@ -62,7 +62,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
         <div className="text-center">
           <p className="text-gray-500">Kontribusi tidak ditemukan.</p>
           <button onClick={() => navigate("/workspace")} className="mt-3 text-sm text-blue-600 hover:underline">
-            Kembali ke Ringkasan Kontribusi
+            Kembali ke Alur Kontribusi
           </button>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function ContributionDetailPage({ currentUser }: ContributionDeta
           className="mb-2 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Kembali ke Ringkasan Kontribusi
+          Kembali ke Alur Kontribusi
         </button>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">

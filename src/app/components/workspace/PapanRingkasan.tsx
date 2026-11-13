@@ -47,10 +47,10 @@ export function PapanRingkasan({ contributions, onTabChange }: PapanRingkasanPro
   const hitung = (s: string) => antrean.filter((i) => i.verval.status === s).length;
   const menunggu = hitung("menunggu");
   const statusVerval = [
-    { label: "Perlu ditinjau", n: menunggu, warna: "#F59E0B" },
-    { label: "Disetujui", n: hitung("disetujui"), warna: "#16A34A" },
-    { label: "Disetujui dengan revisi", n: hitung("disetujui-revisi"), warna: "#0EA5E9" },
-    { label: "Tidak relevan", n: hitung("tidak-relevan"), warna: "#9CA3AF" },
+    { label: "Perlu Ditinjau", n: menunggu, warna: "#F59E0B" },
+    { label: "Terverifikasi", n: hitung("disetujui"), warna: "#16A34A" },
+    { label: "Terverifikasi dengan Revisi", n: hitung("disetujui-revisi"), warna: "#0EA5E9" },
+    { label: "Tidak Valid", n: hitung("tidak-relevan"), warna: "#9CA3AF" },
   ];
 
   const tabs: { key: Tab; label: string; badge?: number; badgeTitle?: string }[] = [

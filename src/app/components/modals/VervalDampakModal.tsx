@@ -109,6 +109,8 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
   const [awalWilayah] = useState(() => uraikanWilayah(dampak.wilayah || ""));
   const [wilayahRows, setWilayahRows] = useState<WilayahRow[]>(awalWilayah.rows);
 
+  const [konfirmasiBuka, setKonfirmasiBuka] = useState(false);
+
   const wajibCatatan = keputusan !== "setuju";
 
   const konfirmasi = () => {
@@ -134,6 +136,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
       oleh,
     });
     if (!hasil.ok) {
+      setKonfirmasiBuka(false);
       setError(hasil.error);
       return;
     }
@@ -204,6 +207,49 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
               setError("");
             }}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (konfirmasiBuka && keputusan) {
+    const teks: Record<VervalKeputusan, { judul: string; isi: string; tombol: string }> = {
+      setuju: {
+        judul: "Verifikasi data ini?",
+        isi: "Nilai yang diajukan akan langsung dihitung sebagai dampak. Keputusan ini tercatat di riwayat tinjauan.",
+        tombol: "Ya, Verifikasi",
+      },
+      revisi: {
+        judul: "Simpan data dengan revisi?",
+        isi: "Nilai hasil revisi yang akan dihitung sebagai dampak. Nilai semula tetap tersimpan di riwayat tinjauan.",
+        tombol: "Ya, Simpan Revisi",
+      },
+      "tidak-relevan": {
+        judul: "Tandai data ini tidak valid?",
+        isi: "Data tidak akan dihitung sebagai dampak. Keputusan ini tercatat di riwayat tinjauan.",
+        tombol: "Ya, Tandai Tidak Valid",
+      },
+    };
+    const t = teks[keputusan];
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">
+        <div role="alertdialog" aria-modal="true" aria-labelledby="judul-konfirmasi-verval" className="w-full max-w-[400px] rounded-xl bg-white p-5 shadow-xl">
+          <h3 id="judul-konfirmasi-verval" className="text-[18px] font-semibold leading-7 text-gray-900">{t.judul}</h3>
+          <p className="mt-1 text-[14px] leading-5 text-gray-700">{t.isi}</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              onClick={() => setKonfirmasiBuka(false)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-[14px] font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Kembali
+            </button>
+            <button
+              onClick={konfirmasi}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-blue-700"
+            >
+              {t.tombol}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -394,7 +440,7 @@ export function VervalDampakModal({ item, keputusanAwal, oleh, onClose, onDone, 
               Batal
             </button>
             <button
-              onClick={konfirmasi}
+              onClick={() => setKonfirmasiBuka(true)}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-blue-700"
             >
               Simpan

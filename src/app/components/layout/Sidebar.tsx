@@ -41,7 +41,7 @@ export function Sidebar({}: SidebarProps) {
           }
         >
           <TableProperties className="h-4 w-4" />
-          Ringkasan Kontribusi
+          Alur Kontribusi
         </NavLink>
         {adaMenuVerval && (
           <NavLink

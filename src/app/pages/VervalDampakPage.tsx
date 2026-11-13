@@ -26,9 +26,9 @@ type FilterStatus = "semua" | VervalStatus;
 const FILTERS: { key: FilterStatus; label: string }[] = [
   { key: "semua", label: "Semua" },
   { key: "menunggu", label: "Perlu Ditinjau" },
-  { key: "disetujui", label: "Disetujui" },
-  { key: "disetujui-revisi", label: "Disetujui dengan Revisi" },
-  { key: "tidak-relevan", label: "Tidak Relevan" },
+  { key: "disetujui", label: "Terverifikasi" },
+  { key: "disetujui-revisi", label: "Terverifikasi dengan Revisi" },
+  { key: "tidak-relevan", label: "Tidak Valid" },
 ];
 
 const PAGE_SIZE = 10;
@@ -162,7 +162,7 @@ export default function VervalDampakPage() {
         <div>
           <h1 className="text-[22px] font-semibold leading-7 text-gray-900">Verval Dampak</h1>
           <p className="mt-1 max-w-3xl text-[15px] leading-[22px] text-gray-600">
-            Periksa target dampak dan realisasi dampak dari log penyaluran yang diajukan, lalu setujui, setujui dengan revisi, atau tandai tidak relevan.
+            Periksa target dampak dan realisasi dampak dari log penyaluran yang diajukan, lalu verifikasi, verifikasi dengan revisi, atau tandai tidak valid.
             Keputusan di halaman ini langsung tercatat di tab Pelaksanaan pada detail kontribusi.
           </p>
         </div>
@@ -348,7 +348,7 @@ export default function VervalDampakPage() {
                                 Revisi
                               </button>
                               <button onClick={() => setModal({ key: i.key, keputusan: "tidak-relevan" })} className="rounded-md border border-red-300 bg-white px-2.5 py-1 text-[13px] font-semibold leading-5 text-red-700 hover:bg-red-50">
-                                Tidak relevan
+                                Tidak valid
                               </button>
                             </>
                           ) : (
@@ -412,7 +412,7 @@ export default function VervalDampakPage() {
 
         <p className="text-[13px] leading-5 text-gray-600">
           Data yang menunggu verval selalu tampil paling atas. Data tidak relevan tidak ditampilkan di daftar Semua dan di detail kontribusi;
-          arsipnya hanya bisa dibuka lewat filter Tidak Relevan. Klik nama instansi untuk membuka tab Pelaksanaan.
+          arsipnya hanya bisa dibuka lewat filter Tidak Valid. Klik nama instansi untuk membuka tab Pelaksanaan.
         </p>
       </div>
 
